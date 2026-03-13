@@ -1,25 +1,35 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
-export function VCheckIcon({ className, ...props }: React.ComponentProps<"svg">) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 32 32"
-      fill="currentColor"
-      className={cn("text-primary", className)}
-      {...props}
-    >
-      <path d="M2.5 14.5 L11 26 L29.5 5 L24.5 1.5 L10 18 L6.5 13 Z" />
-    </svg>
-  )
-}
+export function Logo({ className }: { className?: string }) {
+  const { theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
-export function Logo({ className, showText = true, textClassName }: { className?: string, showText?: boolean, textClassName?: string }) {
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div className={cn("h-10 w-[140px]", className)} />
+  }
+
+  const isDark = resolvedTheme === 'dark'
+  const logoSrc = isDark ? "/vistorify_logo_white.png" : "/vistorify_logo2_preto.jpg-removebg-preview.png"
+
   return (
-    <div className={cn("flex items-center gap-2 tracking-tight", className)}>
-      <VCheckIcon className="h-6 w-6" />
-      {showText && <span className={cn("text-xl font-bold font-sans", textClassName)}>Vistorify</span>}
+    <div className={cn("flex items-center gap-2", className)}>
+      <Image 
+        src={logoSrc} 
+        alt="Vistorify Logo" 
+        width={180} 
+        height={60} 
+        className={cn("object-contain", isDark && "brightness-200")}
+        priority
+      />
     </div>
   )
 }

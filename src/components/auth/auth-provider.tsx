@@ -119,13 +119,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     password,
                 });
 
-                if (authError || !authData.user) {
-                    throw new Error('Senha incorreta.');
+                if (authError) {
+                    // Provide detailed error message instead of generic one
+                    const msg = authError.message.toLowerCase();
+                    if (msg.includes('invalid login credentials')) throw new Error('E-mail ou senha incorretos.');
+                    if (msg.includes('email not confirmed')) throw new Error('Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.');
+                    throw new Error(authError.message);
+                }
+
+                if (!authData.user) {
+                    throw new Error('Falha na autenticação.');
                 }
 
                 // Link auth_id if missing
                 if (!data.auth_id) {
-                    await supabase.from('system_users').update({ auth_id: authData.user.id }).eq('id', data.id);
+                    const { error: linkError } = await supabase.from('system_users').update({ auth_id: authData.user.id }).eq('id', data.id);
+                    if (linkError) console.warn('[AUTH] Falha ao vincular auth_id:', linkError);
                 }
 
                 setUser(loggedUser);
@@ -161,21 +170,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const resetPassword = async (_newPassword: string) => {
         setIsLoading(true);
+        console.log('[AUTH] Iniciando resetPassword para:', user?.email);
         try {
             if (user && isSupabaseConfigured) {
                 let newAuthId = null;
 
                 // 1. Persistently save the new password in Supabase Auth
-                // We attempt to signUp FIRST
+                // We attempt to signUp FIRST (case where user exists in system_users but NOT in auth.users)
                 const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
                     email: user.email,
                     password: _newPassword,
                 });
 
                 if (signUpError) {
+                    console.log('[AUTH] signUp error:', signUpError.message);
                     // Handle "User already registered" by signing in with temp password and updating
                     if (signUpError.message.toLowerCase().includes('already registered')) {
                         const tempPass = lastTempPassword || sessionStorage.getItem('imob_temp_pass');
+                        console.log('[AUTH] Usuário já registrado, tentando signIn com temp password...');
+                        
                         if (tempPass) {
                             const { error: signInError } = await supabase.auth.signInWithPassword({
                                 email: user.email,
@@ -183,16 +196,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             });
 
                             if (!signInError) {
+                                console.log('[AUTH] signIn sucesso, atualizando senha...');
                                 const { data: updateData, error: updateError } = await supabase.auth.updateUser({
                                     password: _newPassword
                                 });
-                                if (updateError) throw updateError;
+                                if (updateError) {
+                                    console.error('[AUTH] updateUser error:', updateError);
+                                    throw updateError;
+                                }
                                 newAuthId = updateData.user.id;
                             } else {
-                                // If signIn with temp password fails, it means either:
-                                // a) The user is NOT in Auth yet but signUp failed for another reason
-                                // b) The user IS in Auth but with a DIFFERENT password (not the temp one)
-                                throw new Error('Erro de sincronização: A conta existe mas a confirmação de acesso falhou. Contate o suporte.');
+                                console.error('[AUTH] signIn error:', signInError.message);
+                                // If signIn with temp password fails, maybe they already changed it?
+                                // Try signing in with the NEW password to see if it's already set
+                                const { error: retryError } = await supabase.auth.signInWithPassword({
+                                    email: user.email,
+                                    password: _newPassword,
+                                });
+
+                                if (!retryError) {
+                                    console.log('[AUTH] A nova senha já estava ativa.');
+                                    // It worked! We can proceed.
+                                } else {
+                                    throw new Error('Erro de sincronização: A conta existe mas a confirmação de acesso falhou. ' + signInError.message);
+                                }
                             }
                         } else {
                             throw new Error('Sessão expirada. Faça login com a senha temporária novamente.');
@@ -201,13 +228,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         throw signUpError;
                     }
                 } else if (signUpData.user) {
+                    console.log('[AUTH] signUp sucesso:', signUpData.user.id);
                     newAuthId = signUpData.user.id;
-                    // If email confirmation is REQUIRED in Supabase, the user might be unusable immediately.
-                    // But we proceed to update the system_users flags anyway.
                 }
 
                 // 2. Clear temp flags AND save auth_id in system_users table
-                // We use BOTH ID and Email for extreme reliability
+                console.log('[AUTH] Atualizando system_users flags...');
                 const { error: dbError } = await supabase.from('system_users')
                     .update({
                         temp_password: null,
@@ -222,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 // 3. Clear transient state and finish login
+                console.log('[AUTH] Reset completo, salvando local user e redirecionando.');
                 localStorage.setItem('imob_user', JSON.stringify(user));
                 setNeedsPasswordReset(false);
                 setLastTempPassword(null);
@@ -230,7 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
             }
         } catch (err: any) {
-            console.error('Reset password error:', err);
+            console.error('[AUTH] Reset password error fatal:', err);
             throw err;
         } finally {
             setIsLoading(false);

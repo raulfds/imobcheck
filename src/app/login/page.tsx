@@ -141,11 +141,11 @@ export default function LoginPage() {
                 <CardHeader className="space-y-6 text-center items-center pt-14 px-10">
                     <div className="w-full flex justify-center mb-2">
                         <Image 
-                            src="/vistorify_logo2_preto.jpg-removebg-preview.png" 
+                            src="/vistorify_logo_white.png" 
                             alt="Vistorify Logo" 
-                            width={240} 
-                            height={70} 
-                            className="object-contain drop-shadow-2xl invert brightness-200"
+                            width={320} 
+                            height={120} 
+                            className="object-contain drop-shadow-2xl brightness-200"
                             priority
                         />
                     </div>
