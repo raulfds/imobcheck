@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
+    const [lastTempPassword, setLastTempPassword] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -97,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Check temp password / must change password
                 if (data.must_change_password || (data.temp_password && password === data.temp_password)) {
                     setNeedsPasswordReset(true);
+                    setLastTempPassword(password);
                     setUser(loggedUser);
                     return;
                 }
@@ -136,49 +138,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const forgotPassword = async (email: string) => {
-        setIsLoading(true);
-        try {
-            if (isSupabaseConfigured) {
-                // Check user exists
-                const { data } = await supabase.from('system_users').select('id').eq('email', email).single();
-                if (!data) throw new Error('E-mail não encontrado.');
-
-                // In a real system: send email via Supabase or SMTP
-                // For now, reset to temp password in DB
-                const tempPassword = Math.random().toString(36).slice(-8);
-                await supabase.from('system_users').update({
-                    temp_password: tempPassword,
-                    must_change_password: true,
-                }).eq('email', email);
-
-                alert(`Senha temporária "${tempPassword}" foi gerada. Em produção, isso seria enviado por e-mail para ${email}.`);
-            } else {
-                alert(`E-mail de recuperação enviado para ${email} (simulado).`);
-            }
-        } finally {
-            setIsLoading(false);
-        }
+    const forgotPassword = async (_email: string) => {
+        // Functionality removed for security reasons. 
+        // Passwords must be reset by a Super Admin or Agency Admin.
+        throw new Error('Recuperação de senha desabilitada por segurança. Entre em contato com seu administrador.');
     };
 
     const resetPassword = async (_newPassword: string) => {
         setIsLoading(true);
         try {
-            console.log('Mock: Resetting password...', _newPassword.length);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
             if (user && isSupabaseConfigured) {
+                // 1. Persistently save the new password in Supabase Auth
+                // We try to sign up first (in case it's a new system user without Auth entry)
+                const { error: signUpError } = await supabase.auth.signUp({
+                    email: user.email,
+                    password: _newPassword,
+                });
+
+                // If user already exists, we must sign in with the temp password and update
+                if (signUpError && signUpError.message.includes('already registered')) {
+                    if (lastTempPassword) {
+                        const { error: signInError } = await supabase.auth.signInWithPassword({
+                            email: user.email,
+                            password: lastTempPassword,
+                        });
+
+                        if (!signInError) {
+                            const { error: updateError } = await supabase.auth.updateUser({
+                                password: _newPassword
+                            });
+                            if (updateError) throw updateError;
+                        } else {
+                            // If signIn fails, they might already have changed it or error
+                            throw new Error('Erro ao validar acesso para troca de senha. Tente novamente.');
+                        }
+                    } else {
+                        // Fallback: If no lastTempPassword (should not happen), warn user
+                        throw new Error('Acesso expirado. Por favor, faça login novamente.');
+                    }
+                } else if (signUpError) {
+                    throw signUpError;
+                }
+
+                // 2. Clear temp flags in system_users table
                 await supabase.from('system_users').update({
                     temp_password: null,
                     must_change_password: false,
                 }).eq('id', user.id);
-            }
 
-            if (user) {
+                // 3. Clear transient state and finish login
                 localStorage.setItem('imob_user', JSON.stringify(user));
                 setNeedsPasswordReset(false);
+                setLastTempPassword(null);
                 router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
             }
+        } catch (err: any) {
+            console.error('Reset password error:', err);
+            throw err;
         } finally {
             setIsLoading(false);
         }

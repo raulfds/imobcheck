@@ -3,8 +3,8 @@
 import { useAuth } from '@/components/auth/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutDashboard, ClipboardCheck, Users, Building, FileText, Settings, LogOut, Package, Plus } from 'lucide-react';
+import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
+import { LayoutDashboard, ClipboardCheck, Users, Building, FileText, Settings, LogOut, Package, Plus, PanelLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Logo } from '@/components/ui/logo';
@@ -110,10 +110,15 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                     </SidebarFooter>
                 </Sidebar>
                 <main className="flex-1 w-full max-w-full overflow-hidden flex flex-col">
-                    <header className="h-20 border-b border-border/40 bg-background/80 backdrop-blur-md flex items-center px-6 md:px-10 justify-between sticky top-0 z-10">
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5">Visão Geral</p>
-                            <h2 className="font-extrabold text-xl tracking-tight text-foreground">Área da Imobiliária</h2>
+                    <header className="h-20 border-b border-border/40 bg-background/80 backdrop-blur-md flex items-center px-4 md:px-10 justify-between sticky top-0 z-10 gap-4">
+                        <div className="flex items-center gap-4">
+                            <SidebarTrigger className="md:hidden h-10 w-10 border border-border/40 bg-card shadow-sm rounded-xl">
+                                <PanelLeft className="h-5 w-5" />
+                            </SidebarTrigger>
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-0.5">Visão Geral</p>
+                                <h2 className="font-extrabold text-lg md:text-xl tracking-tight text-foreground truncate max-w-[120px] sm:max-w-none">Área da Imobiliária</h2>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <ThemeSwitcher />
