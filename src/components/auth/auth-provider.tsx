@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { finalizeUserPassword } from '@/app/actions/auth-actions';
 
 export interface AuthContextType {
     user: User | null;
@@ -170,85 +171,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const resetPassword = async (_newPassword: string) => {
         setIsLoading(true);
-        console.log('[AUTH] Iniciando resetPassword para:', user?.email);
+        console.log('[AUTH] Finalizando nova senha para:', user?.email);
         try {
             if (user && isSupabaseConfigured) {
-                let newAuthId = null;
-
-                // 1. Persistently save the new password in Supabase Auth
-                // We attempt to signUp FIRST (case where user exists in system_users but NOT in auth.users)
-                const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                // 1. Utilize Server Action to finalize password (bypasses email rate limits)
+                const result = await finalizeUserPassword({
                     email: user.email,
-                    password: _newPassword,
+                    newPassword: _newPassword
                 });
 
-                if (signUpError) {
-                    console.log('[AUTH] signUp error:', signUpError.message);
-                    // Handle "User already registered" by signing in with temp password and updating
-                    if (signUpError.message.toLowerCase().includes('already registered')) {
-                        const tempPass = lastTempPassword || sessionStorage.getItem('imob_temp_pass');
-                        console.log('[AUTH] Usuário já registrado, tentando signIn com temp password...');
-                        
-                        if (tempPass) {
-                            const { error: signInError } = await supabase.auth.signInWithPassword({
-                                email: user.email,
-                                password: tempPass,
-                            });
-
-                            if (!signInError) {
-                                console.log('[AUTH] signIn sucesso, atualizando senha...');
-                                const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-                                    password: _newPassword
-                                });
-                                if (updateError) {
-                                    console.error('[AUTH] updateUser error:', updateError);
-                                    throw updateError;
-                                }
-                                newAuthId = updateData.user.id;
-                            } else {
-                                console.error('[AUTH] signIn error:', signInError.message);
-                                // If signIn with temp password fails, maybe they already changed it?
-                                // Try signing in with the NEW password to see if it's already set
-                                const { error: retryError } = await supabase.auth.signInWithPassword({
-                                    email: user.email,
-                                    password: _newPassword,
-                                });
-
-                                if (!retryError) {
-                                    console.log('[AUTH] A nova senha já estava ativa.');
-                                    // It worked! We can proceed.
-                                } else {
-                                    throw new Error('Erro de sincronização: A conta existe mas a confirmação de acesso falhou. ' + signInError.message);
-                                }
-                            }
-                        } else {
-                            throw new Error('Sessão expirada. Faça login com a senha temporária novamente.');
-                        }
-                    } else {
-                        throw signUpError;
-                    }
-                } else if (signUpData.user) {
-                    console.log('[AUTH] signUp sucesso:', signUpData.user.id);
-                    newAuthId = signUpData.user.id;
+                if (!result.success) {
+                    throw new Error(result.error || 'Erro ao processar nova senha.');
                 }
 
-                // 2. Clear temp flags AND save auth_id in system_users table
-                console.log('[AUTH] Atualizando system_users flags...');
-                const { error: dbError } = await supabase.from('system_users')
-                    .update({
-                        temp_password: null,
-                        must_change_password: false,
-                        ...(newAuthId && { auth_id: newAuthId })
-                    })
-                    .match({ id: user.id, email: user.email });
+                console.log('[AUTH] Senha finalizada via servidor. Realizando login automático...');
 
-                if (dbError) {
-                    console.error('[DB] Erro ao atualizar system_users:', dbError);
-                    throw new Error('Erro ao salvar no banco de dados. Tente novamente.');
+                // 2. Perform silent login to establish the session
+                const { error: loginError } = await supabase.auth.signInWithPassword({
+                    email: user.email,
+                    password: _newPassword
+                });
+
+                if (loginError) {
+                    console.error('[AUTH] Erro no login automático:', loginError.message);
+                    // If login fails, we redirect to login page anyway so they can try manually
                 }
 
-                // 3. Clear transient state and finish login
-                console.log('[AUTH] Reset completo, salvando local user e redirecionando.');
+                // 3. Clear transient state and finish
                 localStorage.setItem('imob_user', JSON.stringify(user));
                 setNeedsPasswordReset(false);
                 setLastTempPassword(null);
@@ -257,7 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
             }
         } catch (err: any) {
-            console.error('[AUTH] Reset password error fatal:', err);
+            console.error('[AUTH] Reset password fatal error:', err);
             throw err;
         } finally {
             setIsLoading(false);

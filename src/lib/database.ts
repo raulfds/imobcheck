@@ -7,6 +7,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import {
     Tenant, Property, Landlord, Client, Inspection, InspectionEnvironment, RoomTemplate, SubscriptionPlan, User
 } from '@/types';
+import { adminSaveUser, adminResetPassword as serverAdminResetPassword } from '@/app/actions/auth-actions';
 
 // ─── MOCK DATA (Fallback) ───────────────────────────────────────────────────
 let MOCK_PLANS: SubscriptionPlan[] = [];
@@ -311,46 +312,52 @@ export async function saveSystemUser(user: Partial<User>): Promise<string | unde
     const isNew = !user.id;
     const tempPassword = isNew ? Math.random().toString(36).slice(-8) : undefined;
 
-    const { error } = await supabase.from('system_users').upsert({
-        ...(user.id && { id: user.id }),
-        name: user.name,
-        email: user.email?.toLowerCase(),
-        role: user.role,
-        agency_id: user.tenantId || null,
-        ...(isNew && { 
-            temp_password: tempPassword,
-            must_change_password: true
-        })
-    }, { onConflict: 'email' });
-    
-    if (error) {
-        console.error('saveSystemUser error:', error);
-        throw error;
+    // Utilize Server Action for administrative sync with Supabase Auth
+    try {
+        const result = await adminSaveUser({
+            id: user.id,
+            email: user.email?.toLowerCase() || '',
+            name: user.name || '',
+            role: user.role || 'CLIENT_ADMIN',
+            agency_id: user.tenantId,
+            temp_password: tempPassword
+        });
+
+        if (!result.success) {
+            throw new Error(result.error);
+        }
+    } catch (err: any) {
+        console.error('[DB] Erro ao sincronizar com Auth:', err);
+        throw err;
     }
 
     if (isNew) {
-        console.log(`[AUTH] Novo usuário criado. Senha temporária: ${tempPassword}`);
+        console.log(`[AUTH] Novo usuário criado via Server Action. Senha temporária: ${tempPassword}`);
     }
     
     return tempPassword;
 }
 
 export async function resetUserPassword(userId: string): Promise<string> {
-    const tempPassword = Math.random().toString(36).slice(-8);
-    
     if (isSupabaseConfigured) {
-        const { error } = await supabase.from('system_users').update({
-            temp_password: tempPassword,
-            must_change_password: true
-        }).eq('id', userId);
+        // Fetch user data first to get email and name for Server Action
+        const { data: user, error: fetchError } = await supabase
+            .from('system_users')
+            .select('email, name')
+            .eq('id', userId)
+            .single();
+
+        if (fetchError || !user) throw new Error('Usuário não encontrado para reset.');
+
+        const result = await serverAdminResetPassword(userId, user.email, user.name);
+        if (!result.success) throw new Error(result.error);
         
-        if (error) throw error;
+        return result.tempPassword!;
     } else {
-        // Mock update if needed
+        const tempPassword = Math.random().toString(36).slice(-8);
         MOCK_USERS = MOCK_USERS.map(u => u.id === userId ? { ...u, temp_password: tempPassword, must_change_password: true } : u);
+        return tempPassword;
     }
-    
-    return tempPassword;
 }
 
 export async function deleteSystemUser(id: string): Promise<void> {
