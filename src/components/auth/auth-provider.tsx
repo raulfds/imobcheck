@@ -29,6 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (savedUser) {
             try { setUser(JSON.parse(savedUser)); } catch { /* ignore */ }
         }
+        
+        // Restore temp password if we were in the middle of a reset
+        const savedTemp = sessionStorage.getItem('imob_temp_pass');
+        if (savedTemp) {
+            setLastTempPassword(savedTemp);
+            setNeedsPasswordReset(true);
+        }
+        
         setIsLoading(false);
     }, []);
 
@@ -96,9 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 // Check temp password / must change password
-                if (data.must_change_password || (data.temp_password && password === data.temp_password)) {
+                // FIXED: Must validate password matches temp_password if it exists
+                if (data.temp_password && password === data.temp_password) {
                     setNeedsPasswordReset(true);
                     setLastTempPassword(password);
+                    sessionStorage.setItem('imob_temp_pass', password);
                     setUser(loggedUser);
                     return;
                 }
@@ -111,6 +121,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 if (authError || !authData.user) {
                     throw new Error('Senha incorreta.');
+                }
+
+                // Link auth_id if missing
+                if (!data.auth_id) {
+                    await supabase.from('system_users').update({ auth_id: authData.user.id }).eq('id', data.id);
                 }
 
                 setUser(loggedUser);
@@ -148,48 +163,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         try {
             if (user && isSupabaseConfigured) {
+                let newAuthId = null;
+
                 // 1. Persistently save the new password in Supabase Auth
-                // We try to sign up first (in case it's a new system user without Auth entry)
-                const { error: signUpError } = await supabase.auth.signUp({
+                // We attempt to signUp FIRST
+                const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
                     email: user.email,
                     password: _newPassword,
                 });
 
-                // If user already exists, we must sign in with the temp password and update
-                if (signUpError && signUpError.message.includes('already registered')) {
-                    if (lastTempPassword) {
-                        const { error: signInError } = await supabase.auth.signInWithPassword({
-                            email: user.email,
-                            password: lastTempPassword,
-                        });
-
-                        if (!signInError) {
-                            const { error: updateError } = await supabase.auth.updateUser({
-                                password: _newPassword
+                if (signUpError) {
+                    // Handle "User already registered" by signing in with temp password and updating
+                    if (signUpError.message.toLowerCase().includes('already registered')) {
+                        const tempPass = lastTempPassword || sessionStorage.getItem('imob_temp_pass');
+                        if (tempPass) {
+                            const { error: signInError } = await supabase.auth.signInWithPassword({
+                                email: user.email,
+                                password: tempPass,
                             });
-                            if (updateError) throw updateError;
+
+                            if (!signInError) {
+                                const { data: updateData, error: updateError } = await supabase.auth.updateUser({
+                                    password: _newPassword
+                                });
+                                if (updateError) throw updateError;
+                                newAuthId = updateData.user.id;
+                            } else {
+                                // If signIn with temp password fails, it means either:
+                                // a) The user is NOT in Auth yet but signUp failed for another reason
+                                // b) The user IS in Auth but with a DIFFERENT password (not the temp one)
+                                throw new Error('Erro de sincronização: A conta existe mas a confirmação de acesso falhou. Contate o suporte.');
+                            }
                         } else {
-                            // If signIn fails, they might already have changed it or error
-                            throw new Error('Erro ao validar acesso para troca de senha. Tente novamente.');
+                            throw new Error('Sessão expirada. Faça login com a senha temporária novamente.');
                         }
                     } else {
-                        // Fallback: If no lastTempPassword (should not happen), warn user
-                        throw new Error('Acesso expirado. Por favor, faça login novamente.');
+                        throw signUpError;
                     }
-                } else if (signUpError) {
-                    throw signUpError;
+                } else if (signUpData.user) {
+                    newAuthId = signUpData.user.id;
+                    // If email confirmation is REQUIRED in Supabase, the user might be unusable immediately.
+                    // But we proceed to update the system_users flags anyway.
                 }
 
-                // 2. Clear temp flags in system_users table
-                await supabase.from('system_users').update({
-                    temp_password: null,
-                    must_change_password: false,
-                }).eq('id', user.id);
+                // 2. Clear temp flags AND save auth_id in system_users table
+                // We use BOTH ID and Email for extreme reliability
+                const { error: dbError } = await supabase.from('system_users')
+                    .update({
+                        temp_password: null,
+                        must_change_password: false,
+                        ...(newAuthId && { auth_id: newAuthId })
+                    })
+                    .match({ id: user.id, email: user.email });
+
+                if (dbError) {
+                    console.error('[DB] Erro ao atualizar system_users:', dbError);
+                    throw new Error('Erro ao salvar no banco de dados. Tente novamente.');
+                }
 
                 // 3. Clear transient state and finish login
                 localStorage.setItem('imob_user', JSON.stringify(user));
                 setNeedsPasswordReset(false);
                 setLastTempPassword(null);
+                sessionStorage.removeItem('imob_temp_pass');
+                
                 router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
             }
         } catch (err: any) {
