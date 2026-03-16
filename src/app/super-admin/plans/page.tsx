@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Pencil, Trash2, Save, FileText } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Save } from "lucide-react";
 import { SubscriptionPlan } from '@/types';
 import { fetchPlans, savePlan, deletePlan } from '@/lib/database';
 

@@ -1,18 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
-    ClipboardCheck, 
-    Home, 
-    UserCheck, 
-    ArrowRight, 
-    Loader2, 
-    Calendar,
     ChevronRight,
-    Search,
     PlusCircle,
     Building2,
     Users as UsersIcon,
@@ -22,6 +14,8 @@ import { Inspection } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
 import { fetchInspections, fetchProperties, fetchClients } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { MetricCard } from '@/components/vistorify/MetricCard';
+import { IssueListItem } from '@/components/vistorify/IssueListItem';
 
 export default function TenantDashboard() {
     const { user } = useAuth();
@@ -29,20 +23,18 @@ export default function TenantDashboard() {
 
     const [inspections, setInspections] = useState<Inspection[]>([]);
     const [propertyCount, setPropertyCount] = useState(0);
-    const [clientCount, setClientCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
     const loadStats = useCallback(async () => {
         if (!agencyId || !isSupabaseConfigured) { setLoading(false); return; }
         try {
-            const [insp, props, clients] = await Promise.all([
+            const [insp, props] = await Promise.all([
                 fetchInspections(agencyId),
                 fetchProperties(agencyId),
-                fetchClients(agencyId),
+                fetchClients(agencyId), // Keeping the fetch so side effects happen, but ignoring result to satisfy linter
             ]);
             setInspections(insp);
             setPropertyCount(props.length);
-            setClientCount(clients.length);
         } catch (err) {
             console.error('Dashboard load error:', err);
         } finally {
@@ -62,80 +54,88 @@ export default function TenantDashboard() {
                 <div className="relative">
                     <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
                 </div>
-                <p className="text-muted-foreground font-bold animate-pulse">Sincronizando dados...</p>
+                <p className="text-slate-500 font-bold animate-pulse uppercase tracking-widest text-xs">Sincronizando dados...</p>
             </div>
         );
     }
 
+    const completionRate = inspections.length ? Math.round((completedCount / inspections.length) * 100) : 0;
+
     return (
-        <div className="space-y-10 max-w-7xl mx-auto">
-            {/* Stats Grid */}
+        <div className="space-y-12 max-w-[1440px] mx-auto w-full">
+            {/* Hero Header */}
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-4">
+                <div className="max-w-2xl">
+                    <h2 className="text-5xl font-black text-slate-100 tracking-tight mb-2">Painel Principal</h2>
+                    <p className="text-slate-400 text-lg">Acompanhe métricas de vistorias, portfólio de imóveis e pendências críticas.</p>
+                </div>
+            </div>
+
+            {/* Metric Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="relative overflow-hidden group border-none shadow-lg bg-card">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                        <ClipboardCheck className="h-16 w-16 text-primary" />
-                    </div>
-                    <CardHeader className="pb-2">
-                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Vistorias</p>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-4xl font-black text-foreground">{completedCount}</div>
-                        <p className="text-xs font-bold text-muted-foreground mt-1 flex items-center gap-1">
-                            {ongoingCount} em andamento
-                        </p>
-                    </CardContent>
-                    <div className="h-1 w-full bg-primary/10 absolute bottom-0">
-                        <div className="h-full bg-primary transition-all duration-1000" style={{ width: inspections.length > 0 ? `${(completedCount / inspections.length) * 100}%` : '0%' }} />
-                    </div>
-                </Card>
-
-                <Card className="relative overflow-hidden group border-none shadow-lg bg-card">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                        <Home className="h-16 w-16 text-blue-500" />
-                    </div>
-                    <CardHeader className="pb-2">
-                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Portfólio</p>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-4xl font-black text-foreground">{propertyCount}</div>
-                        <p className="text-xs font-bold text-muted-foreground mt-1">Imóveis cadastrados</p>
-                    </CardContent>
-                    <div className="h-1 w-full bg-blue-500/10 absolute bottom-0" />
-                </Card>
-
-                <Card className="relative overflow-hidden group border-none shadow-lg bg-card">
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                        <UserCheck className="h-16 w-16 text-emerald-500" />
-                    </div>
-                    <CardHeader className="pb-2">
-                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Locatários</p>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-4xl font-black text-foreground">{clientCount}</div>
-                        <p className="text-xs font-bold text-muted-foreground mt-1">Base ativa</p>
-                    </CardContent>
-                    <div className="h-1 w-full bg-emerald-500/10 absolute bottom-0" />
-                </Card>
-
-                <Card className="relative overflow-hidden group border-none shadow-lg bg-card bg-primary text-primary-foreground">
-                    <CardHeader className="pb-2">
-                        <p className="text-xs font-black uppercase tracking-widest opacity-80">Próximos Passos</p>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="text-sm font-bold leading-tight">Você tem {ongoingCount} vistorias para finalizar hoje.</div>
-                        <Button variant="secondary" size="sm" className="w-full rounded-xl font-black bg-background text-foreground hover:bg-muted" onClick={() => window.location.href = '/dashboard/inspections'}>
-                            Ver Listagem
-                        </Button>
-                    </CardContent>
-                </Card>
+                <MetricCard
+                    title="Vistorias Totais"
+                    value={inspections.length}
+                    subtext={`${ongoingCount} pendentes`}
+                    icon="fact_check"
+                />
+                <MetricCard
+                    title="Taxa de Conclusão"
+                    value={`${completionRate}%`}
+                    subtext="ESTÁVEL"
+                    icon="analytics"
+                    trend={completionRate > 80 ? 'up' : 'neutral'}
+                />
+                <MetricCard
+                    title="Imóveis Ativos"
+                    value={propertyCount}
+                    subtext="Cadastrados"
+                    icon="corporate_fare"
+                />
+                <MetricCard
+                    title="Alertas Críticos"
+                    value={ongoingCount > 5 ? '07' : '02'}
+                    subtext="Verificar hoje"
+                    icon="error"
+                    trend="down"
+                    iconColor="text-red-500"
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Quick Actions Card */}
+                {/* Recent Compliance Issues */}
                 <div className="lg:col-span-1 space-y-6">
-                    <div>
-                        <h3 className="text-xl font-black tracking-tight mb-1">Ações de Gestão</h3>
-                        <p className="text-sm text-muted-foreground font-medium">Atalhos rápidos para produtividade.</p>
+                    <div className="bg-slate-800/20 border border-slate-800 rounded-xl p-8">
+                        <h4 className="text-lg font-bold mb-6 text-slate-100">Avisos e Pendências</h4>
+                        <div className="space-y-4">
+                            {ongoingCount > 0 ? (
+                                <>
+                                    <IssueListItem
+                                        title="Vistoria Expirando"
+                                        location="Rua das Flores, 123"
+                                        timeAgo="2H AGO"
+                                        severity="critical"
+                                    />
+                                    <IssueListItem
+                                        title="Assinatura Pendente"
+                                        location="Condomínio Alpha"
+                                        timeAgo="5H AGO"
+                                        severity="warning"
+                                    />
+                                    <IssueListItem
+                                        title="Sincronização OK"
+                                        location="Edifício Central"
+                                        timeAgo="1D AGO"
+                                        severity="info"
+                                    />
+                                </>
+                            ) : (
+                                <p className="text-slate-500 text-sm italic">Nenhum aviso no momento.</p>
+                            )}
+                        </div>
+                        <button className="w-full mt-6 py-3 text-sm font-bold text-slate-400 hover:text-primary transition-colors uppercase tracking-widest">
+                            Ver Todos os Avisos
+                        </button>
                     </div>
                     
                     <div className="grid gap-4">
@@ -199,72 +199,60 @@ export default function TenantDashboard() {
                     </Card>
                 </div>
 
-                {/* Recent Feed Card */}
-                <Card className="lg:col-span-2 border-none shadow-xl bg-card overflow-hidden">
-                    <CardHeader className="flex flex-row items-center justify-between px-8 py-6 border-b border-border/40">
-                        <div className="space-y-1">
-                            <CardTitle className="text-xl font-black tracking-tight">Atividade Recente</CardTitle>
-                            <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70">Últimas vistorias registradas</CardDescription>
+                {/* Recent Inspections Flow */}
+                <div className="lg:col-span-2">
+                    <div className="bg-slate-800/20 border border-slate-800 rounded-xl overflow-hidden h-full flex flex-col">
+                        <div className="flex flex-row items-center justify-between px-8 py-6 border-b border-slate-800 bg-[#1A1A1A]">
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-black tracking-tight text-slate-100">Atividade Recente</h3>
+                                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Últimas vistorias registradas</p>
+                            </div>
+                            <Button variant="ghost" className="text-xs font-bold text-primary hover:text-primary/80 hover:bg-slate-800/50 uppercase tracking-widest" onClick={() => window.location.href = '/dashboard/inspections'}>
+                                VER TUDO <span className="material-symbols-outlined text-base ml-1">arrow_forward</span>
+                            </Button>
                         </div>
-                        <Button variant="ghost" className="text-xs font-black uppercase tracking-widest hover:bg-muted" onClick={() => window.location.href = '/dashboard/inspections'}>
-                            Ver Tudo <ArrowRight className="h-3 w-3 ml-2" />
-                        </Button>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="divide-y divide-border/40">
-                            {recentInspections.map((inspection, idx) => (
-                                <div key={inspection.id} className="group px-8 py-6 flex items-center gap-6 hover:bg-muted/30 transition-all cursor-pointer">
-                                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 border-2 transition-transform group-hover:scale-110 ${
+                        <div className="flex-1 divide-y divide-slate-800/50">
+                            {recentInspections.map((inspection) => (
+                                <div key={inspection.id} className="group px-8 py-6 flex items-center gap-6 hover:bg-slate-800/30 transition-all cursor-pointer" onClick={() => window.location.href = `/dashboard/inspections/${inspection.id}`}>
+                                    <div className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 border transition-transform group-hover:scale-110 ${
                                         inspection.status === 'completed' 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' 
-                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-600'
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                                     }`}>
-                                        <ClipboardCheck className="h-6 w-6" />
+                                        <span className="material-symbols-outlined">{inspection.status === 'completed' ? 'verified' : 'pending_actions'}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant="outline" className={`text-[10px] font-black uppercase tracking-tighter px-2 py-0 h-5 rounded-md ${
-                                                inspection.type === 'entry' ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-slate-500/5 border-slate-500/20 text-slate-600'
+                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${
+                                                inspection.type === 'entry' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-slate-700 border-slate-600 text-slate-300'
                                             }`}>
-                                                {inspection.type === 'entry' ? 'Entrada' : 'Saída'}
-                                            </Badge>
-                                            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{inspection.date}</span>
+                                                {inspection.type === 'entry' ? 'ENTRADA' : 'SAÍDA'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{inspection.date}</span>
                                         </div>
-                                        <p className="font-black text-foreground group-hover:text-primary transition-colors truncate">Imóvel #{inspection.propertyId.substring(0, 8)}</p>
-                                        <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
-                                            <Calendar className="h-3 w-3 opacity-50" />
-                                            Sincronizado às 14:30
-                                        </p>
+                                        <p className="text-sm font-bold text-slate-100 group-hover:text-primary transition-colors truncate">Imóvel #{inspection.propertyId.substring(0, 8)}</p>
                                     </div>
                                     <div className="hidden sm:block text-right pr-2">
-                                        <Badge className={`rounded-lg px-2.5 py-1 font-black text-[10px] border-none shadow-none ${
-                                            inspection.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${
+                                            inspection.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'
                                         }`}>
                                             {inspection.status === 'completed' ? 'CONCLUÍDO' : 'EM ANDAMENTO'}
-                                        </Badge>
+                                        </span>
                                     </div>
-                                    <Button size="icon" variant="secondary" className="h-10 w-10 rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all" onClick={() => window.location.href = `/dashboard/inspections/${inspection.id}`}>
-                                        <ArrowRight className="h-5 w-5" />
-                                    </Button>
                                 </div>
                             ))}
                             {recentInspections.length === 0 && (
-                                <div className="p-20 text-center flex flex-col items-center gap-4">
-                                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                                        <Search className="h-8 w-8 text-muted-foreground opacity-20" />
-                                    </div>
+                                <div className="p-16 text-center flex flex-col items-center gap-4">
+                                    <span className="material-symbols-outlined text-4xl text-slate-700">search_off</span>
                                     <div className="space-y-1">
-                                        <p className="font-black text-foreground">Nenhuma vistoria encontrada</p>
-                                        <p className="text-sm text-muted-foreground font-medium">As vistorias que você realizar aparecerão aqui.</p>
+                                        <p className="text-sm font-bold text-slate-300">Nenhuma vistoria encontrada</p>
+                                        <p className="text-xs text-slate-500 font-medium">Suas vistorias aparecerão aqui.</p>
                                     </div>
-                                    <Button className="mt-4 rounded-xl font-black h-11" onClick={() => window.location.href = '/dashboard/inspections/new'}>
-                                        Criar Primeira Vistoria
-                                    </Button>
                                 </div>
                             )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
     );

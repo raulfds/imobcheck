@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Trash2, Loader2, Shield, User as UserIcon, KeyRound, Copy, Check, Users as UsersIcon } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { useAuth } from '@/components/auth/auth-provider';
-import { User, SubscriptionPlan } from '@/types';
+import { User } from '@/types';
 import { fetchUsersByAgency, saveSystemUser, deleteSystemUser, fetchPlans, resetUserPassword } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
 
@@ -197,7 +197,7 @@ export default function TeamManagement() {
                     <CardTitle className="text-xl font-black tracking-tight">Membros da Imobiliária</CardTitle>
                     <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70 mt-1">Colaboradores ativos nesta organização</CardDescription>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-b border-border/40 bg-muted/30">
@@ -325,7 +325,7 @@ export default function TeamManagement() {
                                 <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cargo / Função</Label>
                                 <Select 
                                     value={newUser.role} 
-                                    onValueChange={(v: any) => setNewUser({...newUser, role: v})}
+                                    onValueChange={(v: User['role']) => setNewUser({...newUser, role: v})}
                                 >
                                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4">
                                         <SelectValue placeholder="Selecione o cargo" />

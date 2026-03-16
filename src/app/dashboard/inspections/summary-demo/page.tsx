@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,6 @@ import { InspectionPDF } from '@/components/inspection/inspection-pdf';
 import { downloadAllPhotos, uploadToGoogleDrive } from '@/lib/export-utils';
 import {
     FileText, 
-    Download, 
     CheckCircle2, 
     MapPin, 
     User, 
@@ -21,13 +20,12 @@ import {
     Archive, 
     Cloud,
     ArrowRight,
-    Search,
     ShieldCheck,
-    Mail,
-    ChevronRight,
     Layout
 } from 'lucide-react';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 
 export default function InspectionSummary() {
     const [isUploading, setIsUploading] = useState(false);
@@ -84,7 +82,7 @@ export default function InspectionSummary() {
             const result = await uploadToGoogleDrive(new Blob(['mock pdf content']), `Vistoria-${inspection.id}.pdf`);
             setUploadUrl(result.url);
             alert('Relatório enviado para o Google Drive!');
-        } catch (e) {
+        } catch {
             alert('Erro ao enviar para o Google Drive.');
         } finally {
             setIsUploading(false);

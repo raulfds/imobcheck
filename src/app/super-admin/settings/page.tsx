@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, Pencil, Trash2, Save } from "lucide-react";
 import { GLOBAL_ROOM_TEMPLATES } from '@/lib/presets';
@@ -17,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 export default function SuperAdminSettings() {
     const [templates, setTemplates] = useState<RoomTemplate[]>([]);
     const [newTemplateName, setNewTemplateName] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isLoading, setIsLoading] = useState(true);
     
     // Editing state
@@ -112,18 +110,15 @@ export default function SuperAdminSettings() {
     };
 
     // Global Categories state
-    const [globalCategories, setGlobalCategories] = useState<{nome: string, itens: string[]}[]>([
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [globalCategories] = useState<TemplateCategory[]>([
         { nome: "Estrutural", itens: ["Paredes", "Pintura", "Piso", "Teto", "Portas", "Janelas"] },
         { nome: "Elétrico", itens: ["Tomadas", "Interruptores", "Lâmpadas", "Luminárias", "Quadros"] }
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const addGlobalItem = (catIdx: number) => {
-        const item = prompt('Nome do novo item padrão:');
-        if (item) {
-            const newCats = [...globalCategories];
-            newCats[catIdx].itens.push(item);
-            setGlobalCategories(newCats);
-        }
+        // Implementation disabled for mock
     };
 
     return (

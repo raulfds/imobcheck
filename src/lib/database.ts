@@ -12,10 +12,12 @@ import { adminSaveUser, adminResetPassword as serverAdminResetPassword } from '@
 // ─── MOCK DATA (Fallback) ───────────────────────────────────────────────────
 let MOCK_PLANS: SubscriptionPlan[] = [];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let MOCK_USERS: any[] = [];
 
 // ─── Type helpers (DB row → App type) ───────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToUser(row: any): User {
     return {
         id: row.id,
@@ -326,7 +328,7 @@ export async function saveSystemUser(user: Partial<User>): Promise<string | unde
         if (!result.success) {
             throw new Error(result.error);
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[DB] Erro ao sincronizar com Auth:', err);
         throw err;
     }

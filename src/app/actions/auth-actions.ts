@@ -87,9 +87,9 @@ export async function adminSaveUser(userData: {
         revalidatePath('/dashboard/team');
         
         return { success: true, authId };
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[ADMIN AUTH ERROR]:', err);
-        return { success: false, error: err.message };
+        return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
 }
 
@@ -171,9 +171,9 @@ export async function finalizeUserPassword(userData: {
         revalidatePath('/');
         
         return { success: true, authId: authId };
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[FINALIZE AUTH ERROR FATAL]:', err);
-        return { success: false, error: err.message };
+        return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
 }
 
@@ -227,8 +227,8 @@ export async function adminResetPassword(userId: string, email: string, name: st
 
         console.log(`[ADMIN] Password reset for ${email} successful.`);
         return { success: true, tempPassword };
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[ADMIN RESET ERROR FATAL]:', err);
-        return { success: false, error: err.message };
+        return { success: false, error: err instanceof Error ? err.message : String(err) };
     }
 }
