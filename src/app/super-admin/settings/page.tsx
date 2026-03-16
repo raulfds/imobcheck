@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, X, Pencil, Trash2, Save, Settings, Layers, LayoutPanelTop, ArrowRight, Sparkles } from "lucide-react";
+import { Pencil, Trash2, Layers, LayoutPanelTop, Sparkles, Plus, X, Save } from "lucide-react";
 import { GLOBAL_ROOM_TEMPLATES } from '@/lib/presets';
 import { RoomTemplate, TemplateCategory } from '@/types';
 import { fetchRoomTemplates, saveRoomTemplate } from '@/lib/database';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 export default function SuperAdminSettings() {

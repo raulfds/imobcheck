@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Search, MoreHorizontal, Pencil, Ban, Trash2, KeyRound, Users, Building2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Ban, Trash2, KeyRound, Users, Building2, CheckCircle2, AlertTriangle, Filter } from 'lucide-react';
 import { Tenant, SubscriptionPlan } from '@/types';
 import { fetchPlans } from '@/lib/database';
 import { TenantFacetCard } from '@/components/vistorify/TenantFacetCard';
