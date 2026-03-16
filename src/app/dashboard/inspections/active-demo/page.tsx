@@ -388,7 +388,8 @@ export default function ActiveInspection() {
                                                     </div>
                                                 </div>
                                             )}
-
+                                        </CardContent>
+                                    </Card>
                                 ))}
                             </div>
                         ))}
