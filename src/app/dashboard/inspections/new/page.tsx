@@ -9,8 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { 
     Loader2, 
-    Home, 
-    User, 
     ClipboardList, 
     ArrowRight, 
     CheckCircle2, 

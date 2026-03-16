@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Building2, Mail, Phone, MapPin, Upload, Trash2, Globe, ShieldCheck, Plus } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, Upload, Globe, ShieldCheck, Plus } from 'lucide-react';
 
 export default function AgencySettings() {
     return (

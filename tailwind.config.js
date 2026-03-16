@@ -9,6 +9,12 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                primary: {
+                    DEFAULT: "#135bec",
+                    foreground: "var(--primary-foreground)",
+                },
+                "background-light": "#f6f6f8",
+                "background-dark": "#101622",
                 background: "var(--background)",
                 foreground: "var(--foreground)",
                 card: {
@@ -18,10 +24,6 @@ module.exports = {
                 popover: {
                     DEFAULT: "var(--popover)",
                     foreground: "var(--popover-foreground)",
-                },
-                primary: {
-                    DEFAULT: "var(--primary)",
-                    foreground: "var(--primary-foreground)",
                 },
                 secondary: {
                     DEFAULT: "var(--secondary)",
@@ -49,6 +51,10 @@ module.exports = {
                     "4": "var(--chart-4)",
                     "5": "var(--chart-5)",
                 },
+            },
+            fontFamily: {
+                display: ["Inter", "sans-serif"],
+                sans: ["Inter", "sans-serif"],
             },
             borderRadius: {
                 lg: "var(--radius)",

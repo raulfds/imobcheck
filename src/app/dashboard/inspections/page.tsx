@@ -10,14 +10,12 @@ import {
     Search, 
     Plus, 
     Trash2, 
-    Loader2,
     Calendar,
     Home,
     User,
     ClipboardCheck,
     ArrowRight,
     Filter,
-    ChevronRight,
     Play
 } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';

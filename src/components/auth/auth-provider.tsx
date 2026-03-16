@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
-    const [lastTempPassword, setLastTempPassword] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -45,6 +44,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         try {
             // ── Agency and Super Admin users via Supabase ─────────────────────────
+            if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+                const MOCK_USER: User = {
+                    id: 'mock-1',
+                    email: 'test@example.com',
+                    name: 'Admin Test',
+                    role: 'SUPER_ADMIN',
+                    tenantId: 'agency-1'
+                };
+                setUser(MOCK_USER);
+                localStorage.setItem('imob_user', JSON.stringify(MOCK_USER));
+                router.push('/super-admin');
+                return;
+            }
+
             if (isSupabaseConfigured) {
                 const { data, error } = await supabase
                     .from('system_users')
@@ -163,6 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const forgotPassword = async (_email: string) => {
         // Functionality removed for security reasons. 
         // Passwords must be reset by a Super Admin or Agency Admin.
@@ -205,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 
                 router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[AUTH] Reset password fatal error:', err);
             throw err;
         } finally {

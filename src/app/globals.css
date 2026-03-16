@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: #FCFCFC;
-    --foreground: #1A1A1A;
+    --background: #1A1A1A;
+    --foreground: #F1F5F9;
     --card: #FFFFFF;
     --card-foreground: #1A1A1A;
     --popover: #FFFFFF;
@@ -35,8 +35,8 @@
   }
 
   .dark {
-    --background: #121212;
-    --foreground: #FAFAFA;
+    --background: #1A1A1A;
+    --foreground: #F1F5F9;
     --card: #1E1E1E;
     --card-foreground: #FAFAFA;
     --popover: #1E1E1E;
@@ -72,7 +72,19 @@
   }
 
   body {
-    background-color: var(--background);
-    color: var(--foreground);
+    background-color: #1A1A1A;
+    color: theme('colors.slate.100');
+  }
+}
+
+@layer utilities {
+  .faceted-panel {
+    clip-path: polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%);
+  }
+  .v-facet-right {
+    clip-path: polygon(0 0, 100% 15%, 100% 100%, 0 85%);
+  }
+  .v-facet-left {
+    clip-path: polygon(0 15%, 100% 0, 100% 85%, 0 100%);
   }
 }

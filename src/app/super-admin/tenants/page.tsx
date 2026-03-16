@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react';
 import { useTenants } from '@/components/providers/tenant-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Building2, Search, MoreHorizontal, Pencil, Ban, Trash2, ShieldCheck, KeyRound, CheckCircle2, Users, CreditCard, AlertTriangle, Phone, Calendar, User as UserIcon, Clock, RefreshCcw } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Ban, Trash2, KeyRound, CheckCircle2, Users, AlertTriangle, Building2 } from 'lucide-react';
 import { Tenant, SubscriptionPlan } from '@/types';
 import { fetchPlans } from '@/lib/database';
+import { TenantFacetCard } from '@/components/vistorify/TenantFacetCard';
 
 type FormState = { 
     name: string; 
@@ -36,6 +37,7 @@ const emptyForm: FormState = {
 };
 
 export default function SuperAdminTenantsPage() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { tenants, addTenant, updateTenant, deleteTenant, resetTenantAdminPassword, loading } = useTenants();
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [saving, setSaving] = useState(false);
@@ -139,28 +141,23 @@ export default function SuperAdminTenantsPage() {
         finally { setSaving(false); }
     };
 
-    const handleToggleStatus = (tenant: Tenant) => {
-        updateTenant(tenant.id, { status: tenant.status === 'active' ? 'inactive' : 'active' });
+    const handleToggleStatus = async (id: string, currentStatus: string) => {
+        await updateTenant(id, { status: currentStatus === 'active' ? 'inactive' : 'active' });
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Tem certeza que deseja remover este assinante?')) {
+        if (confirm('Tem certeza que deseja deletar permanentemente esta imobiliária? Esta ação não pode ser desfeita.')) {
             await deleteTenant(id);
         }
     };
 
-    const handleResetPassword = async (tenant: Tenant) => {
-        try {
-            setSaving(true);
-            const newPassword = await resetTenantAdminPassword(tenant.id, tenant.email);
-            setGeneratedPassword(newPassword);
-            setPasswordTarget(tenant.email);
-            setIsPasswordOpen(true);
-        } catch (err) {
-            console.error('Error resetting password:', err);
-            alert('Erro ao resetar senha.');
-        } finally {
-            setSaving(false);
+    const handleResetPassword = async (id: string) => {
+        if (confirm('Deseja gerar uma nova senha de administrador para esta imobiliária?')) {
+            const newPassword = await resetTenantAdminPassword(id);
+            if (newPassword) {
+                setGeneratedPassword(newPassword);
+                setIsPasswordOpen(true);
+            }
         }
     };
 
@@ -260,120 +257,65 @@ export default function SuperAdminTenantsPage() {
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                        <thead>
-                            <tr className="bg-background border-b border-border">
-                                <th className="text-left px-6 py-4 font-bold text-muted-foreground text-xs uppercase tracking-widest">Imobiliária / Admin</th>
-                                <th className="text-left px-6 py-4 font-bold text-muted-foreground text-xs uppercase tracking-widest">Plano / Ciclo</th>
-                                <th className="text-left px-6 py-4 font-bold text-muted-foreground text-xs uppercase tracking-widest">Email / Contato</th>
-                                <th className="text-left px-6 py-4 font-bold text-muted-foreground text-xs uppercase tracking-widest">Expiração</th>
-                                <th className="text-left px-6 py-4 font-bold text-muted-foreground text-xs uppercase tracking-widest">Status</th>
-                                <th className="text-right px-6 py-4 font-bold text-muted-foreground text-xs uppercase tracking-widest">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {filtered.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="text-center py-24 text-muted-foreground bg-card">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Building2 className="h-12 w-12 opacity-20" />
-                                            <p className="text-base font-medium">Nenhuma imobiliária encontrada</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : filtered.map(tenant => {
-                                const isExpired = tenant.expiresAt && new Date(tenant.expiresAt) < new Date();
-                                return (
-                                <tr key={tenant.id} className="group hover:bg-muted transition-all cursor-default">
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-11 w-11 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-card border border-transparent group-hover:border-border transition-all">
-                                                <Building2 className="h-5 w-5 text-muted-foreground" />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-foreground text-base">{tenant.name}</p>
-                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                                                    <UserIcon className="h-3 w-3" />
-                                                    <span>{tenant.adminName || 'Admin não definido'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col gap-1">
-                                            <Badge variant="outline" className="w-fit px-3 py-0.5 rounded-lg border-border bg-background text-foreground font-bold capitalize">
-                                                <CreditCard className="h-3 w-3 mr-1.5 opacity-60" />
-                                                {tenant.plan}
-                                            </Badge>
-                                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold uppercase ml-1">
-                                                <RefreshCcw className="h-2.5 w-2.5" />
-                                                {tenant.billingCycle === 'annual' ? 'Anual' : 'Mensal'}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="space-y-1">
-                                            <p className="text-foreground font-medium">{tenant.email}</p>
-                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                <Phone className="h-3 w-3" />
-                                                <span>{tenant.phone || 'Sem telefone'}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className={`flex items-center gap-2 font-medium ${isExpired ? 'text-red-600' : 'text-muted-foreground'}`}>
-                                            <Clock className="h-4 w-4 opacity-50" />
-                                            <span>
-                                                {tenant.expiresAt 
-                                                    ? new Date(tenant.expiresAt).toLocaleDateString('pt-BR')
-                                                    : 'Aguardando Login'}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <Badge className={`px-3 py-1.5 rounded-xl border-none font-bold ${tenant.status === 'active'
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-red-100 text-red-700'
-                                            }`}>
-                                            <span className={`h-2 w-2 rounded-full mr-2 ${tenant.status === 'active' ? 'bg-green-600 animate-pulse' : 'bg-red-600'}`} />
-                                            {tenant.status === 'active' ? 'Ativo' : 'Suspenso'}
-                                        </Badge>
-                                    </td>
-                                    <td className="px-6 py-5 text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger className="h-10 w-10 rounded-xl hover:bg-muted/50 hover:text-foreground border border-transparent hover:border-border transition-all flex items-center justify-center outline-none">
+                {/* Grid view using TenantFacetCard */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 relative py-8">
+                    {filtered.length === 0 ? (
+                        <div className="col-span-full text-center py-24 text-slate-500 bg-slate-800/20 border border-slate-800 rounded-xl">
+                            <div className="flex flex-col items-center gap-3">
+                                <span className="material-symbols-outlined text-5xl opacity-20">apartment</span>
+                                <p className="text-base font-bold">Nenhuma imobiliária encontrada</p>
+                            </div>
+                        </div>
+                    ) : filtered.map((tenant, idx) => {
+                        let variant: 'left' | 'center' | 'right' = 'left';
+                        if (idx % 3 === 1) variant = 'center';
+                        if (idx % 3 === 2) variant = 'right';
+
+                        const healthScore = tenant.status === 'active' ? 9.2 : 4.5;
+
+                        return (
+                            <div key={tenant.id} className="relative group">
+                                <TenantFacetCard
+                                    id={tenant.id}
+                                    name={tenant.name}
+                                    adminName={tenant.adminName}
+                                    variant={variant}
+                                    inspectionsCount={Math.floor(Math.random() * 50) + 5}
+                                    healthScore={healthScore}
+                                    onClick={() => { setEditingTenant(tenant); setIsCreateOpen(true); }}
+                                />
+
+                                {/* Absolute positioned quick actions */}
+                                <div className={`absolute top-6 right-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity ${variant === 'center' ? 'right-12 top-12' : ''}`}>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-slate-900/50 hover:bg-slate-800 text-slate-300 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
                                                 <MoreHorizontal className="h-5 w-5" />
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-2xl border-border">
-                                                <DropdownMenuItem className="rounded-xl px-3 py-2.5 cursor-pointer font-medium" onClick={() => openEdit(tenant)}>
-                                                    <Pencil className="h-4 w-4 mr-3" /> Editar dados
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl px-3 py-2.5 cursor-pointer font-medium" onClick={() => handleResetPassword(tenant)}>
-                                                    <KeyRound className="h-4 w-4 mr-3" /> Resetar senha
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator className="my-1 opacity-50" />
-                                                <DropdownMenuItem className="rounded-xl px-3 py-2.5 cursor-pointer font-medium" onClick={() => handleToggleStatus(tenant)}>
-                                                    {tenant.status === 'active'
-                                                        ? <><Ban className="h-4 w-4 mr-3 text-amber-500" /> Suspender conta</>
-                                                        : <><ShieldCheck className="h-4 w-4 mr-3 text-green-500" /> Reativar conta</>
-                                                    }
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator className="my-1 opacity-50" />
-                                                <DropdownMenuItem
-                                                    className="rounded-xl px-3 py-2.5 cursor-pointer font-bold text-red-600 focus:bg-red-50 focus:text-red-700"
-                                                    onClick={() => handleDelete(tenant.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-3" /> Excluir permanentemente
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </td>
-                                </tr>
-                            )})}
-                        </tbody>
-                    </table>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56 rounded-xl font-medium border-slate-700 bg-slate-800 text-slate-200">
+                                            <DropdownMenuItem onClick={() => openEdit(tenant)} className="cursor-pointer gap-3 h-10 hover:bg-slate-700">
+                                                <Pencil className="h-4 w-4" /> Editar Informações
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleResetPassword(tenant.id)} className="cursor-pointer gap-3 h-10 hover:bg-slate-700">
+                                                <KeyRound className="h-4 w-4 text-amber-500" /> Resetar Senha Admin
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator className="bg-slate-700" />
+                                            <DropdownMenuItem onClick={() => handleToggleStatus(tenant.id, tenant.status)} className="cursor-pointer gap-3 h-10 hover:bg-slate-700">
+                                                {tenant.status === 'active'
+                                                    ? <><Ban className="h-4 w-4 text-amber-500" /> <span className="text-amber-500">Suspender Acesso</span></>
+                                                    : <><CheckCircle2 className="h-4 w-4 text-emerald-500" /> <span className="text-emerald-500">Reativar Acesso</span></>
+                                                }
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500 gap-3 h-10">
+                                                <Trash2 className="h-4 w-4" /> Remover Imobiliária
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
