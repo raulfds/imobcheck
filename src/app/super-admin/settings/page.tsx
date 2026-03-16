@@ -118,21 +118,17 @@ export default function SuperAdminSettings() {
                     <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Admin</BreadcrumbLink>
+                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Super Admin</BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/super-admin/settings" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary transition-colors">Configurações Globais</BreadcrumbLink>
+                                <BreadcrumbLink href="/super-admin/settings" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Preferências</BreadcrumbLink>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
                     <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
-                            <Settings className="h-3 w-3" />
-                            Infraestrutura Logística
-                        </div>
-                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Padronização</h1>
-                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Configure as bases normativas para vistorias em toda a rede.</p>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Modelos Globais</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Configure as estruturas padrão de vistoria para todo o sistema.</p>
                     </div>
                 </div>
             </div>
@@ -224,13 +220,13 @@ export default function SuperAdminSettings() {
                 {/* Categories & Items Modal - Premium Edit Environment */}
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                     <DialogContent className="sm:max-w-3xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
-                        <div className="px-10 py-12 bg-slate-900 group relative overflow-hidden">
+                        <div className="px-10 py-12 bg-primary group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
-                                <Layers className="h-32 w-32 text-white fill-current" />
+                                <Layers className="h-32 w-32 text-primary-foreground fill-current" />
                             </div>
-                            <div className="relative z-10 space-y-2 text-white">
+                            <div className="relative z-10 space-y-2 text-primary-foreground">
                                 <DialogTitle className="text-4xl font-black tracking-tight leading-none">Arquitetura: {editingTemplate?.nome}</DialogTitle>
-                                <DialogDescription className="text-slate-400 text-lg font-medium tracking-tight">
+                                <DialogDescription className="text-primary-foreground/70 text-lg font-medium tracking-tight">
                                     Configure as seções e os itens verificáveis deste ambiente.
                                 </DialogDescription>
                             </div>

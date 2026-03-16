@@ -12,20 +12,22 @@ export default function AgencySettings() {
         <div className="space-y-10 max-w-5xl mx-auto pb-10 animate-in fade-in duration-700">
             {/* Header section with refined breadcrumbs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <Breadcrumb className="mb-4">
+                <div className="space-y-4">
+                    <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard" className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">Dashboard</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
                             </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-30" />
+                            <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/settings" className="text-xs font-bold uppercase tracking-widest text-primary">Configurações</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard/settings" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Configurações</BreadcrumbLink>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">Configurações</h1>
-                    <p className="text-muted-foreground font-medium mt-1 italic">Personalize as informações da sua imobiliária e identidade visual.</p>
+                    <div className="space-y-2">
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Configurações</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Personalize as informações da sua imobiliária e identidade visual.</p>
+                    </div>
                 </div>
             </div>
 

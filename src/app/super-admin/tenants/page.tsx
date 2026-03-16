@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Search, MoreHorizontal, Pencil, Ban, Trash2, KeyRound, CheckCircle2, Users, AlertTriangle, Building2, Filter } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Ban, Trash2, KeyRound, Users, Building2 } from 'lucide-react';
 import { Tenant, SubscriptionPlan } from '@/types';
 import { fetchPlans } from '@/lib/database';
 import { TenantFacetCard } from '@/components/vistorify/TenantFacetCard';
@@ -150,11 +150,12 @@ export default function SuperAdminTenantsPage() {
         }
     };
 
-    const handleResetPassword = async (id: string) => {
-        if (confirm('Deseja gerar uma nova senha de administrador para esta imobiliária?')) {
-            const newPassword = await resetTenantAdminPassword(id);
+    const handleResetPassword = async (tenant: Tenant) => {
+        if (confirm(`Deseja gerar uma nova senha de administrador para ${tenant.name}?`)) {
+            const newPassword = await resetTenantAdminPassword(tenant.id, tenant.email);
             if (newPassword) {
                 setGeneratedPassword(newPassword);
+                setPasswordTarget(tenant.email);
                 setIsPasswordOpen(true);
             }
         }
@@ -195,8 +196,8 @@ export default function SuperAdminTenantsPage() {
                             </span>
                             Gestão de Ecossistema
                         </div>
-                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Imobiliárias Parceiras</h1>
-                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Gerencie imobiliárias, planos e níveis de acesso em toda a rede ImobCheck.</p>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Imobiliárias Parceiras</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Gerencie imobiliárias, planos e níveis de acesso em toda a rede ImobCheck.</p>
                     </div>
                 </div>
             </div>
@@ -321,7 +322,7 @@ export default function SuperAdminTenantsPage() {
                                 {/* Absolute positioned quick actions */}
                                 <div className={`absolute top-10 right-10 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 ${variant === 'center' ? 'right-14 top-14' : ''}`}>
                                     <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
+                                        <DropdownMenuTrigger>
                                             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-slate-900/90 hover:bg-black text-white backdrop-blur-xl border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                                                 <MoreHorizontal className="h-6 w-6" />
                                             </Button>
@@ -330,7 +331,7 @@ export default function SuperAdminTenantsPage() {
                                             <DropdownMenuItem onClick={() => openEdit(tenant)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest">
                                                 <Pencil className="h-4 w-4" /> Editar Informações
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleResetPassword(tenant.id)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest text-amber-500 focus:text-amber-500">
+                                            <DropdownMenuItem onClick={() => handleResetPassword(tenant)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest text-amber-500 focus:text-amber-500">
                                                 <KeyRound className="h-4 w-4" /> Resetar Senha Admin
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator className="my-2 opacity-50" />
@@ -459,7 +460,7 @@ export default function SuperAdminTenantsPage() {
             {/* ─── EDIT MODAL ─── */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="sm:max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
-                    <div className="px-10 py-12 bg-slate-800 dark:bg-slate-900 group relative overflow-hidden">
+                    <div className="px-10 py-12 bg-muted/50 group relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
                             <Pencil className="h-32 w-32 text-white fill-current" />
                         </div>

@@ -173,8 +173,8 @@ export default function RegistrationsPage() {
                             </span>
                             Gestão de Ativos
                         </div>
-                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Portfólio Imobiliário</h1>
-                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Organize seus imóveis, proprietários e base de inquilinos em um só lugar.</p>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Portfólio Imobiliário</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Organize seus imóveis, proprietários e inquilinos em um só lugar.</p>
                     </div>
                 </div>
             </div>
@@ -219,7 +219,7 @@ export default function RegistrationsPage() {
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-16">
+                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
                                         <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Endereço e Identificação</TableHead>
                                         <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Tipo / Categoria</TableHead>
                                         <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
@@ -287,7 +287,7 @@ export default function RegistrationsPage() {
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-16">
+                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
                                         <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome do Proprietário</TableHead>
                                         <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Contato Principal</TableHead>
                                         <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
@@ -358,7 +358,7 @@ export default function RegistrationsPage() {
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-16">
+                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
                                         <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome do Inquilino</TableHead>
                                         <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Contato Principal</TableHead>
                                         <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>

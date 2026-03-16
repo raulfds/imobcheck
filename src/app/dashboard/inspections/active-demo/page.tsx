@@ -445,12 +445,12 @@ export default function ActiveInspection() {
         <div className="max-w-xl mx-auto space-y-10 pb-32 animate-in fade-in duration-700">
             <div className="flex flex-col gap-6">
                 <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tighter text-foreground">Vistoria Ativa</h1>
+                    <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Vistoria Ativa</h1>
                     <div className="flex justify-between items-end">
-                        <span className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground italic">
+                        <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
                             {stats.checked} de {stats.total} verificados
                         </span>
-                        <span className="text-2xl font-black text-primary">{progress}%</span>
+                        <span className="text-xl md:text-2xl font-black text-primary">{progress}%</span>
                     </div>
                 </div>
                 <div className="relative h-4 w-full bg-muted/40 rounded-full overflow-hidden shadow-inner">
@@ -558,11 +558,11 @@ export default function ActiveInspection() {
 
             {/* Modal de Adição de Ambiente */}
             <Dialog open={isAddEnvModalOpen} onOpenChange={setIsAddEnvModalOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-primary p-10 text-primary-foreground relative overflow-hidden">
-                        <Layout className="h-32 w-32 absolute -bottom-8 -right-8 text-black/10 rotate-12" />
-                        <DialogTitle className="text-3xl font-black tracking-tight">Onde estamos?</DialogTitle>
-                        <DialogDescription className="text-primary-foreground/70 mt-2 text-base font-medium">
+                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="bg-primary p-12 text-primary-foreground relative overflow-hidden group">
+                        <div className="absolute -bottom-8 -right-8 h-40 w-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
+                        <DialogTitle className="text-3xl font-black tracking-tight leading-none">Onde estamos?</DialogTitle>
+                        <DialogDescription className="text-primary-foreground/70 mt-3 text-sm font-medium italic">
                             Selecione o cômodo para iniciar a conferência.
                         </DialogDescription>
                     </div>

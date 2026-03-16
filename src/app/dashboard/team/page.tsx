@@ -130,20 +130,22 @@ export default function TeamManagement() {
         <div className="space-y-10 max-w-7xl mx-auto pb-10">
             {/* Header section with refined breadcrumbs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <Breadcrumb className="mb-4">
+                <div className="space-y-4">
+                    <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard" className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">Dashboard</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
                             </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-30" />
+                            <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/team" className="text-xs font-bold uppercase tracking-widest text-primary">Equipe</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard/team" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Equipe</BreadcrumbLink>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">Gestão de Equipe</h1>
-                    <p className="text-muted-foreground font-medium mt-1 italic">Controle de acessos e permissões dos seus colaboradores.</p>
+                    <div className="space-y-2">
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Gestão de Equipe</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Controle de acessos e permissões dos seus colaboradores.</p>
+                    </div>
                 </div>
                 <Button className="h-12 px-8 rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all gap-2" onClick={() => setIsModalOpen(true)} disabled={limitReached}>
                     <UserPlus className="h-5 w-5" />
@@ -200,11 +202,11 @@ export default function TeamManagement() {
                 <CardContent className="p-0 overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="hover:bg-transparent border-b border-border/40 bg-muted/30">
-                                <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Colaborador</TableHead>
-                                <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Função / Permissão</TableHead>
-                                <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status do Acesso</TableHead>
-                                <TableHead className="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ações</TableHead>
+                            <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Colaborador</TableHead>
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Privilégios</TableHead>
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Status</TableHead>
+                                <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -288,11 +290,11 @@ export default function TeamManagement() {
 
             {/* Invite Modal Redesign */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-foreground p-8 text-card-foreground relative overflow-hidden">
-                        <UserPlus className="h-24 w-24 text-card-foreground/10 absolute -bottom-4 -right-4 rotate-12" />
-                        <DialogTitle className="text-3xl font-black tracking-tight">Convidar</DialogTitle>
-                        <DialogDescription className="text-muted-foreground mt-2 text-base font-medium opacity-80">
+                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="bg-primary p-10 relative overflow-hidden group">
+                        <div className="absolute -bottom-6 -right-6 h-32 w-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                        <DialogTitle className="text-3xl font-black tracking-tight text-white leading-none">Convidar</DialogTitle>
+                        <DialogDescription className="text-primary-foreground/70 font-medium italic mt-2">
                             Adicione um novo membro à equipe.
                         </DialogDescription>
                     </div>
@@ -325,7 +327,7 @@ export default function TeamManagement() {
                                 <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cargo / Função</Label>
                                 <Select 
                                     value={newUser.role} 
-                                    onValueChange={(v: User['role']) => setNewUser({...newUser, role: v})}
+                                    onValueChange={(v) => setNewUser({...newUser, role: v as User['role']})}
                                 >
                                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4">
                                         <SelectValue placeholder="Selecione o cargo" />

@@ -86,25 +86,26 @@ export default function NewInspection() {
         <div className="max-w-3xl mx-auto space-y-10 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
             <div className="flex flex-col gap-4">
-                <Breadcrumb>
-                    <BreadcrumbList>
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard" className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">Dashboard</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="opacity-30" />
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard/inspections" className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">Vistorias</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="opacity-30" />
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard/inspections/new" className="text-xs font-bold uppercase tracking-widest text-primary">Nova</BreadcrumbLink>
-                        </BreadcrumbItem>
-                    </BreadcrumbList>
-                </Breadcrumb>
-
-                <div className="space-y-2">
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">Nova Vistoria</h1>
-                    <p className="text-muted-foreground font-medium italic">Configure as informações básicas para iniciar o laudo técnico.</p>
+                <div className="space-y-4">
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="opacity-20" />
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard/inspections" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Vistorias</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="opacity-20" />
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard/inspections/new" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Nova</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                    <div className="space-y-2">
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Nova Vistoria</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Configure as informações básicas para iniciar o laudo técnico.</p>
+                    </div>
                 </div>
             </div>
 

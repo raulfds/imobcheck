@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { UserPlus, Shield, MoreHorizontal, Pencil, Trash2, Mail, Loader2, KeyRound, Copy, Check, UserCheck } from 'lucide-react';
+import { UserPlus, MoreHorizontal, Pencil, Trash2, Mail, Loader2, KeyRound, Copy, Check, UserCheck, Shield } from 'lucide-react';
 import { User } from '@/types';
 import { fetchUsersByRole, saveSystemUser, deleteSystemUser, resetUserPassword } from '@/lib/database';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -114,46 +114,33 @@ export default function SuperAdminUsersPage() {
                     <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Admin</BreadcrumbLink>
+                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Super Admin</BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/super-admin/users" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary transition-colors">Gestão de acessos</BreadcrumbLink>
+                                <BreadcrumbLink href="/super-admin/users" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Operadores</BreadcrumbLink>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
                     <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
-                            <Shield className="h-3 w-3" />
-                            Segurança da Rede
-                        </div>
-                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Super Admins</h1>
-                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Gerencie os usuários com privilégios totais sobre a plataforma.</p>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Equipe de Suporte</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Gerencie os acessos administrativos da plataforma global.</p>
                     </div>
                 </div>
                 <Button className="h-16 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all gap-3 bg-primary text-primary-foreground uppercase tracking-widest text-xs" onClick={handleCreateClick}>
-                    <UserPlus className="h-5 w-5 stroke-[3px]" /> Novo Super Admin
+                    <UserPlus className="h-5 w-5 stroke-[3px]" /> Novo Operador
                 </Button>
             </div>
 
-            <Card className="rounded-[2.5rem] border border-border shadow-premium overflow-hidden bg-card">
-                <CardHeader className="p-8 border-b border-border/50 bg-muted/20">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="text-2xl font-black tracking-tight text-foreground">Time de Administração</CardTitle>
-                            <CardDescription className="text-muted-foreground font-medium mt-1">Usuários autorizados a gerenciar o sistema globalmente.</CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
+            <Card className="border-none shadow-premium bg-card rounded-[2.5rem] overflow-hidden">
+                <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="border-b border-border/50 h-16 hover:bg-transparent">
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome Completo</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">E-mail Corporativo</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Papel</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Status</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Ações</TableHead>
+                            <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Colaborador</TableHead>
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Privilégios</TableHead>
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Status</TableHead>
+                                <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -201,7 +188,7 @@ export default function SuperAdminUsersPage() {
                                         </TableCell>
                                         <TableCell className="px-8 text-right">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
+                                                <DropdownMenuTrigger>
                                                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background border border-transparent hover:border-border transition-all">
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
@@ -229,26 +216,20 @@ export default function SuperAdminUsersPage() {
                             )}
                         </TableBody>
                     </Table>
-                </CardContent>
+                </div>
             </Card>
 
             {/* Create/Edit Admin Modal */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
-                    <div className="px-10 py-12 bg-slate-900 group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
-                            <Shield className="h-32 w-32 text-white fill-current" />
-                        </div>
-                        <div className="relative z-10 space-y-2">
-                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">
-                                {editingUser?.id ? 'Editar Admin' : 'Novo Guardião'}
-                            </DialogTitle>
-                            <DialogDescription className="text-slate-400 text-lg font-medium tracking-tight">
-                                {editingUser?.id 
-                                    ? 'Atualize os privilégios e dados do administrador.' 
-                                    : 'Adicione um novo membro com acesso total à infraestrutura.'}
-                            </DialogDescription>
-                        </div>
+                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="bg-primary p-10 relative overflow-hidden group">
+                        <div className="absolute -bottom-6 -right-6 h-32 w-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                        <DialogTitle className="text-3xl font-black tracking-tight text-white leading-none">
+                            {editingUser?.id ? 'Atualizar Perfil' : 'Novo Operador'}
+                        </DialogTitle>
+                        <DialogDescription className="text-primary-foreground/70 font-medium italic mt-2">
+                            {editingUser?.id ? 'Ajuste as permissões deste administrador.' : 'Convide um novo membro para o time de suporte.'}
+                        </DialogDescription>
                     </div>
                     <form onSubmit={handleSaveUser} className="p-10 space-y-8">
                         <div className="space-y-6">

@@ -105,21 +105,17 @@ export default function PlansPage() {
                     <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Admin</BreadcrumbLink>
+                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Super Admin</BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/super-admin/plans" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary transition-colors">Configurações de planos</BreadcrumbLink>
+                                <BreadcrumbLink href="/super-admin/plans" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Assinaturas</BreadcrumbLink>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
                     <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
-                            <Rocket className="h-3 w-3" />
-                            Modelos de Assinatura
-                        </div>
-                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Gestão de Ofertas</h1>
-                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Configure as camadas de serviço e limites para o ecossistema.</p>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Matriz de Planos</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Defina os limites comerciais e recursos de cada nível de acesso.</p>
                     </div>
                 </div>
                 <Button className="h-16 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all gap-3 bg-primary text-primary-foreground uppercase tracking-widest text-xs" onClick={handleCreatePlan}>
@@ -127,7 +123,7 @@ export default function PlansPage() {
                 </Button>
             </div>
 
-            <Card className="rounded-[2.5rem] border border-border shadow-premium overflow-hidden bg-card">
+            <Card className="border-none shadow-premium bg-card rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="p-8 border-b border-border/50 bg-muted/20">
                     <div className="flex items-center justify-between">
                         <div>
@@ -137,25 +133,25 @@ export default function PlansPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
+                <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="border-b border-border/50 h-16 hover:bg-transparent">
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome do Plano</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Limite Usuários</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Limite Vistorias</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Retenção de Fotos</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Preço Mensal</TableHead>
-                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Ações</TableHead>
+                            <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome do Plano</TableHead>
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Preço Base</TableHead>
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Teto de Usuários</TableHead>
+                                <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Recursos Ativos</TableHead>
+                                <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground bg-muted/5 italic">Carregando configurações de planos...</TableCell>
+                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground bg-muted/5 italic">Carregando configurações de planos...</TableCell>
                                 </TableRow>
                             ) : plans.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-48 text-center text-muted-foreground bg-muted/5 italic">Nenhum plano configurado no sistema.</TableCell>
+                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground bg-muted/5 italic">Nenhum plano configurado no sistema.</TableCell>
                                 </TableRow>
                             ) : (
                                 plans.map((plan) => (
@@ -206,24 +202,20 @@ export default function PlansPage() {
                             )}
                         </TableBody>
                     </Table>
+                </div>
                 </CardContent>
             </Card>
 
             {/* Edit/Create Plan Modal */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent className="sm:max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
-                    <div className="px-10 py-12 bg-slate-900 group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
-                            <Zap className="h-32 w-32 text-white fill-current" />
-                        </div>
-                        <div className="relative z-10 space-y-2">
-                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">
-                                {editingPlan?.id ? 'Editar Nível' : 'Novo Plano'}
-                            </DialogTitle>
-                            <DialogDescription className="text-slate-400 text-lg font-medium tracking-tight">
-                                Defina os benefícios e o custo da oferta de serviço.
-                            </DialogDescription>
-                        </div>
+                    <div className="bg-foreground p-10 relative overflow-hidden">
+                        <DialogTitle className="text-3xl font-black tracking-tight text-card">
+                            {editingPlan ? 'Configurar Plano' : 'Criar Novo Modelo'}
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground font-medium italic mt-1">
+                            {editingPlan ? 'Ajuste os valores e privilégios da modalidade.' : 'Defina uma nova oferta comercial para os parceiros.'}
+                        </DialogDescription>
                     </div>
                     <div className="p-10 space-y-8 max-h-[60vh] overflow-y-auto">
                         <div className="grid grid-cols-2 gap-8">

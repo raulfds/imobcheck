@@ -132,8 +132,8 @@ export default function InspectionsPage() {
                             </span>
                             Sistema de Gestão
                         </div>
-                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Vistorias Técnicas</h1>
-                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Gerencie o ciclo completo de laudos e inspeções de imóveis.</p>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Vistorias Técnicas</h1>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Gerencie o ciclo completo de laudos e inspeções de imóveis.</p>
                     </div>
                 </div>
                 <Link href="/dashboard/inspections/new">
@@ -187,7 +187,7 @@ export default function InspectionsPage() {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-16">
+                            <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
                                 <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Identificação do Imóvel</TableHead>
                                 <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Locatário / Inquilino</TableHead>
                                 <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Data do Laudo</TableHead>
