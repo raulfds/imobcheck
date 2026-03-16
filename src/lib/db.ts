@@ -9,6 +9,9 @@ interface ImobCheckDB extends DBSchema {
             tenantId: string;
             environments: InspectionEnvironment[];
             updatedAt: number;
+            meters?: { light: string, water: string, gas: string };
+            keys?: { description: string, quantity: number }[];
+            agreement?: string;
         };
         indexes: { 'by-date': number };
     };
@@ -37,13 +40,19 @@ export async function initDB(): Promise<IDBPDatabase<ImobCheckDB>> {
     });
 }
 
-export async function saveDraft(id: string, tenantId: string, environments: InspectionEnvironment[]) {
+export async function saveDraft(
+    id: string, 
+    tenantId: string, 
+    environments: InspectionEnvironment[], 
+    metadata?: { meters?: any, keys?: any, agreement?: any }
+) {
     const db = await initDB();
     await db.put('drafts', {
         id,
         tenantId,
         environments,
         updatedAt: Date.now(),
+        ...metadata
     });
 }
 

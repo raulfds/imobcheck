@@ -22,8 +22,14 @@ import {
     Check,
     Layout,
     Image as ImageIcon,
-    Clock
+    Clock,
+    Droplets,
+    Zap,
+    Flame,
+    Key,
+    FileCheck2
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 /* eslint-disable @next/next/no-img-element */
 import { saveDraft, getDraft, saveBlob, getBlob, purgeOldDrafts } from '@/lib/db';
 import { fetchRoomTemplates, saveRoomTemplate } from '@/lib/database';
@@ -40,6 +46,11 @@ export default function ActiveInspection() {
     const [activeEnvId, setActiveEnvId] = useState<string | null>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+
+    // Insurance-related state
+    const [meters, setMeters] = useState({ light: '', water: '', gas: '' });
+    const [keys, setKeys] = useState<{description: string, quantity: number}[]>([]);
+    const [agreement, setAgreement] = useState('');
 
     const handleSaveAsTemplate = async (env: Environment) => {
         try {
@@ -109,6 +120,9 @@ export default function ActiveInspection() {
                     }
                 }
                 setEnvironments(initialEnvs);
+                if (draft.meters) setMeters(draft.meters);
+                if (draft.keys) setKeys(draft.keys);
+                if (draft.agreement) setAgreement(draft.agreement);
             } else {
                 setEnvironments([]);
             }
@@ -132,7 +146,7 @@ export default function ActiveInspection() {
                     });
                 }
             }
-            saveDraft(DRAFT_ID, agencyId, cleanEnvs);
+            saveDraft(DRAFT_ID, agencyId, cleanEnvs, { meters, keys, agreement });
         }
     }, [environments, isLoading, agencyId]);
 
@@ -277,6 +291,9 @@ export default function ActiveInspection() {
                         </TabsTrigger>
                         <TabsTrigger value="photos" className="rounded-xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all gap-2">
                             <ImageIcon className="h-4 w-4" /> Fotos Gerais
+                        </TabsTrigger>
+                        <TabsTrigger value="validation" className="rounded-xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all gap-2">
+                            <FileCheck2 className="h-4 w-4" /> Validação
                         </TabsTrigger>
                     </TabsList>
 
@@ -424,6 +441,130 @@ export default function ActiveInspection() {
                                 Tire fotos panorâmicas do ambiente para registrar o estado geral de conservação antes de focar nos itens individuais.
                             </p>
                         </div>
+                    </TabsContent>
+
+                    <TabsContent value="validation" className="space-y-10 animate-in fade-in duration-500">
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">Leitura de Medidores</h3>
+                                <div className="h-px bg-border/40 flex-1" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <Card className="border-none shadow-xl bg-card rounded-3xl overflow-hidden">
+                                    <div className="p-6 space-y-4">
+                                        <div className="h-10 w-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-600">
+                                            <Zap className="h-5 w-5" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Luz (CPFL / Enel)</Label>
+                                            <Input 
+                                                value={meters.light} 
+                                                onChange={(e) => setMeters({...meters, light: e.target.value})}
+                                                placeholder="000000" 
+                                                className="border-none bg-muted/40 h-12 rounded-xl font-black text-lg p-4"
+                                            />
+                                        </div>
+                                    </div>
+                                </Card>
+                                <Card className="border-none shadow-xl bg-card rounded-3xl overflow-hidden">
+                                    <div className="p-6 space-y-4">
+                                        <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                            <Droplets className="h-5 w-5" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Água (Sabesp / ETC)</Label>
+                                            <Input 
+                                                value={meters.water} 
+                                                onChange={(e) => setMeters({...meters, water: e.target.value})}
+                                                placeholder="000000" 
+                                                className="border-none bg-muted/40 h-12 rounded-xl font-black text-lg p-4"
+                                            />
+                                        </div>
+                                    </div>
+                                </Card>
+                                <Card className="border-none shadow-xl bg-card rounded-3xl overflow-hidden">
+                                    <div className="p-6 space-y-4">
+                                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600">
+                                            <Flame className="h-5 w-5" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Gás (Comgás / ETC)</Label>
+                                            <Input 
+                                                value={meters.gas} 
+                                                onChange={(e) => setMeters({...meters, gas: e.target.value})}
+                                                placeholder="000000" 
+                                                className="border-none bg-muted/40 h-12 rounded-xl font-black text-lg p-4"
+                                            />
+                                        </div>
+                                    </div>
+                                </Card>
+                            </div>
+                        </section>
+
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">Controle de Chaves</h3>
+                                <div className="h-px bg-border/40 flex-1" />
+                            </div>
+                            <Card className="border-none shadow-xl bg-card rounded-[2rem] overflow-hidden">
+                                <div className="p-8 space-y-6">
+                                    {keys.length === 0 ? (
+                                        <div className="text-center py-6 bg-muted/20 border-2 border-dashed border-border/40 rounded-2xl flex flex-col items-center gap-4">
+                                            <Key className="h-8 w-8 text-muted-foreground/40" />
+                                            <p className="text-xs font-bold uppercase tracking-widest opacity-40 italic">Nenhuma chave registrada</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {keys.map((k, idx) => (
+                                                <div key={idx} className="flex items-center gap-4 bg-muted/20 p-4 rounded-2xl border border-border/10">
+                                                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                        <Key className="h-4 w-4" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-black">{k.description}</p>
+                                                        <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{k.quantity} UNIDADE(S)</p>
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" onClick={() => setKeys(keys.filter((_, i) => i !== idx))} className="h-8 w-8 text-red-500 hover:bg-red-50 rounded-lg">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Button 
+                                            variant="outline" 
+                                            className="h-12 rounded-xl font-black border-dashed border-primary/20 text-primary bg-primary/5 hover:bg-primary/10"
+                                            onClick={() => {
+                                                const desc = prompt('Descrição da Chave/Controle/Tag:');
+                                                const qty = prompt('Quantidade:');
+                                                if (desc && qty) setKeys([...keys, { description: desc, quantity: parseInt(qty) || 1 }]);
+                                            }}
+                                        >
+                                            <Plus className="h-4 w-4 mr-2" /> Nova Chave
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Card>
+                        </section>
+
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">Termo de Concordância</h3>
+                                <div className="h-px bg-border/40 flex-1" />
+                            </div>
+                            <Card className="border-none shadow-xl bg-card rounded-[2rem] overflow-hidden">
+                                <div className="p-8 space-y-4">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Declaração Final</Label>
+                                    <Textarea 
+                                        value={agreement}
+                                        onChange={(e) => setAgreement(e.target.value)}
+                                        placeholder="As partes declaram estar de acordo com o estado do imóvel..."
+                                        className="min-h-[150px] rounded-2xl bg-muted/40 border-none p-6 font-medium italic shadow-inner"
+                                    />
+                                </div>
+                            </Card>
+                        </section>
                     </TabsContent>
                 </Tabs>
 

@@ -92,10 +92,16 @@ function rowToInspection(row: any): Inspection {
         tenantId: row.agency_id,
         propertyId: row.property_id ?? '',
         clientId: row.client_id ?? '',
+        landlordId: row.landlord_id ?? undefined,
         type: row.type,
         status: row.status,
         date: row.date,
+        startTime: row.start_time ?? undefined,
         environments: (row.environments ?? []) as InspectionEnvironment[],
+        meters: row.meters ?? undefined,
+        keys: row.keys ?? undefined,
+        agreementTerm: row.agreement_term ?? undefined,
+        signatures: row.signatures ?? undefined,
     };
 }
 
@@ -436,10 +442,16 @@ export async function createInspection(inspection: Omit<Inspection, 'id'>): Prom
         agency_id: inspection.tenantId,
         property_id: inspection.propertyId || null,
         client_id: inspection.clientId || null,
+        landlord_id: inspection.landlordId || null,
         type: inspection.type,
         status: inspection.status,
         date: inspection.date,
+        start_time: inspection.startTime || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         environments: inspection.environments,
+        meters: inspection.meters || {},
+        keys: inspection.keys || [],
+        agreement_term: inspection.agreementTerm || '',
+        signatures: inspection.signatures || { inspector: false, landlord: false, tenant: false },
     }).select().single();
     if (error) throw error;
     return rowToInspection(data);
@@ -451,6 +463,11 @@ export async function updateInspection(id: string, updates: Partial<Inspection>)
         ...(updates.environments !== undefined && { environments: updates.environments }),
         ...(updates.propertyId !== undefined && { property_id: updates.propertyId }),
         ...(updates.clientId !== undefined && { client_id: updates.clientId }),
+        ...(updates.landlordId !== undefined && { landlord_id: updates.landlordId }),
+        ...(updates.meters !== undefined && { meters: updates.meters }),
+        ...(updates.keys !== undefined && { keys: updates.keys }),
+        ...(updates.agreementTerm !== undefined && { agreement_term: updates.agreementTerm }),
+        ...(updates.signatures !== undefined && { signatures: updates.signatures }),
     }).eq('id', id);
     if (error) throw error;
 }

@@ -84,13 +84,38 @@ export interface InspectionItem {
   photo?: string;
 }
 
+export type InspectionType = 'entry' | 'exit' | 'verification';
+
+export interface MeterReading {
+  light: string;
+  water: string;
+  gas: string;
+}
+
+export interface KeyRecord {
+  description: string;
+  quantity: number;
+}
+
 export interface Inspection {
   id: string;
   tenantId: string;
   propertyId: string;
-  clientId: string;
-  type: 'entry' | 'exit';
+  clientId: string; // Locatário
+  landlordId?: string; // Locador
+  type: InspectionType;
   status: 'ongoing' | 'completed';
   date: string;
+  startTime?: string;
   environments: InspectionEnvironment[];
+  
+  // Footer Info (Insurance Requirements)
+  meters?: MeterReading;
+  keys?: KeyRecord[];
+  agreementTerm?: string;
+  signatures?: {
+    inspector: boolean;
+    landlord: boolean;
+    tenant: boolean;
+  };
 }

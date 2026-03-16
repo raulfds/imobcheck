@@ -18,12 +18,13 @@ import {
     Settings2,
     Play
 } from 'lucide-react';
-import { Property, Client } from '@/types';
+import { Property, Client, Landlord, InspectionType } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
-import { fetchProperties, fetchClients, createInspection } from '@/lib/database';
+import { fetchProperties, fetchClients, fetchLandlords, createInspection } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { QuickAddProperty } from '@/components/inspections/quick-add-property';
 import { QuickAddClient } from '@/components/inspections/quick-add-client';
+import { QuickAddLandlord } from '@/components/inspections/quick-add-landlord';
 
 export default function NewInspection() {
     const router = useRouter();
@@ -32,22 +33,26 @@ export default function NewInspection() {
 
     const [properties, setProperties] = useState<Property[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
+    const [landlords, setLandlords] = useState<Landlord[]>([]);
     const [loading, setLoading] = useState(true);
     const [starting, setStarting] = useState(false);
 
     const [propertyId, setPropertyId] = useState('');
     const [clientId, setClientId] = useState('');
-    const [type, setType] = useState<'entry' | 'exit'>('entry');
+    const [landlordId, setLandlordId] = useState('');
+    const [type, setType] = useState<InspectionType>('entry');
 
     const loadData = useCallback(async () => {
         if (!agencyId || !isSupabaseConfigured) { setLoading(false); return; }
         try {
-            const [props, cls] = await Promise.all([
+            const [props, cls, lds] = await Promise.all([
                 fetchProperties(agencyId),
                 fetchClients(agencyId),
+                fetchLandlords(agencyId),
             ]);
             setProperties(props);
             setClients(cls);
+            setLandlords(lds);
         } catch (err) {
             console.error(err);
         } finally {
@@ -67,8 +72,13 @@ export default function NewInspection() {
         setClientId(newClient.id);
     };
 
+    const handleLandlordAdded = (newLandlord: Landlord) => {
+        setLandlords(prev => [newLandlord, ...prev]);
+        setLandlordId(newLandlord.id);
+    };
+
     const handleStart = async () => {
-        if (!propertyId || !clientId) return;
+        if (!propertyId || !clientId || !landlordId) return;
         setStarting(true);
         try {
             const today = new Date().toISOString().split('T')[0];
@@ -77,6 +87,7 @@ export default function NewInspection() {
                     tenantId: agencyId,
                     propertyId,
                     clientId,
+                    landlordId,
                     type,
                     status: 'ongoing',
                     date: today,
@@ -116,7 +127,7 @@ export default function NewInspection() {
                     </Breadcrumb>
                     <div className="space-y-2">
                         <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Nova Vistoria</h1>
-                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Configure as informações básicas para iniciar o laudo técnico.</p>
+                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Vistorias seguras, objetivas e datadas.</p>
                     </div>
                 </div>
             </div>
@@ -132,7 +143,7 @@ export default function NewInspection() {
                                 </div>
                                 <div>
                                     <CardTitle className="text-xl font-black tracking-tight">Configurações do Laudo</CardTitle>
-                                    <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70">Defina o vínculo e o tipo da vistoria</CardDescription>
+                                    <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70">Identificação das partes e imóvel</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -161,63 +172,89 @@ export default function NewInspection() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {properties.length === 0 && (
-                                            <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-2xl flex gap-3 items-center">
-                                                <Zap className="h-5 w-5 text-amber-500 shrink-0" />
-                                                <p className="text-xs text-amber-700 font-medium">
-                                                    Você ainda não tem imóveis. Cadastre um acima para continuar.
-                                                </p>
-                                            </div>
-                                        )}
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between ml-1">
-                                            <Label htmlFor="client" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                <Users2 className="h-3 w-3" /> Locatário / Inquilino
-                                            </Label>
-                                            <QuickAddClient agencyId={agencyId} onSuccess={handleClientAdded} />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between ml-1">
+                                                <Label htmlFor="landlord" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                    <Users2 className="h-3 w-3" /> Locador (Dono)
+                                                </Label>
+                                                <QuickAddLandlord agencyId={agencyId} onSuccess={handleLandlordAdded} />
+                                            </div>
+                                            <Select value={landlordId} onValueChange={(v: string | null) => { if (v) setLandlordId(v); }}>
+                                                <SelectTrigger id="landlord" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
+                                                    <SelectValue placeholder="Selecione..." />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
+                                                    {landlords.map(l => (
+                                                        <SelectItem key={l.id} value={l.id} className="rounded-xl py-3 font-bold">{l.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        <Select value={clientId} onValueChange={(v: string | null) => { if (v) setClientId(v); }}>
-                                            <SelectTrigger id="client" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
-                                                <SelectValue placeholder={clients.length === 0 ? 'Nenhum locatário cadastrado' : 'Selecione o locatário'} />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                                                {clients.map(c => (
-                                                    <SelectItem key={c.id} value={c.id} className="rounded-xl py-3 font-bold">{c.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between ml-1">
+                                                <Label htmlFor="client" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                    <Users2 className="h-3 w-3" /> Locatário
+                                                </Label>
+                                                <QuickAddClient agencyId={agencyId} onSuccess={handleClientAdded} />
+                                            </div>
+                                            <Select value={clientId} onValueChange={(v: string | null) => { if (v) setClientId(v); }}>
+                                                <SelectTrigger id="client" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
+                                                    <SelectValue placeholder="Selecione..." />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
+                                                    {clients.map(c => (
+                                                        <SelectItem key={c.id} value={c.id} className="rounded-xl py-3 font-bold">{c.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-3">
                                         <Label htmlFor="type" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Modalidade de Vistoria</Label>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-3 gap-4">
                                             <button 
                                                 onClick={() => setType('entry')}
-                                                className={`p-6 rounded-[2rem] border-4 transition-all flex flex-col items-center gap-3 ${
+                                                className={`p-4 rounded-[1.5rem] border-4 transition-all flex flex-col items-center gap-2 ${
                                                     type === 'entry' 
                                                     ? 'border-emerald-500 bg-emerald-500/5 text-emerald-700 shadow-xl' 
                                                     : 'border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/50'
                                                 }`}
                                             >
-                                                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${type === 'entry' ? 'bg-emerald-500 text-white' : 'bg-muted/50'}`}>
-                                                    <ClipboardList className="h-6 w-6" />
+                                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${type === 'entry' ? 'bg-emerald-500 text-white' : 'bg-muted/50'}`}>
+                                                    <ClipboardList className="h-5 w-5" />
                                                 </div>
-                                                <span className="font-black text-sm uppercase tracking-wider">Entrada</span>
+                                                <span className="font-black text-[10px] uppercase tracking-wider">Entrada</span>
                                             </button>
                                             <button 
                                                 onClick={() => setType('exit')}
-                                                className={`p-6 rounded-[2rem] border-4 transition-all flex flex-col items-center gap-3 ${
+                                                className={`p-4 rounded-[1.5rem] border-4 transition-all flex flex-col items-center gap-2 ${
                                                     type === 'exit' 
                                                     ? 'border-amber-500 bg-amber-500/5 text-amber-700 shadow-xl' 
                                                     : 'border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/50'
                                                 }`}
                                             >
-                                                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${type === 'exit' ? 'bg-amber-500 text-white' : 'bg-muted/50'}`}>
-                                                    <Play className="h-6 w-6 rotate-90" />
+                                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${type === 'exit' ? 'bg-amber-500 text-white' : 'bg-muted/50'}`}>
+                                                    <Play className="h-5 w-5 rotate-90" />
                                                 </div>
-                                                <span className="font-black text-sm uppercase tracking-wider">Saída</span>
+                                                <span className="font-black text-[10px] uppercase tracking-wider">Saída</span>
+                                            </button>
+                                            <button 
+                                                onClick={() => setType('verification')}
+                                                className={`p-4 rounded-[1.5rem] border-4 transition-all flex flex-col items-center gap-2 ${
+                                                    type === 'verification' 
+                                                    ? 'border-blue-500 bg-blue-500/5 text-blue-700 shadow-xl' 
+                                                    : 'border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                                                }`}
+                                            >
+                                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${type === 'verification' ? 'bg-blue-500 text-white' : 'bg-muted/50'}`}>
+                                                    <CheckCircle2 className="h-5 w-5" />
+                                                </div>
+                                                <span className="font-black text-[10px] uppercase tracking-wider">Constatação</span>
                                             </button>
                                         </div>
                                     </div>
@@ -229,7 +266,7 @@ export default function NewInspection() {
                     <Button
                         className="w-full h-20 rounded-[2.5rem] font-black text-xl shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground gap-4 group"
                         onClick={handleStart}
-                        disabled={!propertyId || !clientId || loading || starting}
+                        disabled={!propertyId || !clientId || !landlordId || loading || starting}
                     >
                         {starting ? (
                             <><Loader2 className="h-6 w-6 animate-spin" /> Processando...</>

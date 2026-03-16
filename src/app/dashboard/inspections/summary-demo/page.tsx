@@ -21,7 +21,14 @@ import {
     Cloud,
     ArrowRight,
     ShieldCheck,
-    Layout
+    Clock,
+    Layout,
+    Droplets,
+    Zap,
+    Flame,
+    Key,
+    UserCheck,
+    FileCheck2
 } from 'lucide-react';
 
 /* eslint-disable @next/next/no-img-element */
@@ -40,7 +47,9 @@ export default function InspectionSummary() {
         status: 'completed' as const,
         type: 'entry' as const,
         date: new Date().toISOString(),
+        startTime: '14:30',
         environments: [
+            // ... (previously defined environments)
             {
                 id: 'e1',
                 name: 'Sala de Estar',
@@ -59,6 +68,12 @@ export default function InspectionSummary() {
                 ]
             }
         ] as InspectionEnvironment[],
+        meters: { light: '045892', water: '001243', gas: '0894' },
+        keys: [
+            { description: 'Chave Principal (Porta)', quantity: 2 },
+            { description: 'Controle Garagem', quantity: 1 }
+        ],
+        agreementTerm: 'As partes declaram que conferiram o imóvel e aceitam o estado de conservação descrito neste auto de vistoria para fins de locação.',
     };
     
     const tenant = { 
@@ -135,9 +150,33 @@ export default function InspectionSummary() {
                     <CardHeader className="p-8 border-b border-border/40 bg-muted/20">
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                <UserCheck className="h-5 w-5" />
+                            </div>
+                            <CardTitle className="text-lg font-black tracking-tight">Locador (Proprietário)</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-8">
+                        <div className="flex gap-4 items-start">
+                            <div className="h-12 w-12 rounded-full bg-primary/5 flex items-center justify-center text-primary shrink-0 font-black">
+                                JS
+                            </div>
+                            <div className="space-y-1">
+                                <p className="font-black text-foreground text-lg leading-tight">João Silva de Souza</p>
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground pt-1">
+                                    <ShieldCheck className="h-3 w-3" /> CPF: ***.***.123-45
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-xl bg-card rounded-[2.5rem] overflow-hidden group">
+                    <CardHeader className="p-8 border-b border-border/40 bg-muted/20">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                 <User className="h-5 w-5" />
                             </div>
-                            <CardTitle className="text-lg font-black tracking-tight">Locatário Responsável</CardTitle>
+                            <CardTitle className="text-lg font-black tracking-tight">Locatário (Inquilino)</CardTitle>
                         </div>
                     </CardHeader>
                     <CardContent className="p-8">
@@ -153,6 +192,37 @@ export default function InspectionSummary() {
                             </div>
                         </div>
                     </CardContent>
+                </Card>
+            </div>
+
+            {/* Insurance Acceptance Proof */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <Card className="border-none shadow-lg bg-emerald-500/5 rounded-3xl p-6 flex items-center gap-4 border border-emerald-500/10">
+                    <div className="h-12 w-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center">
+                        <Check className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Objetividade</p>
+                        <p className="font-bold text-emerald-900 leading-tight">Laudo Técnico 100% Preenchido</p>
+                    </div>
+                </Card>
+                <Card className="border-none shadow-lg bg-blue-500/5 rounded-3xl p-6 flex items-center gap-4 border border-blue-500/10">
+                    <div className="h-12 w-12 rounded-2xl bg-blue-500 text-white flex items-center justify-center">
+                        <Clock className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-blue-700">Registro Temporal</p>
+                        <p className="font-bold text-blue-900 leading-tight">Datado: {new Date().toLocaleDateString('pt-BR')} às {inspection.startTime}</p>
+                    </div>
+                </Card>
+                <Card className="border-none shadow-lg bg-indigo-500/5 rounded-3xl p-6 flex items-center gap-4 border border-indigo-500/10">
+                    <div className="h-12 w-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center">
+                        <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Validade Jurídica</p>
+                        <p className="font-bold text-indigo-900 leading-tight">Incontestável: Termo Assinado</p>
+                    </div>
                 </Card>
             </div>
 
@@ -215,6 +285,108 @@ export default function InspectionSummary() {
                                 </div>
                             );
                         })}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Validation & Meters Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="border-none shadow-2xl bg-card rounded-[2.5rem] overflow-hidden">
+                    <CardHeader className="p-8 border-b border-border/40 bg-muted/20">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <Zap className="h-5 w-5" />
+                            </div>
+                            <CardTitle className="text-lg font-black tracking-tight">Leitura de Medidores</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-8 grid grid-cols-3 gap-4">
+                        <div className="text-center space-y-2">
+                            <div className="h-12 w-12 rounded-2xl bg-yellow-500/10 text-yellow-600 flex items-center justify-center mx-auto">
+                                <Zap className="h-5 w-5" />
+                            </div>
+                            <p className="text-[10px] font-black uppercase text-muted-foreground">Luz</p>
+                            <p className="font-black text-lg">{inspection.meters.light}</p>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center mx-auto">
+                                <Droplets className="h-5 w-5" />
+                            </div>
+                            <p className="text-[10px] font-black uppercase text-muted-foreground">Água</p>
+                            <p className="font-black text-lg">{inspection.meters.water}</p>
+                        </div>
+                        <div className="text-center space-y-2">
+                            <div className="h-12 w-12 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center mx-auto">
+                                <Flame className="h-5 w-5" />
+                            </div>
+                            <p className="text-[10px] font-black uppercase text-muted-foreground">Gás</p>
+                            <p className="font-black text-lg">{inspection.meters.gas}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-2xl bg-card rounded-[2.5rem] overflow-hidden">
+                    <CardHeader className="p-8 border-b border-border/40 bg-muted/20">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <Key className="h-5 w-5" />
+                            </div>
+                            <CardTitle className="text-lg font-black tracking-tight">Controle de Chaves</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-4">
+                        {inspection.keys.map((k, i) => (
+                            <div key={i} className="flex justify-between items-center bg-muted/30 p-3 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center shadow-sm">
+                                        <Key className="h-4 w-4 opacity-40" />
+                                    </div>
+                                    <span className="font-bold text-sm text-foreground">{k.description}</span>
+                                </div>
+                                <Badge className="bg-primary text-primary-foreground font-black px-3 rounded-lg">{k.quantity} UN</Badge>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Agreement Section */}
+            <Card className="border-none shadow-2xl bg-foreground text-card rounded-[2.5rem] overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-10 opacity-5">
+                    <FileCheck2 className="h-32 w-32" />
+                </div>
+                <CardContent className="p-10 space-y-6">
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center text-white">
+                            <FileCheck2 className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl font-black tracking-tight">Termo de Aceite do Laudo</CardTitle>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40">Validação Jurídica</p>
+                        </div>
+                    </div>
+                    <p className="text-lg font-medium italic opacity-80 leading-relaxed border-l-4 border-primary/40 pl-6 py-2">
+                        "{inspection.agreementTerm}"
+                    </p>
+                    <div className="flex flex-wrap gap-8 pt-6">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Vistoriador</p>
+                            <p className="font-black flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-primary" /> Assinado Digitalmente
+                            </p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Locador</p>
+                            <p className="font-black flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-primary" /> Pendente Assinatura
+                            </p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Locatário</p>
+                            <p className="font-black flex items-center gap-2 text-primary">
+                                <ArrowRight className="h-4 w-4" /> Coletar Assinatura Agora
+                            </p>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
