@@ -310,13 +310,20 @@ export async function createProperty(prop: Omit<Property, 'id'>): Promise<Proper
 export async function updateProperty(id: string, updates: Partial<Property>): Promise<void> {
     const { error } = await supabase.from('properties').update({
         ...(updates.address !== undefined && { address: updates.address }),
+        ...(updates.cep !== undefined && { cep: updates.cep }),
+        ...(updates.logradouro !== undefined && { logradouro: updates.logradouro }),
+        ...(updates.numero !== undefined && { numero: updates.numero }),
+        ...(updates.complemento !== undefined && { complemento: updates.complemento }),
+        ...(updates.bairro !== undefined && { bairro: updates.bairro }),
+        ...(updates.cidade !== undefined && { cidade: updates.cidade }),
+        ...(updates.estado !== undefined && { estado: updates.estado }),
         ...(updates.description !== undefined && { description: updates.description }),
     }).eq('id', id);
     if (error) throw error;
 }
 
 export async function deleteProperty(id: string): Promise<void> {
-    const { error } = await supabase.from('room_templates').delete().eq('id', id);
+    const { error } = await supabase.from('properties').delete().eq('id', id);
     if (error) throw error;
 }
 
@@ -456,6 +463,16 @@ export async function createClient(c: Omit<Client, 'id'>): Promise<Client> {
     }).select().single();
     if (error) throw error;
     return rowToClient(data);
+}
+
+export async function updateClient(id: string, updates: Partial<Client>): Promise<void> {
+    const { error } = await supabase.from('clients').update({
+        ...(updates.name !== undefined && { name: updates.name }),
+        ...(updates.cpf !== undefined && { cpf: updates.cpf }),
+        ...(updates.email !== undefined && { email: updates.email }),
+        ...(updates.phone !== undefined && { phone: updates.phone }),
+    }).eq('id', id);
+    if (error) throw error;
 }
 
 export async function deleteClient(id: string): Promise<void> {
