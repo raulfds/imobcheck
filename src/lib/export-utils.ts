@@ -38,37 +38,47 @@ export async function downloadAllPhotos(environments: InspectionEnvironment[], f
     const zip = new JSZip();
     const folder = zip.folder('fotos');
 
+    const photoPromises: Promise<void>[] = [];
     let photoCount = 0;
+
     for (const env of environments) {
         // General Photos
         if (env.generalPhotos && env.generalPhotos.length > 0) {
-            for (let i = 0; i < env.generalPhotos.length; i++) {
-                try {
-                    const response = await fetch(env.generalPhotos[i]);
-                    const blob = await response.blob();
-                    folder?.file(`${env.name}/GERAL_${i + 1}.jpg`.replace(/\s+/g, '_'), blob);
-                    photoCount++;
-                } catch {
-                    console.error('Failed to add general photo', env.name);
-                }
-            }
+            env.generalPhotos.forEach((photoUrl, i) => {
+                const promise = (async () => {
+                    try {
+                        const response = await fetch(photoUrl);
+                        const blob = await response.blob();
+                        folder?.file(`${env.name}/GERAL_${i + 1}.jpg`.replace(/\s+/g, '_'), blob);
+                        photoCount++;
+                    } catch {
+                        console.error('Failed to add general photo', env.name);
+                    }
+                })();
+                photoPromises.push(promise);
+            });
         }
 
         // Item Photos
         for (const item of env.items) {
             if (item.photo) {
-                try {
-                    const response = await fetch(item.photo);
-                    const blob = await response.blob();
-                    const cleanName = `${env.name}/${item.name}-${item.status === 'not_ok' ? (item.defect || 'defeito') : 'ok'}.jpg`.replace(/\s+/g, '_');
-                    folder?.file(cleanName, blob);
-                    photoCount++;
-                } catch {
-                    console.error('Failed to add photo to zip', item.name);
-                }
+                const promise = (async () => {
+                    try {
+                        const response = await fetch(item.photo!);
+                        const blob = await response.blob();
+                        const cleanName = `${env.name}/${item.name}-${item.status === 'not_ok' ? (item.defect || 'defeito') : 'ok'}.jpg`.replace(/\s+/g, '_');
+                        folder?.file(cleanName, blob);
+                        photoCount++;
+                    } catch {
+                        console.error('Failed to add photo to zip', item.name);
+                    }
+                })();
+                photoPromises.push(promise);
             }
         }
     }
+
+    await Promise.all(photoPromises);
 
     if (photoCount > 0) {
         const content = await zip.generateAsync({ type: 'blob' });
