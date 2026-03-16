@@ -28,6 +28,7 @@ export function Logo({ className }: { className?: string }) {
         width={180} 
         height={60} 
         className={cn("object-contain", isDark && "brightness-200")}
+        style={{ height: 'auto' }}
         priority
       />
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -44,8 +44,8 @@ export default function TenantDashboard() {
 
     useEffect(() => { loadStats(); }, [loadStats]);
 
-    const completedCount = inspections.filter(i => i.status === 'completed').length;
-    const ongoingCount = inspections.filter(i => i.status === 'ongoing').length;
+    const completedCount = inspections.filter((i: Inspection) => i.status === 'completed').length;
+    const ongoingCount = inspections.filter((i: Inspection) => i.status === 'ongoing').length;
     const recentInspections = inspections.slice(0, 5);
 
     if (loading) {
@@ -62,17 +62,24 @@ export default function TenantDashboard() {
     const completionRate = inspections.length ? Math.round((completedCount / inspections.length) * 100) : 0;
 
     return (
-        <div className="space-y-12 max-w-[1440px] mx-auto w-full">
+        <div className="space-y-12 w-full pb-10">
             {/* Hero Header */}
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-4">
-                <div className="max-w-2xl">
-                    <h2 className="text-5xl font-black text-slate-100 tracking-tight mb-2">Painel Principal</h2>
-                    <p className="text-slate-400 text-lg">Acompanhe métricas de vistorias, portfólio de imóveis e pendências críticas.</p>
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 md:gap-8 mb-4">
+                <div className="max-w-3xl space-y-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[9px] md:text-[10px] font-black uppercase tracking-widest">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </span>
+                        Sistema Online
+                    </div>
+                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tighter leading-[0.9]">Painel Principal</h2>
+                    <p className="text-muted-foreground text-base md:text-lg lg:text-xl font-medium tracking-tight max-w-2xl">Acompanhe métricas de vistorias e pendências críticas com precisão.</p>
                 </div>
             </div>
 
-            {/* Metric Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {/* Metric Grid - Responsive columns */}
+            <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
                     title="Vistorias Totais"
                     value={inspections.length}
@@ -98,15 +105,18 @@ export default function TenantDashboard() {
                     subtext="Verificar hoje"
                     icon="error"
                     trend="down"
-                    iconColor="text-red-500"
+                    iconColor="text-destructive"
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
                 {/* Recent Compliance Issues */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-slate-800/20 border border-slate-800 rounded-xl p-8">
-                        <h4 className="text-lg font-bold mb-6 text-slate-100">Avisos e Pendências</h4>
+                <div className="lg:col-span-1 space-y-6 md:space-y-8">
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-6 md:p-8 shadow-sm">
+                        <div className="flex items-center justify-between mb-6 md:mb-8">
+                            <h4 className="text-base md:text-lg font-black tracking-tight text-foreground uppercase">Avisos</h4>
+                            <span className="text-[9px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded uppercase tracking-widest">Tempo Real</span>
+                        </div>
                         <div className="space-y-4">
                             {ongoingCount > 0 ? (
                                 <>
@@ -130,10 +140,15 @@ export default function TenantDashboard() {
                                     />
                                 </>
                             ) : (
-                                <p className="text-slate-500 text-sm italic">Nenhum aviso no momento.</p>
+                                <div className="py-8 md:py-10 text-center space-y-3">
+                                    <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+                                        <History className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground opacity-50" />
+                                    </div>
+                                    <p className="text-muted-foreground text-[9px] md:text-xs font-bold uppercase tracking-widest">Nenhum aviso ativo</p>
+                                </div>
                             )}
                         </div>
-                        <button className="w-full mt-6 py-3 text-sm font-bold text-slate-400 hover:text-primary transition-colors uppercase tracking-widest">
+                        <button className="w-full mt-6 md:mt-8 py-3 md:py-4 text-[9px] md:text-[10px] font-black text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all uppercase tracking-[0.2em] border border-transparent hover:border-primary/10">
                             Ver Todos os Avisos
                         </button>
                     </div>
@@ -141,57 +156,66 @@ export default function TenantDashboard() {
                     <div className="grid gap-4">
                         <button 
                             onClick={() => window.location.href = '/dashboard/inspections/new'}
-                            className="flex items-center gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group"
+                            className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group relative overflow-hidden"
                         >
-                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform">
-                                <PlusCircle className="h-6 w-6" />
+                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                                <PlusCircle className="h-16 w-16" />
                             </div>
-                            <div>
-                                <p className="font-black text-foreground leading-none mb-1">Nova Vistoria</p>
-                                <p className="text-[11px] text-muted-foreground font-bold">Entrada ou Saída</p>
+                            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform shadow-inner">
+                                <PlusCircle className="h-7 w-7" />
+                            </div>
+                            <div className="relative z-10">
+                                <p className="font-black text-foreground tracking-tight mb-0.5">Nova Vistoria</p>
+                                <p className="text-[11px] text-muted-foreground font-bold tracking-wide">Iniciar laudo de entrada/saída</p>
                             </div>
                             <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
                         </button>
 
                         <button 
                             onClick={() => window.location.href = '/dashboard/registrations'}
-                            className="flex items-center gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left group"
+                            className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left group relative overflow-hidden"
                         >
-                            <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 group-hover:scale-110 transition-transform">
-                                <Building2 className="h-6 w-6" />
+                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                                <Building2 className="h-16 w-16" />
                             </div>
-                            <div>
-                                <p className="font-black text-foreground leading-none mb-1">Cadastrar Imóvel</p>
-                                <p className="text-[11px] text-muted-foreground font-bold">Unidade residencial/comercial</p>
+                            <div className="h-14 w-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 group-hover:scale-110 transition-transform shadow-inner">
+                                <Building2 className="h-7 w-7" />
+                            </div>
+                            <div className="relative z-10">
+                                <p className="font-black text-foreground tracking-tight mb-0.5">Cadastrar Imóvel</p>
+                                <p className="text-[11px] text-muted-foreground font-bold tracking-wide">Adicionar unidade ao portfólio</p>
                             </div>
                             <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
                         </button>
 
                         <button 
                             onClick={() => window.location.href = '/dashboard/team'}
-                            className="flex items-center gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/5 transition-all text-left group"
+                            className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/5 transition-all text-left group relative overflow-hidden"
                         >
-                            <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0 group-hover:scale-110 transition-transform">
-                                <UsersIcon className="h-6 w-6" />
+                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                                <UsersIcon className="h-16 w-16" />
                             </div>
-                            <div>
-                                <p className="font-black text-foreground leading-none mb-1">Gestão de Equipe</p>
-                                <p className="text-[11px] text-muted-foreground font-bold">Vistoriadores e Admins</p>
+                            <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0 group-hover:scale-110 transition-transform shadow-inner">
+                                <UsersIcon className="h-7 w-7" />
+                            </div>
+                            <div className="relative z-10">
+                                <p className="font-black text-foreground tracking-tight mb-0.5">Gestão de Equipe</p>
+                                <p className="text-[11px] text-muted-foreground font-bold tracking-wide">Vistoriadores e permissões</p>
                             </div>
                             <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
 
-                    <Card className="border-none shadow-lg bg-muted/30">
-                        <CardContent className="p-6">
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 bg-amber-500/10 rounded-lg">
-                                    <History className="h-4 w-4 text-amber-600" />
+                    <Card className="border border-border/50 shadow-sm bg-muted/20 rounded-2xl">
+                        <CardContent className="p-8">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                                    <History className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-black">Lembrete</p>
-                                    <p className="text-xs text-muted-foreground font-medium leading-relaxed">
-                                        Vistoria da Rua Alagoas expira em breve. Revise os itens pendentes.
+                                <div className="space-y-1.5">
+                                    <p className="text-sm font-black tracking-tight uppercase">Lembrete de Hoje</p>
+                                    <p className="text-xs text-muted-foreground font-bold leading-relaxed opacity-80">
+                                        Vistoria da Rua Alagoas expira em breve. Recomendamos priorizar a revisão dos itens críticos.
                                     </p>
                                 </div>
                             </div>
@@ -201,40 +225,43 @@ export default function TenantDashboard() {
 
                 {/* Recent Inspections Flow */}
                 <div className="lg:col-span-2">
-                    <div className="bg-slate-800/20 border border-slate-800 rounded-xl overflow-hidden h-full flex flex-col">
-                        <div className="flex flex-row items-center justify-between px-8 py-6 border-b border-slate-800 bg-[#1A1A1A]">
-                            <div className="space-y-1">
-                                <h3 className="text-xl font-black tracking-tight text-slate-100">Atividade Recente</h3>
-                                <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Últimas vistorias registradas</p>
+                    <div className="bg-card border border-border rounded-xl md:rounded-2xl shadow-sm overflow-hidden h-full flex flex-col">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-border bg-muted/30 gap-4 sm:gap-0">
+                            <div className="space-y-1.5">
+                                <h3 className="text-xl md:text-2xl font-black tracking-tight text-foreground uppercase leading-none">Atividade Recente</h3>
+                                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Últimas vistorias registradas</p>
                             </div>
-                            <Button variant="ghost" className="text-xs font-bold text-primary hover:text-primary/80 hover:bg-slate-800/50 uppercase tracking-widest" onClick={() => window.location.href = '/dashboard/inspections'}>
-                                VER TUDO <span className="material-symbols-outlined text-base ml-1">arrow_forward</span>
+                            <Button variant="outline" className="text-[9px] md:text-[10px] font-black text-primary hover:text-primary hover:bg-primary/5 uppercase tracking-widest rounded-lg md:rounded-xl px-4 md:px-6 h-10 md:h-11 border-primary/20 w-full sm:w-auto" onClick={() => window.location.href = '/dashboard/inspections'}>
+                                VER TUDO <ChevronRight className="h-4 w-4 ml-2" />
                             </Button>
                         </div>
-                        <div className="flex-1 divide-y divide-slate-800/50">
+                        <div className="flex-1 divide-y divide-border">
                             {recentInspections.map((inspection) => (
-                                <div key={inspection.id} className="group px-8 py-6 flex items-center gap-6 hover:bg-slate-800/30 transition-all cursor-pointer" onClick={() => window.location.href = `/dashboard/inspections/${inspection.id}`}>
-                                    <div className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 border transition-transform group-hover:scale-110 ${
+                                <div key={inspection.id} className="group px-6 md:px-10 py-6 md:py-8 flex items-center gap-4 md:gap-8 hover:bg-muted/30 transition-all cursor-pointer" onClick={() => window.location.href = `/dashboard/inspections/${inspection.id}`}>
+                                    <div className={`h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 border transition-all group-hover:scale-105 group-hover:shadow-lg ${
                                         inspection.status === 'completed' 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-emerald-500/5'
+                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-amber-500/5'
                                     }`}>
-                                        <span className="material-symbols-outlined">{inspection.status === 'completed' ? 'verified' : 'pending_actions'}</span>
+                                        <span className="material-symbols-outlined !text-xl md:!text-2xl">{inspection.status === 'completed' ? 'verified' : 'pending_actions'}</span>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${
-                                                inspection.type === 'entry' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-slate-700 border-slate-600 text-slate-300'
+                                    <div className="flex-1 min-w-0 space-y-1 md:space-y-2">
+                                        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                                            <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-0.5 md:py-1 rounded-full border ${
+                                                inspection.type === 'entry' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
                                             }`}>
                                                 {inspection.type === 'entry' ? 'ENTRADA' : 'SAÍDA'}
                                             </span>
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{inspection.date}</span>
+                                            <div className="hidden xs:block h-1 w-1 rounded-full bg-border" />
+                                            <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{inspection.date}</span>
                                         </div>
-                                        <p className="text-sm font-bold text-slate-100 group-hover:text-primary transition-colors truncate">Imóvel #{inspection.propertyId.substring(0, 8)}</p>
+                                        <p className="text-base md:text-lg font-black text-foreground group-hover:text-primary transition-colors truncate tracking-tight">Imóvel #{inspection.propertyId.substring(0, 8)}</p>
                                     </div>
-                                    <div className="hidden sm:block text-right pr-2">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest ${
-                                            inspection.status === 'completed' ? 'text-emerald-500' : 'text-amber-500'
+                                    <div className="hidden sm:flex flex-col items-end gap-2 pr-2">
+                                        <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-1 rounded-lg border ${
+                                            inspection.status === 'completed' 
+                                                ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500' 
+                                                : 'bg-amber-500/5 border-amber-500/10 text-amber-500'
                                         }`}>
                                             {inspection.status === 'completed' ? 'CONCLUÍDO' : 'EM ANDAMENTO'}
                                         </span>
@@ -242,11 +269,13 @@ export default function TenantDashboard() {
                                 </div>
                             ))}
                             {recentInspections.length === 0 && (
-                                <div className="p-16 text-center flex flex-col items-center gap-4">
-                                    <span className="material-symbols-outlined text-4xl text-slate-700">search_off</span>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-bold text-slate-300">Nenhuma vistoria encontrada</p>
-                                        <p className="text-xs text-slate-500 font-medium">Suas vistorias aparecerão aqui.</p>
+                                <div className="p-12 md:p-24 text-center flex flex-col items-center gap-4 md:gap-6">
+                                    <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-muted flex items-center justify-center">
+                                        <span className="material-symbols-outlined !text-3xl md:!text-4xl text-muted-foreground opacity-30">search_off</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-xs md:text-sm font-black uppercase tracking-widest text-foreground">Nenhuma vistoria encontrada</p>
+                                        <p className="text-[10px] md:text-xs text-muted-foreground font-bold opacity-60">As vistorias aparecerão aqui.</p>
                                     </div>
                                 </div>
                             )}

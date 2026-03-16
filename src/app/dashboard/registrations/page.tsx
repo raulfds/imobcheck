@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -150,95 +150,117 @@ export default function RegistrationsPage() {
     }
 
     return (
-        <div className="space-y-10 max-w-7xl mx-auto pb-10">
+        <div className="space-y-12 w-full pb-10">
             {/* Header section with refined breadcrumbs */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <Breadcrumb className="mb-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div className="space-y-4">
+                    <Breadcrumb>
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard" className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">Dashboard</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
                             </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-30" />
+                            <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/registrations" className="text-xs font-bold uppercase tracking-widest text-primary">Cadastros</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard/registrations" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Cadastros</BreadcrumbLink>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">Gestão de Portfólio</h1>
-                    <p className="text-muted-foreground font-medium mt-1 italic">Organize seus imóveis, proprietários e futuros inquilinos.</p>
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            Gestão de Ativos
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Portfólio Imobiliário</h1>
+                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Organize seus imóveis, proprietários e base de inquilinos em um só lugar.</p>
+                    </div>
                 </div>
             </div>
 
-            <Tabs defaultValue="properties" className="w-full">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                    <TabsList className="bg-muted/50 p-1.5 rounded-2xl h-14 w-full md:w-auto self-start">
-                        <TabsTrigger value="properties" className="rounded-xl px-8 h-11 flex gap-2 font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary transition-all">
+            <Tabs defaultValue="properties" className="w-full space-y-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <TabsList className="bg-muted/50 p-1.5 rounded-[1.25rem] h-16 w-full md:w-auto shadow-inner">
+                        <TabsTrigger value="properties" className="rounded-xl px-10 h-13 flex gap-3 font-black text-[10px] uppercase tracking-[0.2em] data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary transition-all">
                             <Building className="h-4 w-4" /> Imóveis
                         </TabsTrigger>
-                        <TabsTrigger value="landlords" className="rounded-xl px-8 h-11 flex gap-2 font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary transition-all">
+                        <TabsTrigger value="landlords" className="rounded-xl px-10 h-13 flex gap-3 font-black text-[10px] uppercase tracking-[0.2em] data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary transition-all">
                             <User className="h-4 w-4" /> Locadores
                         </TabsTrigger>
-                        <TabsTrigger value="tenants" className="rounded-xl px-8 h-11 flex gap-2 font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary transition-all">
+                        <TabsTrigger value="tenants" className="rounded-xl px-10 h-13 flex gap-3 font-black text-[10px] uppercase tracking-[0.2em] data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:text-primary transition-all">
                             <Users className="h-4 w-4" /> Locatários
                         </TabsTrigger>
                     </TabsList>
                     
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                         <div className="relative group">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <Input placeholder="Filtrar registros..." className="h-14 pl-10 pr-4 rounded-2xl bg-card border-none shadow-md w-full md:w-64 font-medium focus-visible:ring-primary/20" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <Input placeholder="Filtrar registros..." className="h-16 pl-12 pr-6 rounded-2xl bg-card border-border/50 shadow-md w-full md:w-80 font-bold focus-visible:ring-primary/20" />
                         </div>
-                        <Button variant="secondary" size="icon" className="h-14 w-14 rounded-2xl shadow-md shrink-0">
+                        <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl shadow-md shrink-0 border-border/50 bg-card hover:bg-muted/50 transition-all">
                             <Filter className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>
 
                 {/* ─── IMÓVEIS CONTENT ─── */}
-                <TabsContent value="properties" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <Card className="border-none shadow-xl bg-card overflow-hidden">
-                        <CardHeader className="px-8 py-8 border-b border-border/40 flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-xl font-black tracking-tight">Imóveis</CardTitle>
-                                <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70 mt-1">Total de {properties.length} unidades registradas</CardDescription>
+                <TabsContent value="properties" className="animate-in fade-in slide-in-from-bottom-4 duration-500 m-0">
+                    <div className="bg-card border border-border rounded-[2.5rem] shadow-premium overflow-hidden">
+                        <div className="px-10 py-10 border-b border-border bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="space-y-1.5">
+                                <h3 className="text-2xl font-black tracking-tight text-foreground uppercase leading-none">Unidades Cadastradas</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Total de {properties.length} registros ativos</p>
                             </div>
-                            <Button className="h-11 px-6 rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all gap-2" onClick={() => setIsAddPropertyOpen(true)}>
-                                <Plus className="h-4 w-4" /> Novo Imóvel
+                            <Button className="h-14 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all gap-3 bg-primary text-primary-foreground uppercase tracking-widest text-xs" onClick={() => setIsAddPropertyOpen(true)}>
+                                <Plus className="h-5 w-5 stroke-[3px]" /> Novo Imóvel
                             </Button>
-                        </CardHeader>
-                        <CardContent className="p-0">
+                        </div>
+                        <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b border-border/40 bg-muted/30">
-                                        <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Endereço do Imóvel</TableHead>
-                                        <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tipo / Descrição</TableHead>
-                                        <TableHead className="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ações</TableHead>
+                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-16">
+                                        <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Endereço e Identificação</TableHead>
+                                        <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Tipo / Categoria</TableHead>
+                                        <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody>
+                                <TableBody className="divide-y divide-border/50">
                                     {properties.length === 0 ? (
-                                        <TableRow><TableCell colSpan={3} className="text-center py-20 italic text-muted-foreground font-medium">Nenhum imóvel cadastrado ainda.</TableCell></TableRow>
-                                    ) : properties.map(p => (
-                                        <TableRow key={p.id} className="group hover:bg-muted/30 transition-all border-b border-border/20 last:border-0 h-20">
-                                            <TableCell className="px-8">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
-                                                        <MapPin className="h-5 w-5" />
-                                                    </div>
-                                                    <p className="font-black text-foreground truncate max-w-[300px]">{p.address}</p>
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="py-24 text-center">
+                                                <div className="flex flex-col items-center gap-4 opacity-30">
+                                                    <Building className="h-16 w-16" />
+                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum imóvel registrado</p>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="px-8 font-bold text-muted-foreground italic">
-                                                {p.description || "Sem descrição"}
+                                        </TableRow>
+                                    ) : properties.map(p => (
+                                        <TableRow key={p.id} className="group hover:bg-muted/30 transition-all border-none h-32">
+                                            <TableCell className="px-10">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="h-16 w-16 rounded-[1.25rem] bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-105 group-hover:bg-primary group-hover:text-white group-hover:shadow-lg transition-all">
+                                                        <MapPin className="h-7 w-7" />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="font-black text-foreground text-lg tracking-tight group-hover:text-primary transition-colors max-w-[400px] truncate">{p.address}</p>
+                                                        <p className="text-[10px] font-bold text-muted-foreground opacity-60 uppercase tracking-widest">Código: {p.id.substring(0, 8)}</p>
+                                                    </div>
+                                                </div>
                                             </TableCell>
-                                            <TableCell className="px-8 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl hover:bg-background transition-all">
-                                                        <Edit className="h-4 w-4" />
+                                            <TableCell className="px-10">
+                                                <div className="flex flex-col gap-1">
+                                                    <p className="font-black text-foreground text-sm tracking-tight">{p.description || "Residencial General"}</p>
+                                                    <p className="text-[10px] font-bold text-muted-foreground opacity-40 uppercase tracking-widest">Categoria Selecionada</p>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="px-10 text-right">
+                                                <div className="flex justify-end gap-3 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="secondary" size="icon" className="h-12 w-12 rounded-xl shadow-sm border border-border/50 hover:bg-background transition-all">
+                                                        <Edit className="h-4.5 w-4.5" />
                                                     </Button>
-                                                    <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl hover:bg-red-500 hover:text-white transition-all" onClick={() => handleDeleteProperty(p.id)}>
-                                                        <Trash2 className="h-4 w-4" />
+                                                    <Button variant="secondary" size="icon" className="h-12 w-12 rounded-xl shadow-sm border border-border/50 hover:bg-destructive hover:text-white transition-all group/delete" onClick={() => handleDeleteProperty(p.id)}>
+                                                        <Trash2 className="h-4.5 w-4.5 group-hover/delete:scale-110 transition-transform" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -246,57 +268,70 @@ export default function RegistrationsPage() {
                                     ))}
                                 </TableBody>
                             </Table>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </TabsContent>
 
                 {/* ─── LOCADORES CONTENT ─── */}
-                <TabsContent value="landlords" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <Card className="border-none shadow-xl bg-card overflow-hidden">
-                        <CardHeader className="px-8 py-8 border-b border-border/40 flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-xl font-black tracking-tight">Locadores</CardTitle>
-                                <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70 mt-1">Proprietários parceiros</CardDescription>
+                <TabsContent value="landlords" className="animate-in fade-in slide-in-from-bottom-4 duration-500 m-0">
+                    <div className="bg-card border border-border rounded-[2.5rem] shadow-premium overflow-hidden">
+                        <div className="px-10 py-10 border-b border-border bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="space-y-1.5">
+                                <h3 className="text-2xl font-black tracking-tight text-foreground uppercase leading-none">Locadores & Proprietários</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Gestão de contatos e participações</p>
                             </div>
-                            <Button className="h-11 px-6 rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all gap-2" onClick={() => setIsAddLandlordOpen(true)}>
-                                <Plus className="h-4 w-4" /> Novo Locador
+                            <Button className="h-14 px-8 rounded-2xl font-black shadow-xl shadow-blue-500/20 hover:scale-105 transition-all gap-3 bg-blue-600 hover:bg-blue-700 text-white uppercase tracking-widest text-xs" onClick={() => setIsAddLandlordOpen(true)}>
+                                <Plus className="h-5 w-5 stroke-[3px]" /> Novo Locador
                             </Button>
-                        </CardHeader>
-                        <CardContent className="p-0">
+                        </div>
+                        <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b border-border/40 bg-muted/30">
-                                        <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nome Completo</TableHead>
-                                        <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Informações de Contato</TableHead>
-                                        <TableHead className="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ações</TableHead>
+                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-16">
+                                        <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome do Proprietário</TableHead>
+                                        <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Contato Principal</TableHead>
+                                        <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody>
+                                <TableBody className="divide-y divide-border/50">
                                     {landlords.length === 0 ? (
-                                        <TableRow><TableCell colSpan={3} className="text-center py-20 italic text-muted-foreground font-medium">Nenhum locador registrado.</TableCell></TableRow>
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="py-24 text-center">
+                                                <div className="flex flex-col items-center gap-4 opacity-30">
+                                                    <User className="h-16 w-16" />
+                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum locador registrado</p>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
                                     ) : landlords.map(l => (
-                                        <TableRow key={l.id} className="group hover:bg-muted/30 transition-all border-b border-border/20 last:border-0 h-20">
-                                            <TableCell className="px-8">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 shrink-0 font-black text-xs uppercase">
+                                        <TableRow key={l.id} className="group hover:bg-muted/30 transition-all border-none h-32">
+                                            <TableCell className="px-10">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="h-16 w-16 rounded-[1.25rem] bg-blue-500/10 border border-blue-500/10 flex items-center justify-center text-blue-600 shrink-0 font-black text-xl uppercase group-hover:scale-105 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-lg transition-all">
                                                         {l.name.charAt(0)}
                                                     </div>
-                                                    <p className="font-black text-foreground">{l.name}</p>
+                                                    <div className="space-y-1">
+                                                        <p className="font-black text-foreground text-lg tracking-tight group-hover:text-blue-600 transition-colors">{l.name}</p>
+                                                        <p className="text-[10px] font-bold text-muted-foreground opacity-60 uppercase tracking-widest">Proprietário Ativo</p>
+                                                    </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="px-8">
-                                                <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                                                    <Mail className="h-3 w-3 opacity-50" />
-                                                    {l.email}
+                                            <TableCell className="px-10">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2 text-foreground font-black text-sm tracking-tight">
+                                                        <Mail className="h-4 w-4 text-blue-500" />
+                                                        {l.email}
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-muted-foreground opacity-40 uppercase tracking-widest ml-6">E-mail de Contato</p>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="px-8 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl hover:bg-background transition-all">
-                                                        <Edit className="h-4 w-4" />
+                                            <TableCell className="px-10 text-right">
+                                                <div className="flex justify-end gap-3 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="secondary" size="icon" className="h-12 w-12 rounded-xl shadow-sm border border-border/50 hover:bg-background transition-all">
+                                                        <Edit className="h-4.5 w-4.5" />
                                                     </Button>
-                                                    <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl hover:bg-red-500 hover:text-white transition-all" onClick={() => handleDeleteLandlord(l.id)}>
-                                                        <Trash2 className="h-4 w-4" />
+                                                    <Button variant="secondary" size="icon" className="h-12 w-12 rounded-xl shadow-sm border border-border/50 hover:bg-destructive hover:text-white transition-all group/delete" onClick={() => handleDeleteLandlord(l.id)}>
+                                                        <Trash2 className="h-4.5 w-4.5 group-hover/delete:scale-110 transition-transform" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -304,57 +339,70 @@ export default function RegistrationsPage() {
                                     ))}
                                 </TableBody>
                             </Table>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </TabsContent>
 
                 {/* ─── LOCATÁRIOS CONTENT ─── */}
-                <TabsContent value="tenants" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <Card className="border-none shadow-xl bg-card overflow-hidden">
-                        <CardHeader className="px-8 py-8 border-b border-border/40 flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-xl font-black tracking-tight">Locatários</CardTitle>
-                                <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70 mt-1">Base de inquilinos ativa</CardDescription>
+                <TabsContent value="tenants" className="animate-in fade-in slide-in-from-bottom-4 duration-500 m-0">
+                    <div className="bg-card border border-border rounded-[2.5rem] shadow-premium overflow-hidden">
+                        <div className="px-10 py-10 border-b border-border bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="space-y-1.5">
+                                <h3 className="text-2xl font-black tracking-tight text-foreground uppercase leading-none">Inquilinos & Locatários</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Base de clientes do portfólio</p>
                             </div>
-                            <Button className="h-11 px-6 rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all gap-2" onClick={() => setIsAddTenantOpen(true)}>
-                                <Plus className="h-4 w-4" /> Novo Locatário
+                            <Button className="h-14 px-8 rounded-2xl font-black shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all gap-3 bg-emerald-600 hover:bg-emerald-700 text-white uppercase tracking-widest text-xs" onClick={() => setIsAddTenantOpen(true)}>
+                                <Plus className="h-5 w-5 stroke-[3px]" /> Novo Locatário
                             </Button>
-                        </CardHeader>
-                        <CardContent className="p-0">
+                        </div>
+                        <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b border-border/40 bg-muted/30">
-                                        <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nome Completo</TableHead>
-                                        <TableHead className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Informações de Contato</TableHead>
-                                        <TableHead className="px-8 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ações</TableHead>
+                                    <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-16">
+                                        <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome do Inquilino</TableHead>
+                                        <TableHead className="px-10 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Contato Principal</TableHead>
+                                        <TableHead className="px-10 text-right text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody>
+                                <TableBody className="divide-y divide-border/50">
                                     {tenants.length === 0 ? (
-                                        <TableRow><TableCell colSpan={3} className="text-center py-20 italic text-muted-foreground font-medium">Nenhum inquilino registrado.</TableCell></TableRow>
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="py-24 text-center">
+                                                <div className="flex flex-col items-center gap-4 opacity-30">
+                                                    <Users className="h-16 w-16" />
+                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum locatário registrado</p>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
                                     ) : tenants.map(t => (
-                                        <TableRow key={t.id} className="group hover:bg-muted/30 transition-all border-b border-border/20 last:border-0 h-20">
-                                            <TableCell className="px-8">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0 font-black text-xs uppercase">
+                                        <TableRow key={t.id} className="group hover:bg-muted/30 transition-all border-none h-32">
+                                            <TableCell className="px-10">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="h-16 w-16 rounded-[1.25rem] bg-emerald-500/10 border border-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0 font-black text-xl uppercase group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-lg transition-all">
                                                         {t.name.charAt(0)}
                                                     </div>
-                                                    <p className="font-black text-foreground">{t.name}</p>
+                                                    <div className="space-y-1">
+                                                        <p className="font-black text-foreground text-lg tracking-tight group-hover:text-emerald-600 transition-colors">{t.name}</p>
+                                                        <p className="text-[10px] font-bold text-muted-foreground opacity-60 uppercase tracking-widest">Locatário Ativo</p>
+                                                    </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="px-8">
-                                                <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                                                    <Mail className="h-3 w-3 opacity-50" />
-                                                    {t.email}
+                                            <TableCell className="px-10">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center gap-2 text-foreground font-black text-sm tracking-tight">
+                                                        <Mail className="h-4 w-4 text-emerald-500" />
+                                                        {t.email}
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-muted-foreground opacity-40 uppercase tracking-widest ml-6">E-mail de Contato</p>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="px-8 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl hover:bg-background transition-all">
-                                                        <Edit className="h-4 w-4" />
+                                            <TableCell className="px-10 text-right">
+                                                <div className="flex justify-end gap-3 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="secondary" size="icon" className="h-12 w-12 rounded-xl shadow-sm border border-border/50 hover:bg-background transition-all">
+                                                        <Edit className="h-4.5 w-4.5" />
                                                     </Button>
-                                                    <Button variant="secondary" size="icon" className="h-10 w-10 rounded-xl hover:bg-red-500 hover:text-white transition-all" onClick={() => handleDeleteClient(t.id)}>
-                                                        <Trash2 className="h-4 w-4" />
+                                                    <Button variant="secondary" size="icon" className="h-12 w-12 rounded-xl shadow-sm border border-border/50 hover:bg-destructive hover:text-white transition-all group/delete" onClick={() => handleDeleteClient(t.id)}>
+                                                        <Trash2 className="h-4.5 w-4.5 group-hover/delete:scale-110 transition-transform" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -362,38 +410,42 @@ export default function RegistrationsPage() {
                                     ))}
                                 </TableBody>
                             </Table>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </TabsContent>
             </Tabs>
 
             {/* ─── MODALS REDESIGN ─── */}
             <Dialog open={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-foreground p-8 text-card-foreground relative overflow-hidden">
-                        <Building className="h-24 w-24 text-card-foreground/10 absolute -bottom-4 -right-4 rotate-12" />
-                        <DialogTitle className="text-3xl font-black tracking-tight">Novo Imóvel</DialogTitle>
-                        <DialogDescription className="text-muted-foreground mt-2 text-base font-medium opacity-80">
-                            Preencha as informações básicas para o novo registro.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="px-10 py-12 bg-primary group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                            <Building className="h-32 w-32 text-white fill-current" />
+                        </div>
+                        <div className="relative z-10 space-y-2">
+                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Novo Imóvel</DialogTitle>
+                            <DialogDescription className="text-primary-foreground/80 text-lg font-medium tracking-tight">
+                                Cadastrar nova unidade no sistema.
+                            </DialogDescription>
+                        </div>
                     </div>
-                    <form onSubmit={handleAddProperty} className="p-8 space-y-6 bg-card">
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="address" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Endereço Completo</Label>
-                                <Input id="address" required value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} placeholder="Rua, Número, Bairro, Cidade - UF" className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                    <form onSubmit={handleAddProperty} className="p-10 space-y-8">
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="address" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Endereço do Imóvel</Label>
+                                <Input id="address" required value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} placeholder="Ex: Av. Paulista, 1000 - Bela Vista" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40" />
                             </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Descrição / Tipo</Label>
-                                <Input id="description" value={newProperty.description} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })} placeholder="Ex: Apartamento 2 Quartos" className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            <div className="space-y-2">
+                                <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Tipo ou Categoria</Label>
+                                <Input id="description" value={newProperty.description} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })} placeholder="Ex: Apartamento 3 Quartos" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button type="submit" className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                                Salvar Unidade
+                        <div className="flex flex-col gap-4 pt-4">
+                            <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest">
+                                Finalizar Cadastro
                             </Button>
-                            <Button type="button" variant="ghost" className="rounded-2xl h-12 font-bold opacity-60 hover:opacity-100" onClick={() => setIsAddPropertyOpen(false)}>
-                                Descartar
+                            <Button type="button" variant="ghost" className="rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsAddPropertyOpen(false)}>
+                                Cancelar operação
                             </Button>
                         </div>
                     </form>
@@ -401,31 +453,35 @@ export default function RegistrationsPage() {
             </Dialog>
 
             <Dialog open={isAddLandlordOpen} onOpenChange={setIsAddLandlordOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-blue-600 p-8 text-white relative overflow-hidden">
-                        <User className="h-24 w-24 text-white/10 absolute -bottom-4 -right-4 rotate-12" />
-                        <DialogTitle className="text-3xl font-black tracking-tight text-white">Novo Locador</DialogTitle>
-                        <DialogDescription className="text-blue-100 mt-2 text-base font-medium opacity-80">
-                            Proprietário do imóvel.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="px-10 py-12 bg-blue-600 group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                            <User className="h-32 w-32 text-white fill-current" />
+                        </div>
+                        <div className="relative z-10 space-y-2">
+                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Novo Locador</DialogTitle>
+                            <DialogDescription className="text-blue-100/80 text-lg font-medium tracking-tight">
+                                Adicionar um proprietário de imóvel.
+                            </DialogDescription>
+                        </div>
                     </div>
-                    <form onSubmit={handleAddLandlord} className="p-8 space-y-6 bg-card">
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="lname" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
-                                <Input id="lname" required value={newLandlord.name} onChange={e => setNewLandlord({ ...newLandlord, name: e.target.value })} className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                    <form onSubmit={handleAddLandlord} className="p-10 space-y-8">
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="lname" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome Completo</Label>
+                                <Input id="lname" required value={newLandlord.name} onChange={e => setNewLandlord({ ...newLandlord, name: e.target.value })} placeholder="Ex: João da Silva Santos" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
                             </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="lemail" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">E-mail</Label>
-                                <Input id="lemail" type="email" value={newLandlord.email} onChange={e => setNewLandlord({ ...newLandlord, email: e.target.value })} className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            <div className="space-y-2">
+                                <Label htmlFor="lemail" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">E-mail para Contato</Label>
+                                <Input id="lemail" type="email" value={newLandlord.email} onChange={e => setNewLandlord({ ...newLandlord, email: e.target.value })} placeholder="Ex: joao@email.com" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button type="submit" className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-blue-600 hover:bg-blue-700">
-                                Cadastrar Proprietário
+                        <div className="flex flex-col gap-4 pt-4">
+                            <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-blue-600 hover:bg-blue-700 text-white uppercase tracking-widest">
+                                Cadastrar Locador
                             </Button>
-                            <Button type="button" variant="ghost" className="rounded-2xl h-12 font-bold opacity-60 hover:opacity-100" onClick={() => setIsAddLandlordOpen(false)}>
-                                Descartar
+                            <Button type="button" variant="ghost" className="rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsAddLandlordOpen(false)}>
+                                Cancelar operação
                             </Button>
                         </div>
                     </form>
@@ -433,31 +489,35 @@ export default function RegistrationsPage() {
             </Dialog>
 
             <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-emerald-600 p-8 text-white relative overflow-hidden">
-                        <Users className="h-24 w-24 text-white/10 absolute -bottom-4 -right-4 rotate-12" />
-                        <DialogTitle className="text-3xl font-black tracking-tight text-white">Novo Locatário</DialogTitle>
-                        <DialogDescription className="text-emerald-100 mt-2 text-base font-medium opacity-80">
-                            O futuro inquilino do imóvel.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="px-10 py-12 bg-emerald-600 group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                            <Users className="h-32 w-32 text-white fill-current" />
+                        </div>
+                        <div className="relative z-10 space-y-2">
+                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Novo Inquilino</DialogTitle>
+                            <DialogDescription className="text-emerald-100/80 text-lg font-medium tracking-tight">
+                                Adicionar um locatário ao sistema.
+                            </DialogDescription>
+                        </div>
                     </div>
-                    <form onSubmit={handleAddTenant} className="p-8 space-y-6 bg-card">
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="tname" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nome Completo</Label>
-                                <Input id="tname" required value={newTenant.name} onChange={e => setNewTenant({ ...newTenant, name: e.target.value })} className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                    <form onSubmit={handleAddTenant} className="p-10 space-y-8">
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="tname" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome Completo</Label>
+                                <Input id="tname" required value={newTenant.name} onChange={e => setNewTenant({ ...newTenant, name: e.target.value })} placeholder="Ex: Maria Oliveira Costa" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
                             </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="temail" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">E-mail</Label>
-                                <Input id="temail" type="email" value={newTenant.email} onChange={e => setNewTenant({ ...newTenant, email: e.target.value })} className="h-12 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            <div className="space-y-2">
+                                <Label htmlFor="temail" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">E-mail para Contato</Label>
+                                <Input id="temail" type="email" value={newTenant.email} onChange={e => setNewTenant({ ...newTenant, email: e.target.value })} placeholder="Ex: maria@email.com" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button type="submit" className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-emerald-600 hover:bg-emerald-700">
+                        <div className="flex flex-col gap-4 pt-4">
+                            <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-emerald-600 hover:bg-emerald-700 text-white uppercase tracking-widest">
                                 Cadastrar Inquilino
                             </Button>
-                            <Button type="button" variant="ghost" className="rounded-2xl h-12 font-bold opacity-60 hover:opacity-100" onClick={() => setIsAddTenantOpen(false)}>
-                                Descartar
+                            <Button type="button" variant="ghost" className="rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsAddTenantOpen(false)}>
+                                Cancelar operação
                             </Button>
                         </div>
                     </form>

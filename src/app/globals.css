@@ -4,34 +4,34 @@
 
 @layer base {
   :root {
-    --background: #1A1A1A;
-    --foreground: #F1F5F9;
+    --background: #F8FAFC;
+    --foreground: #0F172A;
     --card: #FFFFFF;
-    --card-foreground: #1A1A1A;
+    --card-foreground: #0F172A;
     --popover: #FFFFFF;
-    --popover-foreground: #1A1A1A;
-    --primary: #1A1A1A;
-    --primary-foreground: #F8F8F8;
-    --secondary: #F0F0F0;
-    --secondary-foreground: #1A1A1A;
-    --muted: #F0F0F0;
-    --muted-foreground: #707070;
-    --accent: #F0F0F0;
-    --accent-foreground: #1A1A1A;
-    --destructive: #E11D48;
-    --destructive-foreground: #FFFFFF;
-    --border: #EAEAEA;
-    --input: #EAEAEA;
-    --ring: #1A1A1A;
+    --popover-foreground: #0F172A;
+    --primary: #0F172A;
+    --primary-foreground: #F8FAFC;
+    --secondary: #F1F5F9;
+    --secondary-foreground: #0F172A;
+    --muted: #F1F5F9;
+    --muted-foreground: #64748B;
+    --accent: #F1F5F9;
+    --accent-foreground: #0F172A;
+    --destructive: #EF4444;
+    --destructive-foreground: #F8FAFC;
+    --border: #E2E8F0;
+    --input: #E2E8F0;
+    --ring: #0F172A;
     --radius: 1rem;
     --sidebar: #FFFFFF;
-    --sidebar-foreground: #1A1A1A;
-    --sidebar-primary: #1A1A1A;
+    --sidebar-foreground: #0F172A;
+    --sidebar-primary: #0F172A;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #F5F5F5;
-    --sidebar-accent-foreground: #1A1A1A;
-    --sidebar-border: #EAEAEA;
-    --sidebar-ring: #1A1A1A;
+    --sidebar-accent: #F1F5F9;
+    --sidebar-accent-foreground: #0F172A;
+    --sidebar-border: #E2E8F0;
+    --sidebar-ring: #0F172A;
   }
 
   .dark {
@@ -72,19 +72,24 @@
   }
 
   body {
-    background-color: #1A1A1A;
-    color: theme('colors.slate.100');
+    @apply bg-background text-foreground;
   }
 }
 
 @layer utilities {
   .faceted-panel {
-    clip-path: polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%);
+    clip-path: polygon(2% 0%, 98% 0%, 100% 100%, 0% 100%);
   }
   .v-facet-right {
-    clip-path: polygon(0 0, 100% 15%, 100% 100%, 0 85%);
+    clip-path: polygon(0 0, 100% 8%, 100% 100%, 0 92%);
   }
   .v-facet-left {
-    clip-path: polygon(0 15%, 100% 0, 100% 85%, 0 100%);
+    clip-path: polygon(0 8%, 100% 0, 100% 92%, 0 100%);
+  }
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-md border border-border/50;
+  }
+  .shadow-premium {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
   }
 }

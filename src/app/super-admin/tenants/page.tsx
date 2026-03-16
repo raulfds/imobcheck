@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenants } from '@/components/providers/tenant-provider';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Search, MoreHorizontal, Pencil, Ban, Trash2, KeyRound, CheckCircle2, Users, AlertTriangle, Building2 } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Ban, Trash2, KeyRound, CheckCircle2, Users, AlertTriangle, Building2, Filter } from 'lucide-react';
 import { Tenant, SubscriptionPlan } from '@/types';
 import { fetchPlans } from '@/lib/database';
 import { TenantFacetCard } from '@/components/vistorify/TenantFacetCard';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 type FormState = { 
     name: string; 
@@ -37,8 +37,7 @@ const emptyForm: FormState = {
 };
 
 export default function SuperAdminTenantsPage() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { tenants, addTenant, updateTenant, deleteTenant, resetTenantAdminPassword, loading } = useTenants();
+    const { tenants, addTenant, updateTenant, deleteTenant, resetTenantAdminPassword } = useTenants();
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [saving, setSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +77,7 @@ export default function SuperAdminTenantsPage() {
         if (!createForm.name.trim() || !createForm.email.trim()) return;
         try {
             setSaving(true);
-            const selectedPlanId = plans.find(p => p.name === createForm.plan)?.id;
+            const selectedPlanId = plans.find((p: SubscriptionPlan) => p.name === createForm.plan)?.id;
             const result = await addTenant({ 
                 name: createForm.name, 
                 adminName: createForm.adminName,
@@ -123,7 +122,7 @@ export default function SuperAdminTenantsPage() {
         if (!editingId) return;
         try {
             setSaving(true);
-            const selectedPlanId = plans.find(p => p.name === editForm.plan)?.id;
+            const selectedPlanId = plans.find((p: SubscriptionPlan) => p.name === editForm.plan)?.id;
             await updateTenant(editingId, { 
                 name: editForm.name, 
                 adminName: editForm.adminName,
@@ -161,7 +160,7 @@ export default function SuperAdminTenantsPage() {
         }
     };
 
-    const filtered = tenants.filter(t => {
+    const filtered = tenants.filter((t: Tenant) => {
         const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             t.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (t.adminName && t.adminName.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -169,75 +168,97 @@ export default function SuperAdminTenantsPage() {
         return matchesSearch && matchesTab;
     });
 
-    const activeCount = tenants.filter(t => t.status === 'active').length;
-    const inactiveCount = tenants.filter(t => t.status === 'inactive').length;
+    const activeCount = tenants.filter((t: Tenant) => t.status === 'active').length;
+    const inactiveCount = tenants.filter((t: Tenant) => t.status === 'inactive').length;
 
     return (
-        <div className="space-y-8 max-w-full px-1">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Assinantes</h1>
-                    <p className="text-muted-foreground mt-1">Gestão de imobiliárias, planos e acessos ao sistema.</p>
+        <div className="space-y-12 w-full pb-10">
+            {/* Header section with refined breadcrumbs */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div className="space-y-4">
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Admin</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="opacity-20" />
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/super-admin/tenants" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary transition-colors">Assinantes</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            Gestão de Ecossistema
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Imobiliárias Parceiras</h1>
+                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Gerencie imobiliárias, planos e níveis de acesso em toda a rede ImobCheck.</p>
+                    </div>
                 </div>
-                <Button className="gap-2 shadow-lg h-11 px-6 rounded-xl hover:scale-105 transition-transform" onClick={() => setIsCreateOpen(true)}>
-                    <Plus className="h-5 w-5" />
-                    Nova Imobiliária
-                </Button>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-card rounded-2xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                            <Users className="h-6 w-6 text-blue-600" />
+            {/* Stats Cards - Reimagined for modern look */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-card rounded-[2rem] border border-border p-8 shadow-premium group hover:border-primary/50 transition-all">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
+                            <Users className="h-7 w-7" />
                         </div>
-                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-none px-3 py-1">Total</Badge>
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/40 group-hover:text-primary transition-colors">Total de Contas</div>
                     </div>
-                    <p className="text-3xl font-black text-foreground">{tenants.length}</p>
-                    <p className="text-sm text-muted-foreground font-medium">Imobiliárias cadastradas</p>
+                    <div>
+                        <p className="text-5xl font-black text-foreground tracking-tighter leading-none">{tenants.length}</p>
+                        <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-3 opacity-60">Imobiliárias no ecossistema</p>
+                    </div>
                 </div>
-                <div className="bg-card rounded-2xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center">
-                            <CheckCircle2 className="h-6 w-6 text-green-600" />
+                <div className="bg-card rounded-[2rem] border border-border p-8 shadow-premium group hover:border-emerald-500/50 transition-all">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-inner">
+                            <CheckCircle2 className="h-7 w-7" />
                         </div>
-                        <Badge variant="secondary" className="bg-green-50 text-green-700 border-none px-3 py-1">Ativas</Badge>
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/40 group-hover:text-emerald-500 transition-colors">Operação Ativa</div>
                     </div>
-                    <p className="text-3xl font-black text-foreground">{activeCount}</p>
-                    <p className="text-sm text-muted-foreground font-medium">Operando normalmente</p>
+                    <div>
+                        <p className="text-5xl font-black text-foreground tracking-tighter leading-none">{activeCount}</p>
+                        <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-3 opacity-60">Provisionamento estável</p>
+                    </div>
                 </div>
-                <div className="bg-card rounded-2xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                            <AlertTriangle className="h-6 w-6 text-amber-500" />
+                <div className="bg-card rounded-[2rem] border border-border p-8 shadow-premium group hover:border-amber-500/50 transition-all">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="h-14 w-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-inner">
+                            <AlertTriangle className="h-7 w-7" />
                         </div>
-                        <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-none px-3 py-1">Atenção</Badge>
+                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/40 group-hover:text-amber-500 transition-colors">Ações Pendentes</div>
                     </div>
-                    <p className="text-3xl font-black text-foreground">{inactiveCount}</p>
-                    <p className="text-sm text-muted-foreground font-medium">Contas suspensas</p>
+                    <div>
+                        <p className="text-5xl font-black text-foreground tracking-tighter leading-none">{inactiveCount}</p>
+                        <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-3 opacity-60">Acessos bloqueados/expirados</p>
+                    </div>
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
+            <div className="space-y-8">
                 {/* Toolbar */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-5 border-b border-border bg-muted">
-                    <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="flex flex-wrap items-center gap-2 bg-muted/50 p-1.5 rounded-[1.25rem] shadow-inner">
                         {(['all', 'active', 'inactive'] as const).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === tab
-                                    ? 'bg-primary text-primary-foreground shadow-md'
-                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${activeTab === tab
+                                    ? 'bg-background text-primary shadow-lg scale-100 ring-1 ring-border'
+                                    : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/80'
                                     }`}
                             >
                                 {tab === 'all' ? `Todas` :
                                     tab === 'active' ? `Ativas` :
                                         `Suspensas`}
-                                <span className="ml-2 opacity-50 font-normal">
+                                <span className={`ml-3 px-2 py-0.5 rounded-md text-[9px] ${activeTab === tab ? 'bg-primary/10 text-primary' : 'bg-muted-foreground/10 text-muted-foreground/40'}`}>
                                     {tab === 'all' ? tenants.length :
                                         tab === 'active' ? activeCount :
                                             inactiveCount}
@@ -246,30 +267,42 @@ export default function SuperAdminTenantsPage() {
                         ))}
                     </div>
 
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar imobiliária, admin ou e-mail..."
-                            className="pl-10 bg-card border-border h-11 rounded-xl shadow-sm focus:ring-2 focus:ring-primary/20 transition-all"
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                        />
+                    <div className="flex gap-4">
+                        <div className="relative group flex-1 min-w-[320px]">
+                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <Input
+                                placeholder="Buscar imobiliária, admin ou e-mail..."
+                                className="pl-12 bg-card border-border/50 h-16 rounded-2xl shadow-md focus-visible:ring-primary/20 text-sm font-bold placeholder:text-muted-foreground/40"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl shadow-md shrink-0 border-border/50 bg-card hover:bg-muted/50 transition-all">
+                            <Filter className="h-5 w-5" />
+                        </Button>
+                        <Button className="h-16 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all gap-3 bg-primary text-primary-foreground uppercase tracking-widest text-xs ml-2" onClick={() => setIsCreateOpen(true)}>
+                            <Plus className="h-5 w-5 stroke-[3px]" /> Nova Imobiliária
+                        </Button>
                     </div>
                 </div>
 
                 {/* Grid view using TenantFacetCard */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 relative py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 relative pt-4 -mx-1">
                     {filtered.length === 0 ? (
-                        <div className="col-span-full text-center py-24 text-slate-500 bg-slate-800/20 border border-slate-800 rounded-xl">
-                            <div className="flex flex-col items-center gap-3">
-                                <span className="material-symbols-outlined text-5xl opacity-20">apartment</span>
-                                <p className="text-base font-bold">Nenhuma imobiliária encontrada</p>
+                        <div className="col-span-full text-center py-24 bg-card border border-border rounded-[2.5rem] shadow-premium">
+                            <div className="flex flex-col items-center gap-6 opacity-30">
+                                <Building2 className="h-20 w-20" />
+                                <div className="space-y-1.5">
+                                    <p className="text-xl font-black uppercase tracking-widest italic leading-none">Nenhuma imobiliária encontrada</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest">Tente ajustar seus filtros de busca</p>
+                                </div>
                             </div>
                         </div>
-                    ) : filtered.map((tenant, idx) => {
+                    ) : filtered.map((tenant: Tenant, idx: number) => {
                         let variant: 'left' | 'center' | 'right' = 'left';
-                        if (idx % 3 === 1) variant = 'center';
-                        if (idx % 3 === 2) variant = 'right';
+                        const pos = idx % 3;
+                        if (pos === 1) variant = 'center';
+                        if (pos === 2) variant = 'right';
 
                         const healthScore = tenant.status === 'active' ? 9.2 : 4.5;
 
@@ -278,36 +311,36 @@ export default function SuperAdminTenantsPage() {
                                 <TenantFacetCard
                                     id={tenant.id}
                                     name={tenant.name}
-                                    adminName={tenant.adminName}
+                                    adminName={tenant.adminName || ""}
                                     variant={variant}
                                     inspectionsCount={Math.floor(Math.random() * 50) + 5}
                                     healthScore={healthScore}
-                                    onClick={() => { setEditingTenant(tenant); setIsCreateOpen(true); }}
+                                    onClick={() => openEdit(tenant)}
                                 />
 
                                 {/* Absolute positioned quick actions */}
-                                <div className={`absolute top-6 right-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity ${variant === 'center' ? 'right-12 top-12' : ''}`}>
+                                <div className={`absolute top-10 right-10 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 ${variant === 'center' ? 'right-14 top-14' : ''}`}>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-slate-900/50 hover:bg-slate-800 text-slate-300 backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
-                                                <MoreHorizontal className="h-5 w-5" />
+                                            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-slate-900/90 hover:bg-black text-white backdrop-blur-xl border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                                                <MoreHorizontal className="h-6 w-6" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-56 rounded-xl font-medium border-slate-700 bg-slate-800 text-slate-200">
-                                            <DropdownMenuItem onClick={() => openEdit(tenant)} className="cursor-pointer gap-3 h-10 hover:bg-slate-700">
+                                        <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 font-black border-border/50 shadow-2xl animate-in zoom-in-95 duration-200">
+                                            <DropdownMenuItem onClick={() => openEdit(tenant)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest">
                                                 <Pencil className="h-4 w-4" /> Editar Informações
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleResetPassword(tenant.id)} className="cursor-pointer gap-3 h-10 hover:bg-slate-700">
-                                                <KeyRound className="h-4 w-4 text-amber-500" /> Resetar Senha Admin
+                                            <DropdownMenuItem onClick={() => handleResetPassword(tenant.id)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest text-amber-500 focus:text-amber-500">
+                                                <KeyRound className="h-4 w-4" /> Resetar Senha Admin
                                             </DropdownMenuItem>
-                                            <DropdownMenuSeparator className="bg-slate-700" />
-                                            <DropdownMenuItem onClick={() => handleToggleStatus(tenant.id, tenant.status)} className="cursor-pointer gap-3 h-10 hover:bg-slate-700">
+                                            <DropdownMenuSeparator className="my-2 opacity-50" />
+                                            <DropdownMenuItem onClick={() => handleToggleStatus(tenant.id, tenant.status)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest">
                                                 {tenant.status === 'active'
                                                     ? <><Ban className="h-4 w-4 text-amber-500" /> <span className="text-amber-500">Suspender Acesso</span></>
                                                     : <><CheckCircle2 className="h-4 w-4 text-emerald-500" /> <span className="text-emerald-500">Reativar Acesso</span></>
                                                 }
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500 gap-3 h-10">
+                                            <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest">
                                                 <Trash2 className="h-4 w-4" /> Remover Imobiliária
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -321,96 +354,102 @@ export default function SuperAdminTenantsPage() {
 
             {/* ─── CREATE MODAL ─── */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent className="sm:max-w-xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-foreground p-8 text-card-foreground relative">
-                        <Building2 className="h-12 w-12 text-foreground absolute top-6 right-6 opacity-40 rotate-12" />
-                        <DialogTitle className="text-2xl font-black">Nova Imobiliária</DialogTitle>
-                        <DialogDescription className="text-muted-foreground mt-2 text-base">
-                            Provisione um novo ambiente para o cliente no sistema.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="px-10 py-12 bg-primary group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                            <Building2 className="h-32 w-32 text-white fill-current" />
+                        </div>
+                        <div className="relative z-10 space-y-2">
+                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Nova Imobiliária</DialogTitle>
+                            <DialogDescription className="text-primary-foreground/80 text-lg font-medium tracking-tight">
+                                Provisione um novo ambiente para o cliente no sistema.
+                            </DialogDescription>
+                        </div>
                     </div>
-                    <form onSubmit={handleCreate} className="p-8 space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                    <form onSubmit={handleCreate} className="p-10 space-y-8">
+                        <div className="grid grid-cols-2 gap-8">
                             <div className="space-y-2 col-span-2">
-                                <Label htmlFor="c-name" className="text-foreground font-bold ml-1">Nome da Imobiliária *</Label>
+                                <Label htmlFor="c-name" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome da Instituição</Label>
                                 <Input
                                     id="c-name"
                                     placeholder="Ex: Imob Prime Negócios"
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40"
                                     value={createForm.name}
                                     onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="c-admin" className="text-foreground font-bold ml-1">Nome do Admin *</Label>
+                                <Label htmlFor="c-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Administrador Responsável</Label>
                                 <Input
                                     id="c-admin"
-                                    placeholder="Nome do responsável"
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card"
+                                    placeholder="Nome completo"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40"
                                     value={createForm.adminName}
                                     onChange={e => setCreateForm(p => ({ ...p, adminName: e.target.value }))}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="c-phone" className="text-foreground font-bold ml-1">Telefone / WhatsApp</Label>
+                                <Label htmlFor="c-phone" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Telefone Principal</Label>
                                 <Input
                                     id="c-phone"
                                     placeholder="(00) 00000-0000"
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40"
                                     value={createForm.phone}
                                     onChange={e => setCreateForm(p => ({ ...p, phone: e.target.value }))}
                                 />
                             </div>
                             <div className="space-y-2 col-span-2">
-                                <Label htmlFor="c-email" className="text-foreground font-bold ml-1">E-mail de Login *</Label>
+                                <Label htmlFor="c-email" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">E-mail de Acesso Administrativo</Label>
                                 <Input
                                     id="c-email"
                                     type="email"
                                     placeholder="gerente@imobiliaria.com.br"
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40"
                                     value={createForm.email}
                                     onChange={e => setCreateForm(p => ({ ...p, email: e.target.value }))}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-foreground font-bold ml-1">Plano</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Plano de Assinatura</Label>
                                 <Select
                                     value={createForm.plan}
                                     onValueChange={v => setCreateForm(p => ({ ...p, plan: v as string }))}
                                 >
-                                    <SelectTrigger className="h-12 rounded-xl border-border bg-background">
+                                    <SelectTrigger className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        {plans.map(p => (
-                                            <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                                    <SelectContent className="rounded-2xl p-2 font-bold border-border/50 shadow-2xl">
+                                        {plans.map((p: SubscriptionPlan) => (
+                                            <SelectItem key={p.id} value={p.name as string} className="rounded-xl h-11">{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-foreground font-bold ml-1">Ciclo de Pagamento</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Ciclo de Cobrança</Label>
                                 <Select
                                     value={createForm.billingCycle}
                                     onValueChange={v => setCreateForm(p => ({ ...p, billingCycle: v as 'monthly' | 'annual' }))}
                                 >
-                                    <SelectTrigger className="h-12 rounded-xl border-border bg-background">
+                                    <SelectTrigger className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="monthly">Mensal</SelectItem>
-                                        <SelectItem value="annual">Anual</SelectItem>
+                                    <SelectContent className="rounded-2xl p-2 font-bold border-border/50 shadow-2xl">
+                                        <SelectItem value="monthly" className="rounded-xl h-11">Mensalidade</SelectItem>
+                                        <SelectItem value="annual" className="rounded-xl h-11">Anuidade (Desconto)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="ghost" className="rounded-xl h-11 px-6 font-bold" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
-                            <Button type="submit" className="rounded-xl h-11 px-8 font-black shadow-lg shadow-slate-900/10" disabled={saving}>
-                                {saving ? 'Processando...' : 'Cadastrar Imobiliária'}
+                        <div className="flex flex-col gap-4 pt-4">
+                            <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest" disabled={saving}>
+                                {saving ? 'Processando...' : 'Finalizar Provisionamento'}
+                            </Button>
+                            <Button type="button" variant="ghost" className="rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsCreateOpen(false)}>
+                                Cancelar operação
                             </Button>
                         </div>
                     </form>
@@ -419,107 +458,114 @@ export default function SuperAdminTenantsPage() {
 
             {/* ─── EDIT MODAL ─── */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="sm:max-w-xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-                    <div className="bg-primary p-8 text-card-foreground relative">
-                        <Pencil className="h-12 w-12 text-black/10 absolute top-6 right-6 rotate-[-10deg]" />
-                        <DialogTitle className="text-2xl font-black">Editar Assinante</DialogTitle>
-                        <DialogDescription className="text-card-foreground/70 mt-2 text-base">
-                            Atualize as informações de cadastro e plano do cliente.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="px-10 py-12 bg-slate-800 dark:bg-slate-900 group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                            <Pencil className="h-32 w-32 text-white fill-current" />
+                        </div>
+                        <div className="relative z-10 space-y-2">
+                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Editar Assinante</DialogTitle>
+                            <DialogDescription className="text-slate-300 text-lg font-medium tracking-tight">
+                                Atualize as informações de cadastro e plano do cliente.
+                            </DialogDescription>
+                        </div>
                     </div>
-                    <form onSubmit={handleEdit} className="p-8 space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                    <form onSubmit={handleEdit} className="p-10 space-y-8">
+                        <div className="grid grid-cols-2 gap-8">
                             <div className="space-y-2 col-span-2">
-                                <Label className="text-foreground font-bold ml-1 text-sm uppercase tracking-wider">Nome da Imobiliária</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome da Imobiliária</Label>
                                 <Input
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg"
                                     value={editForm.name}
                                     onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-foreground font-bold ml-1 text-sm uppercase tracking-wider">Admin Responsável</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Admin Responsável</Label>
                                 <Input
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg"
                                     value={editForm.adminName}
                                     onChange={e => setEditForm(p => ({ ...p, adminName: e.target.value }))}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-foreground font-bold ml-1 text-sm uppercase tracking-wider">Telefone</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Telefone</Label>
                                 <Input
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg"
                                     value={editForm.phone}
                                     onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))}
                                 />
                             </div>
                             <div className="space-y-2 col-span-2">
-                                <Label className="text-foreground font-bold ml-1 text-sm uppercase tracking-wider">Email de Contato</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Email de Contato</Label>
                                 <Input
-                                    className="h-12 rounded-xl border-border bg-background focus:bg-card opacity-70"
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg opacity-50 cursor-not-allowed"
                                     value={editForm.email}
                                     readOnly
                                 />
-                                <p className="text-[10px] text-muted-foreground ml-1">O email principal não pode ser alterado aqui.</p>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest ml-1 opacity-50">O e-mail principal é imutável nesta tela</p>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-foreground font-bold ml-1 text-sm uppercase tracking-wider">Plano</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Plano Atual</Label>
                                 <Select
                                     value={editForm.plan}
                                     onValueChange={v => setEditForm(p => ({ ...p, plan: v as string }))}
                                 >
-                                    <SelectTrigger className="h-12 rounded-xl border-border bg-background">
+                                    <SelectTrigger className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        {plans.map(p => (
-                                            <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                                    <SelectContent className="rounded-2xl p-2 font-bold border-border/50 shadow-2xl">
+                                        {plans.map((p: SubscriptionPlan) => (
+                                            <SelectItem key={p.id} value={p.name as string} className="rounded-xl h-11">{p.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-foreground font-bold ml-1 text-sm uppercase tracking-wider">Ciclo</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Ciclo Ativo</Label>
                                 <Select
                                     value={editForm.billingCycle}
                                     onValueChange={v => setEditForm(p => ({ ...p, billingCycle: v as 'monthly' | 'annual' }))}
                                 >
-                                    <SelectTrigger className="h-12 rounded-xl border-border bg-background">
+                                    <SelectTrigger className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="monthly">Mensal</SelectItem>
-                                        <SelectItem value="annual">Anual</SelectItem>
+                                    <SelectContent className="rounded-2xl p-2 font-bold border-border/50 shadow-2xl">
+                                        <SelectItem value="monthly" className="rounded-xl h-11">Mensal</SelectItem>
+                                        <SelectItem value="annual" className="rounded-xl h-11">Anual</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2 col-span-2">
-                                <Label className="text-foreground font-bold ml-1 text-sm uppercase tracking-wider">Status da Conta</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Estado da Assinatura</Label>
                                 <Select
                                     value={editForm.status}
                                     onValueChange={v => setEditForm(p => ({ ...p, status: v as FormState['status'] }))}
                                 >
-                                    <SelectTrigger className={`h-12 rounded-xl border-border ${editForm.status === 'active' ? 'bg-green-50' : 'bg-red-50'}`}>
+                                    <SelectTrigger className={`h-16 rounded-2xl border-border/50 font-black px-6 text-lg ${editForm.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-destructive/10 text-destructive'}`}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="active">Ativa</SelectItem>
-                                        <SelectItem value="inactive">Suspensa</SelectItem>
+                                    <SelectContent className="rounded-2xl p-2 font-black border-border/50 shadow-2xl">
+                                        <SelectItem value="active" className="rounded-xl h-11 text-emerald-600">ATIVO / EM DIA</SelectItem>
+                                        <SelectItem value="inactive" className="rounded-xl h-11 text-destructive">SUSPENSO / INADIMPLENTE</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="ghost" className="rounded-xl h-11 px-6 font-bold" onClick={() => setIsEditOpen(false)}>Descartar</Button>
-                            <Button type="submit" className="rounded-xl h-11 px-8 font-black shadow-lg" disabled={saving}>
-                                {saving ? 'Salvando...' : 'Salvar Alterações'}
+                        <div className="flex flex-col gap-4 pt-4">
+                            <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest" disabled={saving}>
+                                {saving ? 'Salvando...' : 'Confirmar Alterações'}
+                            </Button>
+                            <Button type="button" variant="ghost" className="rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsEditOpen(false)}>
+                                Descartar mudanças
                             </Button>
                         </div>
                     </form>
                 </DialogContent>
             </Dialog>
+
             {/* ─── PASSWORD MODAL ─── */}
             <Dialog open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
                 <DialogContent className="sm:max-w-md rounded-3xl p-8 overflow-hidden border-none shadow-2xl">

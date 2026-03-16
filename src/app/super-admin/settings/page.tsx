@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Pencil, Trash2, Save } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Save, Settings, Layers, LayoutPanelTop, ArrowRight, Sparkles } from "lucide-react";
 import { GLOBAL_ROOM_TEMPLATES } from '@/lib/presets';
 import { RoomTemplate, TemplateCategory } from '@/types';
 import { fetchRoomTemplates, saveRoomTemplate } from '@/lib/database';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 export default function SuperAdminSettings() {
     const [templates, setTemplates] = useState<RoomTemplate[]>([]);
@@ -109,92 +110,110 @@ export default function SuperAdminSettings() {
         }
     };
 
-    // Global Categories state
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [globalCategories] = useState<TemplateCategory[]>([
-        { nome: "Estrutural", itens: ["Paredes", "Pintura", "Piso", "Teto", "Portas", "Janelas"] },
-        { nome: "Elétrico", itens: ["Tomadas", "Interruptores", "Lâmpadas", "Luminárias", "Quadros"] }
-    ]);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const addGlobalItem = (catIdx: number) => {
-        // Implementation disabled for mock
-    };
-
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Configurações Globais</h1>
-                <p className="text-muted-foreground mt-1">Gerencie os parâmetros do sistema e integrações do painel Super Admin.</p>
+        <div className="space-y-12 w-full pb-10">
+            {/* Header section with refined breadcrumbs */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div className="space-y-4">
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Admin</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="opacity-20" />
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/super-admin/settings" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary transition-colors">Configurações Globais</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                            <Settings className="h-3 w-3" />
+                            Infraestrutura Logística
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Padronização</h1>
+                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Configure as bases normativas para vistorias em toda a rede.</p>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid gap-6">
-                <Card className="shadow-sm border-border">
-                    <CardHeader className="bg-muted border-b">
-                        <div className="flex items-center justify-between">
+            <div className="grid gap-12">
+                <Card className="rounded-[2.5rem] border border-border shadow-premium overflow-hidden bg-card">
+                    <CardHeader className="p-8 border-b border-border/50 bg-muted/20">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
-                                <CardTitle className="text-lg">Modelos de Ambientes (Global)</CardTitle>
-                                <CardDescription>
-                                    Configurações padrão sugeridas para todas as imobiliárias.
+                                <CardTitle className="text-2xl font-black tracking-tight text-foreground flex items-center gap-3">
+                                    <LayoutPanelTop className="h-6 w-6 text-primary" />
+                                    Modelos de Ambientes
+                                </CardTitle>
+                                <CardDescription className="text-muted-foreground font-medium mt-1">
+                                    Define as categorias de inspeção sugeridas globalmente.
                                 </CardDescription>
                             </div>
-                            <Button size="sm" className="gap-2" onClick={() => handleAddTemplate()}>
-                                <Plus className="h-4 w-4" /> Novo Modelo
-                            </Button>
+                            <form onSubmit={(e) => handleAddTemplate(e)} className="flex gap-3 w-full md:w-auto">
+                                <Input
+                                    placeholder="Nome do Ambiente... (ex: Suíte Master)"
+                                    value={newTemplateName}
+                                    onChange={(e) => setNewTemplateName(e.target.value)}
+                                    className="h-12 w-full md:w-72 rounded-xl bg-muted/50 border-border/50 font-bold px-4"
+                                />
+                                <Button type="submit" variant="secondary" className="h-12 rounded-xl px-6 font-black uppercase tracking-widest text-[10px]">
+                                    Cadastrar
+                                </Button>
+                            </form>
                         </div>
                     </CardHeader>
-                    <CardContent className="pt-6 space-y-6">
-                        <form onSubmit={(e) => handleAddTemplate(e)} className="flex gap-2">
-                            <Input
-                                placeholder="Novo ambiente... (ex: Hall de Entrada)"
-                                value={newTemplateName}
-                                onChange={(e) => setNewTemplateName(e.target.value)}
-                                className="bg-background border-border"
-                            />
-                            <Button type="submit" variant="secondary" className="shrink-0">
-                                Adicionar
-                            </Button>
-                        </form>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <CardContent className="p-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {templates.map(template => (
-                                <div key={template.nome} className="group flex flex-col p-4 rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-sm transition-all">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-2 w-2 rounded-full bg-primary" />
-                                            <span className="text-sm font-bold text-foreground">{template.nome}</span>
+                                <div key={template.nome} className="group relative flex flex-col p-6 rounded-3xl border border-border bg-card hover:border-primary/40 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                                <Layers className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <span className="text-base font-black text-foreground tracking-tight">{template.nome}</span>
                                         </div>
                                         <button 
                                             onClick={() => removeTemplate(template.nome)} 
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-red-500 transition-all"
+                                            className="opacity-0 group-hover:opacity-100 h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                                         >
-                                            <X className="h-4 w-4" />
+                                            <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
                                     
-                                    <div className="space-y-2">
+                                    <div className="space-y-4 flex-1">
                                         {template.categorias.length > 0 ? (
-                                            template.categorias.slice(0, 2).map((cat: TemplateCategory) => (
-                                                <div key={cat.nome} className="text-[10px] text-muted-foreground bg-background p-1.5 rounded border border-border">
-                                                    <span className="font-semibold uppercase mr-1">{cat.nome}:</span>
-                                                    {cat.itens.slice(0, 3).join(', ')}{cat.itens.length > 3 && '...'}
-                                                </div>
-                                            ))
+                                            <div className="space-y-2">
+                                                {template.categorias.slice(0, 3).map((cat: TemplateCategory) => (
+                                                    <div key={cat.nome} className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/30">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{cat.nome}</span>
+                                                        <span className="text-[10px] font-bold text-primary">{cat.itens.length} itens</span>
+                                                    </div>
+                                                ))}
+                                                {template.categorias.length > 3 && (
+                                                    <div className="text-[10px] text-center font-black text-primary/40 uppercase tracking-widest pt-1">
+                                                        + {template.categorias.length - 3} Categorias Adicionais
+                                                    </div>
+                                                )}
+                                            </div>
                                         ) : (
-                                            <div className="text-[10px] text-muted-foreground italic">Sem categorias.</div>
-                                        )}
-                                        {template.categorias.length > 2 && (
-                                            <div className="text-[9px] text-center text-primary font-medium">+ {template.categorias.length - 2} categorias</div>
+                                            <div className="flex flex-col items-center justify-center py-6 text-center">
+                                                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-2">
+                                                    <Sparkles className="h-5 w-5 text-muted-foreground/30" />
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground/50 font-black uppercase tracking-widest">Sem categorias definidas</span>
+                                            </div>
                                         )}
                                     </div>
                                     
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="mt-3 text-[10px] h-7 w-full border-dashed border"
+                                        className="mt-6 h-12 w-full rounded-2xl border-dashed border border-border/50 group-hover:border-primary/30 group-hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2"
                                         onClick={() => handleEditItems(template)}
                                     >
-                                        <Pencil className="h-3 w-3 mr-1" /> Editar Ítens
+                                        <Pencil className="h-4 w-4" /> Gerenciar Itens Técnicos
                                     </Button>
                                 </div>
                             ))}
@@ -202,71 +221,81 @@ export default function SuperAdminSettings() {
                     </CardContent>
                 </Card>
 
-                {/* Categories & Items Modal */}
+                {/* Categories & Items Modal - Premium Edit Environment */}
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                    <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Editar Modelo: {editingTemplate?.nome}</DialogTitle>
-                            <DialogDescription>
-                                Adicione ou remova categorias e itens técnicos deste ambiente.
-                            </DialogDescription>
-                        </DialogHeader>
+                    <DialogContent className="sm:max-w-3xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                        <div className="px-10 py-12 bg-slate-900 group relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                                <Layers className="h-32 w-32 text-white fill-current" />
+                            </div>
+                            <div className="relative z-10 space-y-2 text-white">
+                                <DialogTitle className="text-4xl font-black tracking-tight leading-none">Arquitetura: {editingTemplate?.nome}</DialogTitle>
+                                <DialogDescription className="text-slate-400 text-lg font-medium tracking-tight">
+                                    Configure as seções e os itens verificáveis deste ambiente.
+                                </DialogDescription>
+                            </div>
+                        </div>
                         
-                        <div className="space-y-6 py-4">
-                            {editingTemplate?.categorias.map((cat, catIdx) => (
-                                <div key={catIdx} className="space-y-3 p-4 rounded-lg border border-border bg-muted">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-sm uppercase text-foreground">{cat.nome}</h4>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-6 w-6 text-red-400 hover:text-red-500"
-                                            onClick={() => {
-                                                const newCats = [...editingTemplate.categorias];
-                                                newCats.splice(catIdx, 1);
-                                                setEditingTemplate({ ...editingTemplate, categorias: newCats });
-                                            }}
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </Button>
+                        <div className="p-10 space-y-8 max-h-[55vh] overflow-y-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {editingTemplate?.categorias.map((cat, catIdx) => (
+                                    <div key={catIdx} className="space-y-4 p-6 rounded-3xl border border-border/50 bg-muted/30 group/cat">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-primary">{cat.nome}</h4>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover/cat:opacity-100 transition-all"
+                                                onClick={() => {
+                                                    const newCats = [...editingTemplate.categorias];
+                                                    newCats.splice(catIdx, 1);
+                                                    setEditingTemplate({ ...editingTemplate, categorias: newCats });
+                                                }}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap gap-2">
+                                            {cat.itens.map((item, itemIdx) => (
+                                                <Badge key={itemIdx} variant="secondary" className="pl-3 pr-1 py-1.5 h-8 rounded-xl gap-2 bg-background text-foreground font-bold border border-border/50">
+                                                    {item}
+                                                    <button onClick={() => removeItemFromCategory(catIdx, itemIdx)} className="h-6 w-6 rounded-lg hover:bg-destructive/10 hover:text-destructive flex items-center justify-center transition-colors">
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </Badge>
+                                            ))}
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="h-8 rounded-xl font-black text-[9px] uppercase tracking-widest border-dashed gap-1"
+                                                onClick={() => addItemToCategory(catIdx)}
+                                            >
+                                                <Plus className="h-3 w-3" /> Item
+                                            </Button>
+                                        </div>
                                     </div>
-                                    
-                                    <div className="flex flex-wrap gap-2">
-                                        {cat.itens.map((item, itemIdx) => (
-                                            <Badge key={itemIdx} variant="secondary" className="gap-1 pr-1 font-normal bg-card">
-                                                {item}
-                                                <button onClick={() => removeItemFromCategory(catIdx, itemIdx)} className="hover:text-red-500">
-                                                    <X className="h-3 w-3" />
-                                                </button>
-                                            </Badge>
-                                        ))}
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="h-6 text-[10px] border-dashed"
-                                            onClick={() => addItemToCategory(catIdx)}
-                                        >
-                                            + Adicionar Item
-                                        </Button>
+                                ))}
+                                
+                                <Button variant="outline" className="h-full min-h-[140px] rounded-3xl border-dashed border-2 gap-3 flex flex-col items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all" onClick={addCategory}>
+                                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                        <Plus className="h-6 w-6" />
                                     </div>
-                                </div>
-                            ))}
-                            
-                            <Button variant="outline" className="w-full border-dashed gap-2" onClick={addCategory}>
-                                <Plus className="h-4 w-4" /> Adicionar Categoria
-                            </Button>
+                                    <span className="font-black text-[10px] uppercase tracking-widest">Nova Seção</span>
+                                </Button>
+                            </div>
                         </div>
 
-                        <DialogFooter>
-                            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
-                            <Button onClick={saveChanges} className="gap-2">
-                                <Save className="h-4 w-4" /> Salvar Modelo
+                        <div className="p-10 pt-0 flex flex-col gap-4">
+                            <Button onClick={saveChanges} className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest">
+                                <Save className="h-5 w-5 mr-3" /> Salvar Modelo Normativo
                             </Button>
-                        </DialogFooter>
+                            <Button variant="ghost" className="rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsEditDialogOpen(false)}>
+                                Descartar Alterações
+                            </Button>
+                        </div>
                     </DialogContent>
                 </Dialog>
-
-
             </div>
         </div>
     );

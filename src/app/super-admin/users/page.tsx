@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { UserPlus, Shield, MoreHorizontal, Pencil, Trash2, Mail, Loader2, KeyRound, Copy, Check } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { UserPlus, Shield, MoreHorizontal, Pencil, Trash2, Mail, Loader2, KeyRound, Copy, Check, UserCheck } from 'lucide-react';
 import { User } from '@/types';
 import { fetchUsersByRole, saveSystemUser, deleteSystemUser, resetUserPassword } from '@/lib/database';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 export default function SuperAdminUsersPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -57,17 +58,17 @@ export default function SuperAdminUsersPage() {
         
         setIsSaving(true);
         try {
-            const formData = editingUser; // Use editingUser as formData
+            const formData = editingUser; 
             const tempPassword = await saveSystemUser(formData);
             setIsModalOpen(false);
             if (tempPassword) {
                 setGeneratedPasswordInfo({ name: formData.name || '', password: tempPassword });
                 setIsPasswordModalOpen(true);
             }
-            fetchUsers(); // Changed from loadUsers() to fetchUsers()
+            fetchUsers(); 
         } catch (err) {
             console.error('Error saving user:', err);
-            alert('Erro ao salvar administrador.'); // Added alert for error
+            alert('Erro ao salvar administrador.'); 
         } finally {
             setIsSaving(false);
         }
@@ -106,180 +107,238 @@ export default function SuperAdminUsersPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Super Administradores</h1>
-                    <p className="text-muted-foreground mt-1">Gerencie os usuários com acesso total à plataforma.</p>
+        <div className="space-y-12 w-full pb-10">
+            {/* Header section with refined breadcrumbs */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div className="space-y-4">
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/super-admin" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Admin</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="opacity-20" />
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/super-admin/users" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary transition-colors">Gestão de acessos</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                    <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                            <Shield className="h-3 w-3" />
+                            Segurança da Rede
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tighter text-foreground leading-none">Super Admins</h1>
+                        <p className="text-muted-foreground text-lg font-medium tracking-tight">Gerencie os usuários com privilégios totais sobre a plataforma.</p>
+                    </div>
                 </div>
-                <Button className="gap-2 shadow-sm" onClick={handleCreateClick}>
-                    <UserPlus className="h-4 w-4" />
-                    Novo Super Admin
+                <Button className="h-16 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all gap-3 bg-primary text-primary-foreground uppercase tracking-widest text-xs" onClick={handleCreateClick}>
+                    <UserPlus className="h-5 w-5 stroke-[3px]" /> Novo Super Admin
                 </Button>
             </div>
 
-            <Card className="shadow-sm border-border">
-                <CardHeader className="border-b bg-muted pb-4">
-                    <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-primary" />
-                        Lista de Administradores
-                    </CardTitle>
+            <Card className="rounded-[2.5rem] border border-border shadow-premium overflow-hidden bg-card">
+                <CardHeader className="p-8 border-b border-border/50 bg-muted/20">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="text-2xl font-black tracking-tight text-foreground">Time de Administração</CardTitle>
+                            <CardDescription className="text-muted-foreground font-medium mt-1">Usuários autorizados a gerenciar o sistema globalmente.</CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-background hover:bg-background">
-                                    <TableHead className="font-semibold text-muted-foreground">Nome</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground">E-mail</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground text-right w-[100px]">Ações</TableHead>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-b border-border/50 h-16 hover:bg-transparent">
+                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Nome Completo</TableHead>
+                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">E-mail Corporativo</TableHead>
+                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Papel</TableHead>
+                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Status</TableHead>
+                                <TableHead className="px-8 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground bg-muted/5 italic">
+                                        <div className="flex flex-col items-center justify-center gap-3">
+                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                            <span>Carregando administradores...</span>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8">
-                                            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                Carregando...
+                            ) : users.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-48 text-center text-muted-foreground bg-muted/5 italic">Nenhum administrador cadastrado no sistema.</TableCell>
+                                </TableRow>
+                            ) : (
+                                users.map((user) => (
+                                    <TableRow key={user.id} className="group border-b border-border/50 h-20 hover:bg-muted/30 transition-colors">
+                                        <TableCell className="px-8">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-xs text-primary">
+                                                    {user.name.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <span className="font-bold text-foreground text-sm">{user.name}</span>
                                             </div>
                                         </TableCell>
-                                    </TableRow>
-                                ) : users.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic">
-                                            Nenhum administrador cadastrado.
+                                        <TableCell className="px-8 text-muted-foreground text-sm font-medium">
+                                            <div className="flex items-center gap-2">
+                                                <Mail className="h-3 w-3 opacity-40" />
+                                                {user.email}
+                                            </div>
                                         </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    users.map((user) => (
-                                        <TableRow key={user.id} className="group hover:bg-muted transition-colors">
-                                            <TableCell className="font-medium text-foreground">{user.name}</TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                                <div className="flex items-center gap-2">
-                                                    <Mail className="h-3 w-3 text-muted-foreground" />
-                                                    {user.email}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200">
+                                        <TableCell className="px-8 text-center">
+                                            <Badge variant="outline" className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-background border-border/50 text-foreground">
+                                                {user.role.replace('_', ' ')}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-8 text-center">
+                                            <div className="flex justify-center">
+                                                <Badge className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 border-none shadow-none">
                                                     Ativo
                                                 </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none flex items-center justify-center rounded-md hover:bg-muted">
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-8 text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background border border-transparent hover:border-border transition-all">
                                                         <MoreHorizontal className="h-4 w-4" />
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-[160px]">
-                                                        <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditClick(user)}>
-                                                            <Pencil className="mr-2 h-4 w-4" /> Editar
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem className="cursor-pointer text-blue-600 focus:text-blue-600" onClick={() => handleResetPassword(user.id, user.name)}>
-                                                            <KeyRound className="mr-2 h-4 w-4" /> Resetar Senha
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem 
-                                                            className="text-red-600 focus:text-red-600 cursor-pointer"
-                                                            onClick={() => handleDeleteUser(user.id, user.name)}
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Remover
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 font-black border-border/50 shadow-2xl">
+                                                    <DropdownMenuLabel className="text-[9px] uppercase tracking-widest opacity-40 px-3 py-2">Gestão de Usuário</DropdownMenuLabel>
+                                                    <DropdownMenuItem className="cursor-pointer gap-3 h-11 rounded-xl text-[10px] uppercase tracking-widest" onClick={() => handleEditClick(user)}>
+                                                        <Pencil className="h-4 w-4" /> Editar Perfil
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="cursor-pointer gap-3 h-11 rounded-xl text-[10px] uppercase tracking-widest text-blue-600 focus:text-blue-600" onClick={() => handleResetPassword(user.id, user.name)}>
+                                                        <KeyRound className="h-4 w-4" /> Gerar Nova Senha
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator className="my-2 opacity-50" />
+                                                    <DropdownMenuItem 
+                                                        className="text-destructive focus:bg-destructive/5 focus:text-destructive cursor-pointer gap-3 h-11 rounded-xl text-[10px] uppercase tracking-widest"
+                                                        onClick={() => handleDeleteUser(user.id, user.name)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" /> Revogar Acesso
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
 
+            {/* Create/Edit Admin Modal */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingUser?.id ? 'Editar Administrador' : 'Novo Super Administrador'}</DialogTitle>
-                        <DialogDescription>
-                            {editingUser?.id 
-                                ? 'Atualize as informações de acesso deste administrador.' 
-                                : 'Convide um novo usuário com acesso total ao painel admin.'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSaveUser}>
-                        <div className="space-y-4 py-4">
+                <DialogContent className="sm:max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="px-10 py-12 bg-slate-900 group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
+                            <Shield className="h-32 w-32 text-white fill-current" />
+                        </div>
+                        <div className="relative z-10 space-y-2">
+                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">
+                                {editingUser?.id ? 'Editar Admin' : 'Novo Guardião'}
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-400 text-lg font-medium tracking-tight">
+                                {editingUser?.id 
+                                    ? 'Atualize os privilégios e dados do administrador.' 
+                                    : 'Adicione um novo membro com acesso total à infraestrutura.'}
+                            </DialogDescription>
+                        </div>
+                    </div>
+                    <form onSubmit={handleSaveUser} className="p-10 space-y-8">
+                        <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label>Nome Completo</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome Completo</Label>
                                 <Input 
                                     value={editingUser?.name || ''}
                                     onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
-                                    placeholder="João Silva" 
+                                    placeholder="Ex: Alexandre Oliveira" 
                                     required 
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-xl placeholder:text-muted-foreground/30"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>E-mail Corporativo</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">E-mail Corporativo (@imobcheck.com.br)</Label>
                                 <Input 
                                     type="email"
                                     value={editingUser?.email || ''}
                                     onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
-                                    placeholder="joao@imobcheck.com.br" 
+                                    placeholder="alexandre@imobcheck.com.br" 
                                     required 
+                                    className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-xl placeholder:text-muted-foreground/30"
                                 />
                             </div>
                         </div>
-                        <DialogFooter>
-                            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                            <Button type="submit" disabled={isSaving}>
+                        <div className="flex flex-col gap-4 pt-4">
+                            <Button type="submit" disabled={isSaving} className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest">
                                 {isSaving ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Salvando...
-                                    </>
+                                    <div className="flex items-center gap-3">
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Sincronizando...
+                                    </div>
                                 ) : (
-                                    editingUser?.id ? 'Salvar Alterações' : 'Criar Administrador'
+                                    editingUser?.id ? 'Salvar Alterações' : 'Conceder Acesso Administrador'
                                 )}
                             </Button>
-                        </DialogFooter>
+                            <Button type="button" variant="ghost" className="rounded-2xl h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsModalOpen(false)}>
+                                Cancelar Registro
+                            </Button>
+                        </div>
                     </form>
                 </DialogContent>
             </Dialog>
 
-            {/* Password Display Modal */}
+            {/* Password Display Modal - Premium */}
             <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <KeyRound className="h-5 w-5 text-primary" />
-                            Senha Gerada com Sucesso
-                        </DialogTitle>
-                        <DialogDescription>
-                            Copie a senha abaixo e envie para <strong>{generatedPasswordInfo?.name}</strong>.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex items-center space-x-2 py-4">
-                        <div className="grid flex-1 gap-2">
-                            <Label htmlFor="password" title="Senha Temporária">
-                                Senha Temporária
-                            </Label>
-                            <div className="flex bg-muted p-3 rounded-md font-mono text-xl justify-between items-center border border-border">
-                                <span className="tracking-wider select-all">{generatedPasswordInfo?.password}</span>
-                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={copyToClipboard}>
-                                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
+                    <div className="px-10 py-12 bg-emerald-600 group relative overflow-hidden text-white">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:rotate-12 transition-transform duration-700">
+                            <UserCheck className="h-32 w-32 fill-current" />
+                        </div>
+                        <div className="relative z-10 space-y-2 text-white">
+                            <DialogTitle className="text-4xl font-black tracking-tight leading-none flex items-center gap-3">
+                                <KeyRound className="h-10 w-10 text-emerald-200" />
+                                Credenciais Ativas
+                            </DialogTitle>
+                            <DialogDescription className="text-emerald-100 text-lg font-medium tracking-tight">
+                                Senha temporária gerada para <strong>{generatedPasswordInfo?.name}</strong>.
+                            </DialogDescription>
+                        </div>
+                    </div>
+                    <div className="p-10 space-y-8">
+                        <div className="space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Senha de Primeiro Acesso</Label>
+                            <div className="flex bg-muted/30 p-6 rounded-2xl font-mono text-3xl justify-between items-center border border-border/50 shadow-inner group/pass">
+                                <span className="tracking-widest select-all font-black text-primary">{generatedPasswordInfo?.password}</span>
+                                <Button size="icon" variant="ghost" className="h-12 w-12 rounded-xl hover:bg-primary/10 hover:text-primary transition-all" onClick={copyToClipboard}>
+                                    {copied ? <Check className="h-5 w-5 text-emerald-500" /> : <Copy className="h-5 w-5" />}
                                 </Button>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-amber-50 p-4 rounded-lg text-sm text-amber-800 border border-amber-200 mb-2">
-                        <strong>Aviso:</strong> O usuário será obrigado a trocar esta senha no primeiro acesso. Esta senha não será mostrada novamente.
-                    </div>
-                    <DialogFooter>
-                        <Button type="button" onClick={() => setIsPasswordModalOpen(false)} className="w-full">
-                            Entendi, já copiei
+                        
+                        <div className="bg-amber-500/10 p-6 rounded-2xl border border-amber-500/20">
+                            <div className="flex gap-4">
+                                <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                                    <Shield className="h-5 w-5 text-amber-600" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="font-black text-amber-700 uppercase tracking-widest text-[10px]">Protocolo de Segurança</p>
+                                    <p className="text-sm font-medium text-amber-700/80 leading-snug">
+                                        Esta senha é temporária e será invalidada após o primeiro login. Por segurança, ela não será exibida novamente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Button type="button" onClick={() => setIsPasswordModalOpen(false)} className="w-full h-16 rounded-2xl font-black text-lg bg-slate-900 hover:bg-slate-800 text-white transition-all uppercase tracking-widest">
+                            Entendido, Segurança Confirmada
                         </Button>
-                    </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
