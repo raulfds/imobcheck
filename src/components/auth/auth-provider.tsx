@@ -31,12 +31,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try { setUser(JSON.parse(savedUser)); } catch { /* ignore */ }
         }
         
-        // Restore temp password if we were in the middle of a reset
-        const savedTemp = sessionStorage.getItem('imob_temp_pass');
-        if (savedTemp) {
-            setLastTempPassword(savedTemp);
-            setNeedsPasswordReset(true);
-        }
         
         setIsLoading(false);
     }, []);
@@ -109,7 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (data.temp_password && password === data.temp_password) {
                     setNeedsPasswordReset(true);
                     setLastTempPassword(password);
-                    sessionStorage.setItem('imob_temp_pass', password);
                     setUser(loggedUser);
                     return;
                 }
@@ -201,7 +194,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 localStorage.setItem('imob_user', JSON.stringify(user));
                 setNeedsPasswordReset(false);
                 setLastTempPassword(null);
-                sessionStorage.removeItem('imob_temp_pass');
                 
                 router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
             }
