@@ -331,9 +331,6 @@ export async function saveSystemUser(user: Partial<User>): Promise<string | unde
         throw err;
     }
 
-    if (isNew) {
-        console.log(`[AUTH] Novo usuário criado via Server Action. Senha temporária: ${tempPassword}`);
-    }
     
     return tempPassword;
 }
