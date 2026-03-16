@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +44,7 @@ export default function ActiveInspection() {
     const [environments, setEnvironments] = useState<Environment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeEnvId, setActiveEnvId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
 
@@ -169,30 +170,41 @@ export default function ActiveInspection() {
         }));
     };
 
-    const addGeneralPhoto = async (envId: string) => {
-        const response = await fetch('https://via.placeholder.com/800x600');
-        const blob = await response.blob();
-        const key = `blob-ref:gen-${envId}-${Date.now()}`;
-        await saveBlob(key, blob);
-        const url = URL.createObjectURL(blob);
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, envId: string) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const blob = new Blob([file], { type: file.type });
+            const key = `blob-ref:gen-${envId}-${Date.now()}-${i}`;
+            await saveBlob(key, blob);
+            const url = URL.createObjectURL(blob);
+
+            setEnvironments(envs => envs.map(env => {
+                if (env.id !== envId) return env;
+                return {
+                    ...env,
+                    generalPhotos: [...(env.generalPhotos || []), url]
+                };
+            }));
+        }
+        // Clear input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const addGeneralPhoto = () => {
+        if (fileInputRef.current) fileInputRef.current.click();
+    };
+
+    const deletePhoto = (envId: string, photoUrl: string) => {
         setEnvironments(envs => envs.map(env => {
             if (env.id !== envId) return env;
             return {
                 ...env,
-                generalPhotos: [...(env.generalPhotos || []), url]
+                generalPhotos: (env.generalPhotos || []).filter(p => p !== photoUrl)
             };
         }));
-    };
-
-    const captureItemPhoto = async (envId: string, itemId: string) => {
-        const response = await fetch('https://via.placeholder.com/800x600');
-        const blob = await response.blob();
-        const key = `blob-ref:item-${itemId}-${Date.now()}`;
-        await saveBlob(key, blob);
-        const url = URL.createObjectURL(blob);
-
-        updateItem(envId, itemId, { photo: url });
     };
 
     const handleAddEnvironment = (e: React.FormEvent) => {
@@ -377,68 +389,53 @@ export default function ActiveInspection() {
                                                 </div>
                                             )}
 
-                                            <div className="space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex justify-between">
-                                                    Registro Fotográfico do Item
-                                                    {item.status === 'not_ok' && <Badge variant="destructive" className="h-4 text-[7px] font-black px-1.5 uppercase tracking-tighter">Obrigatório</Badge>}
-                                                </Label>
-                                                <div className="grid grid-cols-1">
-                                                    <button
-                                                        className="w-full h-32 rounded-2xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center bg-muted/20 hover:bg-primary/5 hover:border-primary/40 transition-all group relative overflow-hidden"
-                                                        onClick={() => captureItemPhoto(env.id, item.id)}
-                                                    >
-                                                        {item.photo ? (
-                                                            <>
-                                                                <img src={item.photo} alt="Item" className="h-full w-full object-cover" />
-                                                                <div className="absolute inset-0 bg-primary/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity">
-                                                                    <Camera className="h-8 w-8 mb-2" />
-                                                                    <span className="text-[10px] font-black uppercase tracking-widest">Alternar Foto</span>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Camera className="h-8 w-8 text-primary/40 group-hover:text-primary transition-colors mb-2" />
-                                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Capturar Evidência</span>
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
                                 ))}
                             </div>
                         ))}
                     </TabsContent>
 
                     <TabsContent value="photos" className="space-y-8 animate-in fade-in duration-500">
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            style={{ display: 'none' }} 
+                            accept="image/*" 
+                            multiple
+                            capture="environment"
+                            onChange={(e) => handlePhotoUpload(e, env.id)}
+                        />
                         <div className="grid grid-cols-2 gap-6">
                             {(env.generalPhotos || []).map((photo: string, i: number) => (
-                                <div key={i} className="aspect-video relative rounded-3xl overflow-hidden border shadow-lg group">
+                                <div key={i} className="aspect-square relative rounded-3xl overflow-hidden border shadow-lg group">
                                     <img src={photo} alt={`Foto geral ${i + 1}`} className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex items-end">
-                                        <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-black text-[10px]">VISÃO GERAL {i + 1}</Badge>
+                                        <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-black text-[10px]">EVIDÊNCIA {i + 1}</Badge>
                                     </div>
-                                    <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button 
+                                        variant="destructive" 
+                                        size="icon" 
+                                        className="absolute top-2 right-2 h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => deletePhoto(env.id, photo)}
+                                    >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </div>
                             ))}
                             <button
-                                className="aspect-video rounded-3xl border-2 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center gap-3 hover:bg-primary/10 hover:border-primary/40 transition-all group"
-                                onClick={() => addGeneralPhoto(env.id)}
+                                className="aspect-square rounded-3xl border-2 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center gap-3 hover:bg-primary/10 hover:border-primary/40 transition-all group"
+                                onClick={() => addGeneralPhoto()}
                             >
                                 <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                                     <Plus className="h-6 w-6" />
                                 </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Adicionar Panorama</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-primary text-center px-2">Adicionar Foto (Câmera/Galeria)</span>
                             </button>
                         </div>
                         <div className="bg-foreground p-6 rounded-[2rem] text-card-foreground flex gap-4 items-center">
-                            <AlertCircle className="h-10 w-10 text-primary shrink-0" />
+                            <AlertCircle className="h-10 w-10 text-primary shrink-0 transition-transform group-hover:scale-110" />
                             <p className="text-xs font-medium italic opacity-80">
                                 <span className="font-black not-italic block mb-1">DICA DO ESPECIALISTA</span>
-                                Tire fotos panorâmicas do ambiente para registrar o estado geral de conservação antes de focar nos itens individuais.
+                                Tire fotos de todos os ângulos do ambiente. Elas servem como prova do estado geral de conservação.
                             </p>
                         </div>
                     </TabsContent>

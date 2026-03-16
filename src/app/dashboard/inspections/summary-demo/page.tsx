@@ -49,10 +49,13 @@ export default function InspectionSummary() {
         date: new Date().toISOString(),
         startTime: '14:30',
         environments: [
-            // ... (previously defined environments)
             {
                 id: 'e1',
                 name: 'Sala de Estar',
+                generalPhotos: [
+                    'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=800&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=800&auto=format&fit=crop'
+                ],
                 items: [
                     { id: 'i1', name: 'Piso Laminado', status: 'ok' as const },
                     { id: 'i2', name: 'Pintura Paredes', status: 'not_ok' as const, defect: 'Riscado', observation: 'Marca de móvel na parede sul.' },
@@ -62,6 +65,9 @@ export default function InspectionSummary() {
             {
                 id: 'e2',
                 name: 'Cozinha',
+                generalPhotos: [
+                    'https://images.unsplash.com/photo-1556911223-e153e9d37293?q=80&w=800&auto=format&fit=crop'
+                ],
                 items: [
                     { id: 'i4', name: 'Bancada Granito', status: 'ok' as const },
                     { id: 'i5', name: 'Torneira', status: 'ok' as const }
@@ -257,31 +263,43 @@ export default function InspectionSummary() {
                                         </span>
                                     </div>
 
-                                    {defects.length > 0 ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
-                                            {defects.map(d => (
-                                                <div key={d.id} className="flex gap-4 bg-red-500/5 p-4 rounded-2xl border border-red-500/10 items-center">
-                                                    <div className="w-16 h-16 bg-muted rounded-xl shrink-0 overflow-hidden border-2 border-white shadow-md">
-                                                        {d.photo ? <img src={d.photo} alt="Dano" className="w-full h-full object-cover" /> : <AlertTriangle className="h-full w-full p-4 text-red-500 opacity-20" />}
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <p className="text-xs font-black uppercase tracking-widest text-red-700 flex items-center gap-1">
-                                                            <AlertTriangle className="h-3 w-3" /> {d.name}
-                                                        </p>
-                                                        <p className="text-sm font-bold text-foreground leading-tight">{d.defect}</p>
-                                                        {d.observation && <p className="text-[10px] text-muted-foreground font-medium italic">"{d.observation}"</p>}
-                                                    </div>
+                                    {/* Environment Photos */}
+                                    {env.generalPhotos && env.generalPhotos.length > 0 && (
+                                        <div className="flex gap-4 overflow-x-auto pb-4 ml-4 no-scrollbar">
+                                            {env.generalPhotos.map((photo, idx) => (
+                                                <div key={idx} className="w-40 h-40 shrink-0 rounded-2xl overflow-hidden border-2 border-white shadow-xl hover:scale-105 transition-transform">
+                                                    <img src={photo} alt={`Ambiente ${idx}`} className="w-full h-full object-cover" />
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="ml-14 flex items-center gap-3 text-emerald-600 font-bold bg-emerald-500/5 px-4 py-2 rounded-xl w-fit">
-                                            <div className="h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
-                                                <Check className="h-3 w-3" />
-                                            </div>
-                                            <span className="text-sm">Ambiente sem avarias identificadas.</span>
-                                        </div>
                                     )}
+
+                                    {/* Items Status */}
+                                    <div className="ml-14 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                                        {env.items.map((item) => (
+                                            <div key={item.id} className="flex items-center justify-between border-b border-border/10 pb-2">
+                                                <div className="flex items-center gap-3">
+                                                    {item.status === 'ok' ? (
+                                                        <div className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                                                            <Check className="h-3 w-3" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-5 w-5 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center">
+                                                            <AlertTriangle className="h-3 w-3" />
+                                                        </div>
+                                                    )}
+                                                    <span className={`text-sm font-bold ${item.status === 'ok' ? 'text-foreground/80' : 'text-red-700'}`}>
+                                                        {item.name}
+                                                    </span>
+                                                </div>
+                                                {item.defect && (
+                                                    <Badge variant="outline" className="text-[9px] font-black uppercase text-red-600 border-red-200 bg-red-50">
+                                                        {item.defect}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             );
                         })}
