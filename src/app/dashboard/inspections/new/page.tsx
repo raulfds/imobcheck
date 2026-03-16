@@ -22,6 +22,8 @@ import { Property, Client } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
 import { fetchProperties, fetchClients, createInspection } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { QuickAddProperty } from '@/components/inspections/quick-add-property';
+import { QuickAddClient } from '@/components/inspections/quick-add-client';
 
 export default function NewInspection() {
     const router = useRouter();
@@ -54,6 +56,16 @@ export default function NewInspection() {
     }, [agencyId]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    const handlePropertyAdded = (newProp: Property) => {
+        setProperties(prev => [newProp, ...prev]);
+        setPropertyId(newProp.id);
+    };
+
+    const handleClientAdded = (newClient: Client) => {
+        setClients(prev => [newClient, ...prev]);
+        setClientId(newClient.id);
+    };
 
     const handleStart = async () => {
         if (!propertyId || !clientId) return;
@@ -133,10 +145,13 @@ export default function NewInspection() {
                             ) : (
                                 <>
                                     <div className="space-y-3">
-                                        <Label htmlFor="property" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
-                                            <Building2 className="h-3 w-3" /> Imóvel do Portfólio
-                                        </Label>
-                                        <Select onValueChange={(v: string | null) => { if (v) setPropertyId(v); }}>
+                                        <div className="flex items-center justify-between ml-1">
+                                            <Label htmlFor="property" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                <Building2 className="h-3 w-3" /> Imóvel do Portfólio
+                                            </Label>
+                                            <QuickAddProperty agencyId={agencyId} onSuccess={handlePropertyAdded} />
+                                        </div>
+                                        <Select value={propertyId} onValueChange={(v: string | null) => { if (v) setPropertyId(v); }}>
                                             <SelectTrigger id="property" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
                                                 <SelectValue placeholder={properties.length === 0 ? 'Nenhum imóvel cadastrado' : 'Selecione o imóvel'} />
                                             </SelectTrigger>
@@ -150,17 +165,20 @@ export default function NewInspection() {
                                             <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-2xl flex gap-3 items-center">
                                                 <Zap className="h-5 w-5 text-amber-500 shrink-0" />
                                                 <p className="text-xs text-amber-700 font-medium">
-                                                    Você ainda não tem imóveis. <a href="/dashboard/registrations" className="font-black underline ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">Cadastrar agora</a>.
+                                                    Você ainda não tem imóveis. Cadastre um acima para continuar.
                                                 </p>
                                             </div>
                                         )}
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label htmlFor="client" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
-                                            <Users2 className="h-3 w-3" /> Locatário / Inquilino
-                                        </Label>
-                                        <Select onValueChange={(v: string | null) => { if (v) setClientId(v); }}>
+                                        <div className="flex items-center justify-between ml-1">
+                                            <Label htmlFor="client" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                <Users2 className="h-3 w-3" /> Locatário / Inquilino
+                                            </Label>
+                                            <QuickAddClient agencyId={agencyId} onSuccess={handleClientAdded} />
+                                        </div>
+                                        <Select value={clientId} onValueChange={(v: string | null) => { if (v) setClientId(v); }}>
                                             <SelectTrigger id="client" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
                                                 <SelectValue placeholder={clients.length === 0 ? 'Nenhum locatário cadastrado' : 'Selecione o locatário'} />
                                             </SelectTrigger>
