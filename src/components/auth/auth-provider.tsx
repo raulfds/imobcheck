@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
-    const [lastTempPassword, setLastTempPassword] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -31,10 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try { setUser(JSON.parse(savedUser)); } catch { /* ignore */ }
         }
         
-        // Restore temp password if we were in the middle of a reset
-        const savedTemp = sessionStorage.getItem('imob_temp_pass');
-        if (savedTemp) {
-            setLastTempPassword(savedTemp);
+        // Restore reset state if we were in the middle of a reset
+        const needsReset = sessionStorage.getItem('imob_needs_reset');
+        if (needsReset === 'true') {
             setNeedsPasswordReset(true);
         }
         
@@ -105,12 +103,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 // Check temp password / must change password
-                // FIXED: Must validate password matches temp_password if it exists
-                if (data.temp_password && password === data.temp_password) {
+                if (data.temp_password) {
+                    if (password !== data.temp_password) {
+                        throw new Error('Senha temporária incorreta.');
+                    }
                     setNeedsPasswordReset(true);
-                    setLastTempPassword(password);
-                    sessionStorage.setItem('imob_temp_pass', password);
+                    sessionStorage.setItem('imob_needs_reset', 'true');
                     setUser(loggedUser);
+                    localStorage.setItem('imob_user', JSON.stringify(loggedUser));
                     return;
                 }
 
@@ -200,8 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // 3. Clear transient state and finish
                 localStorage.setItem('imob_user', JSON.stringify(user));
                 setNeedsPasswordReset(false);
-                setLastTempPassword(null);
-                sessionStorage.removeItem('imob_temp_pass');
+                sessionStorage.removeItem('imob_needs_reset');
                 
                 router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
             }
@@ -217,6 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setNeedsPasswordReset(false);
         localStorage.removeItem('imob_user');
+        sessionStorage.removeItem('imob_needs_reset');
         if (isSupabaseConfigured) supabase.auth.signOut();
         router.push('/login');
     };
