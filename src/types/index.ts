@@ -49,7 +49,14 @@ export interface Tenant {
 export interface Property {
   id: string;
   tenantId: string;
-  address: string;
+  address: string; // Keep for backward compatibility/display
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
   description: string;
 }
 
@@ -57,14 +64,18 @@ export interface Landlord {
   id: string;
   tenantId: string;
   name: string;
-  email: string;
+  cpf: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface Client {
   id: string;
   tenantId: string;
   name: string;
-  email: string;
+  cpf: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface InspectionEnvironment {

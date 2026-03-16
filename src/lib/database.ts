@@ -72,17 +72,43 @@ function rowToTenant(row: any): Tenant {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToProperty(row: any): Property {
-    return { id: row.id, tenantId: row.agency_id, address: row.address, description: row.description ?? '' };
+    return { 
+        id: row.id, 
+        tenantId: row.agency_id, 
+        address: row.address, 
+        cep: row.cep ?? undefined,
+        logradouro: row.logradouro ?? undefined,
+        numero: row.numero ?? undefined,
+        complemento: row.complemento ?? undefined,
+        bairro: row.bairro ?? undefined,
+        cidade: row.cidade ?? undefined,
+        estado: row.estado ?? undefined,
+        description: row.description ?? '' 
+    };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToLandlord(row: any): Landlord {
-    return { id: row.id, tenantId: row.agency_id, name: row.name, email: row.email ?? '' };
+    return { 
+        id: row.id, 
+        tenantId: row.agency_id, 
+        name: row.name, 
+        cpf: row.cpf,
+        email: row.email ?? undefined,
+        phone: row.phone ?? undefined
+    };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToClient(row: any): Client {
-    return { id: row.id, tenantId: row.agency_id, name: row.name, email: row.email ?? '' };
+    return { 
+        id: row.id, 
+        tenantId: row.agency_id, 
+        name: row.name, 
+        cpf: row.cpf,
+        email: row.email ?? undefined,
+        phone: row.phone ?? undefined
+    };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -266,7 +292,16 @@ export async function fetchProperties(agencyId: string): Promise<Property[]> {
 
 export async function createProperty(prop: Omit<Property, 'id'>): Promise<Property> {
     const { data, error } = await supabase.from('properties').insert({
-        agency_id: prop.tenantId, address: prop.address, description: prop.description
+        agency_id: prop.tenantId, 
+        address: prop.address, 
+        cep: prop.cep || null,
+        logradouro: prop.logradouro || null,
+        numero: prop.numero || null,
+        complemento: prop.complemento || null,
+        bairro: prop.bairro || null,
+        cidade: prop.cidade || null,
+        estado: prop.estado || null,
+        description: prop.description
     }).select().single();
     if (error) throw error;
     return rowToProperty(data);
@@ -386,7 +421,11 @@ export async function fetchLandlords(agencyId: string): Promise<Landlord[]> {
 
 export async function createLandlord(l: Omit<Landlord, 'id'>): Promise<Landlord> {
     const { data, error } = await supabase.from('landlords').insert({
-        agency_id: l.tenantId, name: l.name, email: l.email
+        agency_id: l.tenantId, 
+        name: l.name, 
+        cpf: l.cpf,
+        email: l.email || null,
+        phone: l.phone || null
     }).select().single();
     if (error) throw error;
     return rowToLandlord(data);
@@ -409,7 +448,11 @@ export async function fetchClients(agencyId: string): Promise<Client[]> {
 
 export async function createClient(c: Omit<Client, 'id'>): Promise<Client> {
     const { data, error } = await supabase.from('clients').insert({
-        agency_id: c.tenantId, name: c.name, email: c.email
+        agency_id: c.tenantId, 
+        name: c.name, 
+        cpf: c.cpf,
+        email: c.email || null,
+        phone: c.phone || null
     }).select().single();
     if (error) throw error;
     return rowToClient(data);
