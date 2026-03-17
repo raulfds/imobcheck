@@ -81,19 +81,13 @@ export default function TenantDashboard() {
             </div>
 
             {/* Metric Grid - Responsive columns: 2 columns on mobile-large */}
-            <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-2 max-w-2xl">
                 <MetricCard
                     title="Vistorias"
                     value={inspections.length}
                     subtext={`${ongoingCount} pendentes`}
                     icon="fact_check"
-                />
-                <MetricCard
-                    title="Conclusão"
-                    value={`${completionRate}%`}
-                    subtext="ESTÁVEL"
-                    icon="analytics"
-                    trend={completionRate > 80 ? 'up' : 'neutral'}
+                    onClick={() => router.push('/dashboard/inspections')}
                 />
                 <MetricCard
                     title="Imóveis"
@@ -101,64 +95,11 @@ export default function TenantDashboard() {
                     subtext="Cadastrados"
                     icon="corporate_fare"
                 />
-                <MetricCard
-                    title="Alertas"
-                    value={ongoingCount > 5 ? '07' : '02'}
-                    subtext="Verificar hoje"
-                    icon="error"
-                    trend="down"
-                    iconColor="text-destructive"
-                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-                {/* Recent Compliance Issues */}
                 <div className="lg:col-span-1 space-y-6 md:space-y-8">
-                    <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
-                        <div className="flex items-center justify-between mb-6 md:mb-8">
-                            <h4 className="text-base md:text-lg font-black tracking-tight text-foreground uppercase">Avisos</h4>
-                            <span className="text-[9px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded uppercase tracking-widest">Tempo Real</span>
-                        </div>
-                        <div className="space-y-4">
-                            {ongoingCount > 0 ? (
-                                <>
-                                    <IssueListItem
-                                        title="Vistoria Expirando"
-                                        location="Rua das Flores, 123"
-                                        timeAgo="2H AGO"
-                                        severity="critical"
-                                    />
-                                    <IssueListItem
-                                        title="Assinatura Pendente"
-                                        location="Condomínio Alpha"
-                                        timeAgo="5H AGO"
-                                        severity="warning"
-                                    />
-                                    <IssueListItem
-                                        title="Sincronização OK"
-                                        location="Edifício Central"
-                                        timeAgo="1D AGO"
-                                        severity="info"
-                                    />
-                                </>
-                            ) : (
-                                <div className="py-8 md:py-10 text-center space-y-3">
-                                    <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-muted flex items-center justify-center mx-auto">
-                                        <History className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground opacity-50" />
-                                    </div>
-                                    <p className="text-muted-foreground text-[9px] md:text-xs font-bold uppercase tracking-widest">Nenhum aviso ativo</p>
-                                </div>
-                            )}
-                        </div>
-                        <button 
-                            onClick={() => router.push('/dashboard/inspections')}
-                            className="w-full mt-6 md:mt-8 py-3 md:py-4 text-[9px] md:text-[10px] font-black text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all uppercase tracking-[0.2em] border border-transparent hover:border-primary/10"
-                        >
-                            Ver Todos os Avisos
-                        </button>
-                    </div>
-                    
-                    <div className="grid gap-4">
+                    <div className="grid gap-4 pt-4">
                         <button 
                             onClick={() => router.push('/dashboard/inspections/new')}
                             className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group relative overflow-hidden"

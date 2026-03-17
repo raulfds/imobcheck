@@ -62,12 +62,15 @@ export default function InspectionsPage() {
             let cls: Client[] = [];
 
             if (isSupabaseConfigured) {
-                const [insps, props, cls, lords] = await Promise.all([
+                const [rInsps, rProps, rCls, lords] = await Promise.all([
                     fetchInspections(agencyId),
                     fetchProperties(agencyId),
                     fetchClients(agencyId),
                     fetchLandlords(agencyId)
                 ]);
+                insps = rInsps;
+                props = rProps;
+                cls = rCls;
                 setAllProperties(props);
                 setAllClients(cls);
                 setAllLandlords(lords);

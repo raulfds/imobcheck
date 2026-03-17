@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { InspectionItem, InspectionEnvironment as Environment } from '@/types';
 import { 
+    Loader2,
     Camera, 
     Plus, 
     ArrowLeft, 
@@ -194,18 +195,42 @@ export default function ActiveInspection() {
             
             const currentId = inspectionId || DRAFT_ID;
             saveDraft(currentId, agencyId, cleanEnvs, { meters, keys, agreement });
-            
-            // Auto-save to Supabase if we have an ID
-            if (inspectionId && isSupabaseConfigured) {
-                updateInspection(inspectionId, {
-                    environments: cleanEnvs,
-                    meters: meters as any,
-                    keys: keys as any,
-                    agreementTerm: agreement
-                }).catch(e => console.error('Supabase auto-save failed:', e));
-            }
         }
     }, [environments, isLoading, agencyId, inspectionId, meters, keys, agreement]);
+
+    const [isSavingSupabase, setIsSavingSupabase] = useState(false);
+    const handleManualSave = async () => {
+        if (!inspectionId || !isSupabaseConfigured) return;
+        setIsSavingSupabase(true);
+        try {
+            const cleanEnvs = JSON.parse(JSON.stringify(environments));
+            for (const env of cleanEnvs) {
+                if (env.generalPhotos) {
+                    env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? `blob-ref:gen-${env.id}-${p.slice(-5)}` : p);
+                }
+                if (env.items) {
+                    env.items.forEach((item: InspectionItem) => {
+                        if (item.photo && item.photo.startsWith('blob:')) {
+                            item.photo = `blob-ref:item-${item.id}`;
+                        }
+                    });
+                }
+            }
+
+            await updateInspection(inspectionId, {
+                environments: cleanEnvs,
+                meters: meters as any,
+                keys: keys as any,
+                agreementTerm: agreement
+            });
+            alert('Rascunho salvo com sucesso!');
+        } catch (err) {
+            console.error('Manual save failed:', err);
+            alert('Falha ao salvar rascunho.');
+        } finally {
+            setIsSavingSupabase(false);
+        }
+    };
 
     const stats = {
         total: environments.reduce((acc, env) => acc + (env.items?.length || 0), 0),
@@ -713,14 +738,23 @@ export default function ActiveInspection() {
 
             {/* Bottom Actions Bar */}
             <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-background/80 backdrop-blur-xl border-t border-border/40 z-50">
-                <div className="max-w-xl mx-auto">
+                <div className="max-w-xl mx-auto flex gap-4">
                     <Button 
-                        className="w-full h-14 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-emerald-500/20 transition-all active:scale-[0.98] bg-emerald-600 hover:bg-emerald-700 text-white"
-                        disabled={environments.length === 0} 
+                        variant="outline"
+                        className="flex-1 h-14 rounded-2xl font-black text-lg gap-3 border-2 border-primary/20 text-primary hover:bg-primary/5 transition-all"
+                        onClick={handleManualSave}
+                        disabled={isSavingSupabase || !inspectionId}
+                    >
+                        {isSavingSupabase ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                        Salvar
+                    </Button>
+                    <Button 
+                        className="flex-[2] h-14 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-emerald-500/20 transition-all active:scale-[0.98] bg-emerald-600 hover:bg-emerald-700 text-white"
+                        disabled={environments.length === 0 || isSavingSupabase} 
                         onClick={handleFinish}
                     >
                         <FileCheck2 className="h-5 w-5" />
-                        Finalizar e Gerar Laudo
+                        Finalizar
                     </Button>
                 </div>
             </div>

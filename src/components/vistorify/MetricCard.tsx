@@ -7,15 +7,19 @@ interface MetricCardProps {
     trend?: 'up' | 'down' | 'neutral';
     icon: string;
     iconColor?: string;
+    onClick?: () => void;
 }
 
-export function MetricCard({ title, value, subtext, trend = 'neutral', icon, iconColor = 'text-primary' }: MetricCardProps) {
+export function MetricCard({ title, value, subtext, trend = 'neutral', icon, iconColor = 'text-primary', onClick }: MetricCardProps) {
     let trendColor = 'text-slate-500';
     if (trend === 'up') trendColor = 'text-emerald-500';
     if (trend === 'down') trendColor = 'text-red-500';
 
     return (
-        <div className="bg-card rounded-2xl border border-border p-4 md:p-6 shadow-sm hover:shadow-md transition-all hover:border-primary/50 group relative overflow-hidden">
+        <div 
+            className={`bg-card rounded-2xl border border-border p-4 md:p-6 shadow-sm hover:shadow-md transition-all hover:border-primary/50 group relative overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
+            onClick={onClick}
+        >
             <div className="flex flex-col justify-between h-full relative z-10">
                 <div className="flex justify-between items-start mb-3 md:mb-4">
                     <p className="text-muted-foreground font-bold text-[9px] md:text-[10px] uppercase tracking-[0.2em]">{title}</p>
