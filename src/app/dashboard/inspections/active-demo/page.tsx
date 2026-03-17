@@ -63,6 +63,7 @@ export default function ActiveInspection() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeEnvId, setActiveEnvId] = useState<string | null>(null);
     const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+    const [collapsedInternalCategories, setCollapsedInternalCategories] = useState<Record<string, boolean>>({});
     const [targetedEnvId, setTargetedEnvId] = useState<string | null>(null);
     const [photoName, setPhotoName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -370,26 +371,10 @@ export default function ActiveInspection() {
 
     // ─── PÁGINA DE VISTORIA (Visão Geral em Sessões) ───
     return (
-        <div className="max-w-2xl mx-auto space-y-12 pb-40 animate-in fade-in duration-700 px-4">
-            {/* Header / Progresso */}
-            <div className="flex flex-col gap-6 pt-6">
-                <div className="space-y-2">
-                    <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Vistoria Ativa</h1>
-                    <div className="flex justify-between items-end">
-                        <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">
-                            {stats.checked} de {stats.total} verificados
-                        </span>
-                        <span className="text-xl md:text-2xl font-black text-primary">{progress}%</span>
-                    </div>
-                </div>
-                <div className="relative h-4 w-full bg-muted/40 rounded-full overflow-hidden shadow-inner">
-                    <div 
-                        className="absolute h-full bg-primary transition-all duration-1000 ease-in-out flex items-center justify-end px-2"
-                        style={{ width: `${progress}%` }}
-                    >
-                        <div className="h-1.5 w-1.5 rounded-full bg-white shadow-lg animate-pulse" />
-                    </div>
-                </div>
+        <div className="max-w-2xl mx-auto space-y-8 pb-40 animate-in fade-in duration-700 px-4">
+            {/* Header Simples */}
+            <div className="pt-8 pb-2">
+                <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-foreground leading-none">Vistoria Ativa</h1>
             </div>
 
             {/* 1. SESSÃO: AMBIENTES */}
@@ -445,24 +430,11 @@ export default function ActiveInspection() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h3 className="text-xl font-black tracking-tight truncate">{env.name}</h3>
-                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
-                                                <span>{envChecked}/{env.items?.length || 0} Itens</span>
-                                                {photosCount > 0 && <span className="text-primary font-black">• {photosCount} Fotos</span>}
-                                            </div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
+                                                {env.items?.length || 0} Itens
+                                            </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Button 
-                                                variant="secondary" 
-                                                size="icon" 
-                                                className="h-10 w-10 rounded-xl"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setTargetedEnvId(env.id);
-                                                    setIsPhotoModalOpen(true);
-                                                }}
-                                            >
-                                                <Camera className="h-5 w-5" />
-                                            </Button>
                                             {isExpanded ? <ChevronUp className="h-6 w-6 text-primary" /> : <ChevronDown className="h-6 w-6 text-muted-foreground/40" />}
                                         </div>
                                     </div>
@@ -478,46 +450,73 @@ export default function ActiveInspection() {
                                                         acc[cat].push(item);
                                                         return acc;
                                                     }, {})
-                                                ).map(([categoryName, items]: [string, InspectionItem[]]) => (
-                                                    <div key={categoryName} className="space-y-3">
-                                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-2">{categoryName}</p>
-                                                        <div className="bg-muted/30 rounded-3xl p-2 space-y-1">
-                                                            {items.map((item) => (
-                                                                <div key={item.id} className="flex items-center justify-between p-3 bg-card rounded-2xl shadow-sm border border-border/10">
-                                                                    <span className="text-sm font-bold text-foreground/80 px-2 truncate flex-1">{item.name}</span>
-                                                                    <div className="flex gap-1">
-                                                                        <button 
-                                                                            onClick={() => updateItem(env.id, item.id, { status: item.status === 'ok' ? 'pending' : 'ok' })}
-                                                                            className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
-                                                                                item.status === 'ok' ? 'bg-emerald-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600'
-                                                                            }`}
-                                                                        >
-                                                                            OK
-                                                                        </button>
-                                                                        <button 
-                                                                            onClick={() => updateItem(env.id, item.id, { status: item.status === 'not_ok' ? 'pending' : 'not_ok' })}
-                                                                            className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
-                                                                                item.status === 'not_ok' ? 'bg-red-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-red-500/10 hover:text-red-600'
-                                                                            }`}
-                                                                        >
-                                                                            AVARIA
-                                                                        </button>
-                                                                    </div>
+                                                ).map(([categoryName, items]: [string, InspectionItem[]]) => {
+                                                    const categoryKey = `${env.id}-${categoryName}`;
+                                                    const isCatCollapsed = collapsedInternalCategories[categoryKey] ?? false;
+
+                                                    return (
+                                                        <div key={categoryName} className="space-y-3">
+                                                            <button 
+                                                                onClick={() => setCollapsedInternalCategories(prev => ({ ...prev, [categoryKey]: !isCatCollapsed }))}
+                                                                className="flex items-center justify-between w-full px-2 group/cat"
+                                                            >
+                                                                <p className="text-[10px] font-black text-muted-foreground group-hover/cat:text-primary transition-colors uppercase tracking-[0.2em]">{categoryName}</p>
+                                                                {isCatCollapsed ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronUp className="h-3 w-3 text-primary" />}
+                                                            </button>
+                                                            
+                                                            {!isCatCollapsed && (
+                                                                <div className="bg-muted/30 rounded-3xl p-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                                                                    {items.map((item) => (
+                                                                        <div key={item.id} className="flex items-center justify-between p-3 bg-card rounded-2xl shadow-sm border border-border/10">
+                                                                            <span className="text-sm font-bold text-foreground/80 px-2 truncate flex-1">{item.name}</span>
+                                                                            <div className="flex gap-1">
+                                                                                <button 
+                                                                                    onClick={() => updateItem(env.id, item.id, { status: item.status === 'ok' ? 'pending' : 'ok' })}
+                                                                                    className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
+                                                                                        item.status === 'ok' ? 'bg-emerald-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600'
+                                                                                    }`}
+                                                                                >
+                                                                                    OK
+                                                                                </button>
+                                                                                <button 
+                                                                                    onClick={() => updateItem(env.id, item.id, { status: item.status === 'not_ok' ? 'pending' : 'not_ok' })}
+                                                                                    className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
+                                                                                        item.status === 'not_ok' ? 'bg-red-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-red-500/10 hover:text-red-600'
+                                                                                    }`}
+                                                                                >
+                                                                                    AVARIA
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
-                                                            ))}
+                                                            )}
                                                         </div>
-                                                    </div>
-                                                ))}
-                                                <Button 
-                                                    variant="ghost" 
-                                                    className="w-full h-12 rounded-2xl border-2 border-dashed border-primary/10 text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2"
-                                                    onClick={() => {
-                                                        const cat = prompt('Nome da categoria (ex: Pintura, Elétrica):');
-                                                        if (cat) addItemToEnv(env.id, cat);
-                                                    }}
-                                                >
-                                                    <Plus className="h-4 w-4" /> Adicionar Item
-                                                </Button>
+                                                    );
+                                                })}
+                                                <div className="flex gap-2">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        className="flex-1 h-12 rounded-2xl border-2 border-dashed border-primary/10 text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2"
+                                                        onClick={() => {
+                                                            const cat = prompt('Nome da categoria (ex: Pintura, Elétrica):');
+                                                            if (cat) addItemToEnv(env.id, cat);
+                                                        }}
+                                                    >
+                                                        <Plus className="h-4 w-4" /> Item
+                                                    </Button>
+                                                    <Button 
+                                                        variant="secondary" 
+                                                        className="flex-[2] h-12 rounded-2xl bg-primary text-white hover:bg-primary/90 font-black text-[10px] uppercase tracking-widest gap-3 shadow-lg shadow-primary/20"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTargetedEnvId(env.id);
+                                                            setIsPhotoModalOpen(true);
+                                                        }}
+                                                    >
+                                                        <Camera className="h-4 w-4" /> Capturar Evidências
+                                                    </Button>
+                                                </div>
                                             </div>
 
                                             {/* Fotos do Ambiente */}
