@@ -41,9 +41,21 @@ export default function RegistrationsPage() {
     const [loading, setLoading] = useState(true);
 
     // Form states
-    const [newProperty, setNewProperty] = useState({ address: '', description: '' });
-    const [newLandlord, setNewLandlord] = useState({ name: '', email: '', cpf: '' });
-    const [newTenant, setNewTenant] = useState({ name: '', email: '', cpf: '' });
+    const [newProperty, setNewProperty] = useState({ 
+        cep: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        description: '' 
+    });
+    const [newLandlord, setNewLandlord] = useState({ name: '', email: '', cpf: '', phone: '' });
+    const [newTenant, setNewTenant] = useState({ name: '', email: '', cpf: '', phone: '' });
+
+    // Search/Filter states
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Dialog states
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
@@ -80,15 +92,32 @@ export default function RegistrationsPage() {
     const handleAddProperty = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const fullAddress = `${newProperty.logradouro}, ${newProperty.numero}${newProperty.complemento ? ' - ' + newProperty.complemento : ''} - ${newProperty.bairro}, ${newProperty.cidade} - ${newProperty.estado}`;
+            const propertyData = { 
+                tenantId: agencyId, 
+                address: fullAddress,
+                cep: newProperty.cep,
+                logradouro: newProperty.logradouro,
+                numero: newProperty.numero,
+                complemento: newProperty.complemento,
+                bairro: newProperty.bairro,
+                cidade: newProperty.cidade,
+                estado: newProperty.estado,
+                description: newProperty.description 
+            };
+
             if (isSupabaseConfigured) {
-                const p = await createProperty({ tenantId: agencyId, ...newProperty });
+                const p = await createProperty(propertyData);
                 setProperties(prev => [p, ...prev]);
             } else {
-                const p: Property = { id: `p${Date.now()}`, tenantId: agencyId, ...newProperty };
+                const p: Property = { id: `p${Date.now()}`, ...propertyData };
                 setProperties(prev => [p, ...prev]);
             }
             setIsAddPropertyOpen(false);
-            setNewProperty({ address: '', description: '' });
+            setNewProperty({ 
+                cep: '', logradouro: '', numero: '', complemento: '', 
+                bairro: '', cidade: '', estado: '', description: '' 
+            });
         } catch (err) { console.error(err); alert('Erro ao cadastrar imóvel.'); }
     };
 
@@ -103,7 +132,7 @@ export default function RegistrationsPage() {
                 setLandlords(prev => [l, ...prev]);
             }
             setIsAddLandlordOpen(false);
-            setNewLandlord({ name: '', email: '', cpf: '' });
+            setNewLandlord({ name: '', email: '', cpf: '', phone: '' });
         } catch (err) { console.error(err); alert('Erro ao cadastrar locador.'); }
     };
 
@@ -118,7 +147,7 @@ export default function RegistrationsPage() {
                 setTenants(prev => [c, ...prev]);
             }
             setIsAddTenantOpen(false);
-            setNewTenant({ name: '', email: '', cpf: '' });
+            setNewTenant({ name: '', email: '', cpf: '', phone: '' });
         } catch (err) { console.error(err); alert('Erro ao cadastrar locatário.'); }
     };
 
@@ -193,12 +222,17 @@ export default function RegistrationsPage() {
                         </TabsTrigger>
                     </TabsList>
                     
-                    <div className="flex gap-4">
-                        <div className="relative group">
+                    <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                        <div className="relative group flex-1 sm:w-80">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <Input placeholder="Filtrar registros..." className="h-16 pl-12 pr-6 rounded-2xl bg-card border-border/50 shadow-md w-full md:w-80 font-bold focus-visible:ring-primary/20" />
+                            <Input 
+                                placeholder="Buscar por CEP, CPF ou nome..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="h-16 pl-12 pr-6 rounded-2xl bg-card border-border/50 shadow-md w-full font-bold focus-visible:ring-primary/20" 
+                            />
                         </div>
-                        <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl shadow-md shrink-0 border-border/50 bg-card hover:bg-muted/50 transition-all">
+                        <Button variant="outline" size="icon" className="h-16 w-16 rounded-2xl shadow-md shrink-0 border-border/50 bg-card hover:bg-muted/50 transition-all hidden sm:flex">
                             <Filter className="h-5 w-5" />
                         </Button>
                     </div>
@@ -219,20 +253,31 @@ export default function RegistrationsPage() {
                         
                         {/* Mobile view (Cards) */}
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
-                            {properties.length === 0 ? (
+                            {properties.filter(p => 
+                                p.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                p.cep?.includes(searchTerm)
+                            ).length === 0 ? (
                                 <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
                                     <Building className="h-12 w-12" />
-                                    <p className="font-black text-xs uppercase tracking-widest italic">Nenhum imóvel</p>
+                                    <p className="font-black text-xs uppercase tracking-widest italic">Nenhum imóvel encontrado</p>
                                 </div>
-                            ) : properties.map(p => (
-                                <div key={p.id} className="p-5 bg-muted/20 border border-border/50 rounded-2xl space-y-4 group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                            <MapPin className="h-6 w-6" />
+                            ) : properties.filter(p => 
+                                p.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                p.cep?.includes(searchTerm)
+                            ).map(p => (
+                                <div key={p.id} className="p-6 bg-muted/20 border border-border/50 rounded-3xl space-y-4 shadow-sm">
+                                    <div className="flex items-start gap-4">
+                                        <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/5">
+                                            <MapPin className="h-7 w-7" />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-black text-sm text-foreground truncate">{p.address}</p>
-                                            <p className="text-[9px] font-bold text-muted-foreground uppercase">{p.description || "Residencial"}</p>
+                                        <div className="flex-1 min-w-0 pt-1">
+                                            <p className="font-black text-base text-foreground leading-tight">{p.address}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="px-2 py-0.5 rounded-md bg-muted/50 text-[10px] font-black text-muted-foreground uppercase tracking-tighter">
+                                                    {p.cep || "S/ CEP"}
+                                                </div>
+                                                <p className="text-[10px] font-bold text-primary uppercase tracking-tight">{p.description || "Residencial"}</p>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex justify-between items-center pt-2 border-t border-border/10">
@@ -261,33 +306,43 @@ export default function RegistrationsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody className="divide-y divide-border/50">
-                                    {properties.length === 0 ? (
+                                    {properties.filter(p => 
+                                        p.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                        p.cep?.includes(searchTerm)
+                                    ).length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={3} className="py-24 text-center">
                                                 <div className="flex flex-col items-center gap-4 opacity-30">
                                                     <Building className="h-16 w-16" />
-                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum imóvel registrado</p>
+                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum imóvel encontrado</p>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ) : properties.map(p => (
+                                    ) : properties.filter(p => 
+                                        p.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                        p.cep?.includes(searchTerm)
+                                    ).map(p => (
                                         <TableRow key={p.id} className="group hover:bg-muted/30 transition-all border-none h-32">
                                             <TableCell className="px-10">
                                                 <div className="flex items-center gap-6">
-                                                    <div className="h-16 w-16 rounded-[1.25rem] bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-105 group-hover:bg-primary group-hover:text-white group-hover:shadow-lg transition-all">
-                                                        <MapPin className="h-7 w-7" />
+                                                    <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform border border-primary/5">
+                                                        <MapPin className="h-8 w-8" />
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        <p className="font-black text-foreground text-lg tracking-tight group-hover:text-primary transition-colors max-w-[400px] truncate">{p.address}</p>
-                                                        <p className="text-[10px] font-bold text-muted-foreground opacity-60 uppercase tracking-widest">Código: {p.id.substring(0, 8)}</p>
+                                                    <div className="space-y-1.5">
+                                                        <p className="font-black text-lg text-foreground leading-tight">{p.address}</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="px-3 py-1 rounded-lg bg-muted text-[10px] font-black text-muted-foreground uppercase tracking-widest border border-border/50">
+                                                                CEP: {p.cep || "Não informado"}
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">ID: {p.id.substring(0, 8)}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="px-10">
-                                                <div className="flex flex-col gap-1">
-                                                    <p className="font-black text-foreground text-sm tracking-tight">{p.description || "Residencial General"}</p>
-                                                    <p className="text-[10px] font-bold text-muted-foreground opacity-40 uppercase tracking-widest">Categoria Selecionada</p>
-                                                </div>
+                                                <span className="px-4 py-2 rounded-xl bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                                                    {p.description || "Residencial"}
+                                                </span>
                                             </TableCell>
                                             <TableCell className="px-10 text-right">
                                                 <div className="flex justify-end gap-3 opacity-80 group-hover:opacity-100 transition-opacity">
@@ -322,22 +377,33 @@ export default function RegistrationsPage() {
 
                         {/* Mobile view (Cards) */}
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
-                            {landlords.length === 0 ? (
+                            {landlords.filter(l => 
+                                l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                l.cpf.includes(searchTerm)
+                            ).length === 0 ? (
                                 <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
                                     <User className="h-12 w-12" />
-                                    <p className="font-black text-xs uppercase tracking-widest italic">Nenhum locador</p>
+                                    <p className="font-black text-xs uppercase tracking-widest italic">Nenhum locador encontrado</p>
                                 </div>
-                            ) : landlords.map(l => (
-                                <div key={l.id} className="p-5 bg-muted/20 border border-border/50 rounded-2xl space-y-4 group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 shrink-0 font-black text-lg uppercase">
+                            ) : landlords.filter(l => 
+                                l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                l.cpf.includes(searchTerm)
+                            ).map(l => (
+                                <div key={l.id} className="p-6 bg-muted/20 border border-border/50 rounded-3xl space-y-4 shadow-sm">
+                                    <div className="flex items-start gap-4">
+                                        <div className="h-14 w-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600 shrink-0 font-black text-xl uppercase border border-blue-500/5">
                                             {l.name.charAt(0)}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-black text-sm text-foreground truncate">{l.name}</p>
-                                            <div className="flex items-center gap-1.5">
-                                                <Mail className="h-3 w-3 text-blue-500" />
-                                                <p className="text-[9px] font-bold text-muted-foreground truncate">{l.email}</p>
+                                        <div className="flex-1 min-w-0 pt-1">
+                                            <p className="font-black text-base text-foreground leading-tight truncate">{l.name}</p>
+                                            <div className="flex flex-col gap-1 mt-1">
+                                                <div className="px-2 py-0.5 rounded-md bg-blue-500/5 inline-flex self-start text-[10px] font-black text-blue-600 uppercase tracking-tighter">
+                                                    CPF: {l.cpf}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 opacity-60">
+                                                    <Mail className="h-3 w-3 text-blue-500" />
+                                                    <p className="text-[10px] font-bold text-muted-foreground truncate">{l.email}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -364,16 +430,22 @@ export default function RegistrationsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody className="divide-y divide-border/50">
-                                    {landlords.length === 0 ? (
+                                    {landlords.filter(l => 
+                                        l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                        l.cpf.includes(searchTerm)
+                                    ).length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={3} className="py-24 text-center">
                                                 <div className="flex flex-col items-center gap-4 opacity-30">
                                                     <User className="h-16 w-16" />
-                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum locador registrado</p>
+                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum locador encontrado</p>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ) : landlords.map(l => (
+                                    ) : landlords.filter(l => 
+                                        l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                        l.cpf.includes(searchTerm)
+                                    ).map(l => (
                                         <TableRow key={l.id} className="group hover:bg-muted/30 transition-all border-none h-32">
                                             <TableCell className="px-10">
                                                 <div className="flex items-center gap-6">
@@ -428,22 +500,33 @@ export default function RegistrationsPage() {
 
                         {/* Mobile view (Cards) */}
                         <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
-                            {tenants.length === 0 ? (
+                            {tenants.filter(t => 
+                                t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                t.cpf.includes(searchTerm)
+                            ).length === 0 ? (
                                 <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
                                     <Users className="h-12 w-12" />
-                                    <p className="font-black text-xs uppercase tracking-widest italic">Nenhum locatário</p>
+                                    <p className="font-black text-xs uppercase tracking-widest italic">Nenhum locatário encontrado</p>
                                 </div>
-                            ) : tenants.map(t => (
-                                <div key={t.id} className="p-5 bg-muted/20 border border-border/50 rounded-2xl space-y-4 group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0 font-black text-lg uppercase">
+                            ) : tenants.filter(t => 
+                                t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                t.cpf.includes(searchTerm)
+                            ).map(t => (
+                                <div key={t.id} className="p-6 bg-muted/20 border border-border/50 rounded-3xl space-y-4 shadow-sm">
+                                    <div className="flex items-start gap-4">
+                                        <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0 font-black text-xl uppercase border border-emerald-500/5">
                                             {t.name.charAt(0)}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-black text-sm text-foreground truncate">{t.name}</p>
-                                            <div className="flex items-center gap-1.5">
-                                                <Mail className="h-3 w-3 text-emerald-500" />
-                                                <p className="text-[9px] font-bold text-muted-foreground truncate">{t.email}</p>
+                                        <div className="flex-1 min-w-0 pt-1">
+                                            <p className="font-black text-base text-foreground leading-tight truncate">{t.name}</p>
+                                            <div className="flex flex-col gap-1 mt-1">
+                                                <div className="px-2 py-0.5 rounded-md bg-emerald-500/5 inline-flex self-start text-[10px] font-black text-emerald-600 uppercase tracking-tighter">
+                                                    CPF: {t.cpf}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 opacity-60">
+                                                    <Mail className="h-3 w-3 text-emerald-500" />
+                                                    <p className="text-[10px] font-bold text-muted-foreground truncate">{t.email}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -470,16 +553,22 @@ export default function RegistrationsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody className="divide-y divide-border/50">
-                                    {tenants.length === 0 ? (
+                                    {tenants.filter(t => 
+                                        t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                        t.cpf.includes(searchTerm)
+                                    ).length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={3} className="py-24 text-center">
                                                 <div className="flex flex-col items-center gap-4 opacity-30">
                                                     <Users className="h-16 w-16" />
-                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum locatário registrado</p>
+                                                    <p className="font-black text-lg uppercase tracking-widest italic">Nenhum locatário encontrado</p>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ) : tenants.map(t => (
+                                    ) : tenants.filter(t => 
+                                        t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                        t.cpf.includes(searchTerm)
+                                    ).map(t => (
                                         <TableRow key={t.id} className="group hover:bg-muted/30 transition-all border-none h-32">
                                             <TableCell className="px-10">
                                                 <div className="flex items-center gap-6">
@@ -522,30 +611,80 @@ export default function RegistrationsPage() {
 
             {/* ─── MODALS REDESIGN ─── */}
             <Dialog open={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
-                    <div className="px-10 py-12 bg-primary group relative overflow-hidden">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] md:rounded-[2.5rem] p-0 border-none shadow-2xl bg-card">
+                    <div className="px-6 py-8 md:px-10 md:py-12 bg-primary group relative overflow-hidden shrink-0">
                         <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
                             <Building className="h-32 w-32 text-white fill-current" />
                         </div>
                         <div className="relative z-10 space-y-2">
-                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Novo Imóvel</DialogTitle>
-                            <DialogDescription className="text-primary-foreground/80 text-lg font-medium tracking-tight">
+                            <DialogTitle className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">Novo Imóvel</DialogTitle>
+                            <DialogDescription className="text-primary-foreground/80 text-sm md:text-lg font-medium tracking-tight">
                                 Cadastrar nova unidade no sistema.
                             </DialogDescription>
                         </div>
                     </div>
-                    <form onSubmit={handleAddProperty} className="p-10 space-y-8">
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="address" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Endereço do Imóvel</Label>
-                                <Input id="address" required value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} placeholder="Ex: Av. Paulista, 1000 - Bela Vista" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40" />
+                    <form onSubmit={handleAddProperty} className="p-6 md:p-10 space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                            <div className="md:col-span-4 space-y-2">
+                                <Label htmlFor="pcep" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">CEP</Label>
+                                <Input 
+                                    id="pcep" 
+                                    required 
+                                    value={newProperty.cep} 
+                                    onChange={async (e) => {
+                                        const val = e.target.value.replace(/\D/g, '').substring(0, 8);
+                                        setNewProperty({ ...newProperty, cep: val });
+                                        if (val.length === 8) {
+                                            try {
+                                                const res = await fetch(`https://viacep.com.br/ws/${val}/json/`);
+                                                const data = await res.json();
+                                                if (!data.erro) {
+                                                    setNewProperty(prev => ({
+                                                        ...prev,
+                                                        cep: val,
+                                                        logradouro: data.logradouro,
+                                                        bairro: data.bairro,
+                                                        cidade: data.localidade,
+                                                        estado: data.uf
+                                                    }));
+                                                }
+                                            } catch (err) { console.error('CEP fail', err); }
+                                        }
+                                    }} 
+                                    placeholder="00000-000" 
+                                    className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" 
+                                />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Tipo ou Categoria</Label>
-                                <Input id="description" value={newProperty.description} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })} placeholder="Ex: Apartamento 3 Quartos" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg placeholder:text-muted-foreground/40" />
+                            <div className="md:col-span-8 space-y-2">
+                                <Label htmlFor="plog" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Logradouro / Rua</Label>
+                                <Input id="plog" required value={newProperty.logradouro} onChange={e => setNewProperty({ ...newProperty, logradouro: e.target.value })} placeholder="Nome da rua" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            </div>
+                            <div className="md:col-span-4 space-y-2">
+                                <Label htmlFor="pnum" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Número</Label>
+                                <Input id="pnum" required value={newProperty.numero} onChange={e => setNewProperty({ ...newProperty, numero: e.target.value })} placeholder="123" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            </div>
+                            <div className="md:col-span-8 space-y-2">
+                                <Label htmlFor="pcomp" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Complemento</Label>
+                                <Input id="pcomp" value={newProperty.complemento} onChange={e => setNewProperty({ ...newProperty, complemento: e.target.value })} placeholder="Apto 42, Bloco B" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            </div>
+                            <div className="md:col-span-6 space-y-2">
+                                <Label htmlFor="pbairro" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Bairro</Label>
+                                <Input id="pbairro" required value={newProperty.bairro} onChange={e => setNewProperty({ ...newProperty, bairro: e.target.value })} placeholder="Nome do bairro" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            </div>
+                            <div className="md:col-span-4 space-y-2">
+                                <Label htmlFor="pcidade" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Cidade</Label>
+                                <Input id="pcidade" required value={newProperty.cidade} onChange={e => setNewProperty({ ...newProperty, cidade: e.target.value })} placeholder="São Paulo" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            </div>
+                            <div className="md:col-span-2 space-y-2">
+                                <Label htmlFor="puf" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">UF</Label>
+                                <Input id="puf" required maxLength={2} value={newProperty.estado} onChange={e => setNewProperty({ ...newProperty, estado: e.target.value.toUpperCase() })} placeholder="SP" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4 text-center" />
+                            </div>
+                            <div className="md:col-span-12 space-y-2">
+                                <Label htmlFor="pdesc" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Descrição curta (Tipo do imóvel)</Label>
+                                <Input id="pdesc" value={newProperty.description} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })} placeholder="Ex: Apartamento 3 Quartos com Suíte" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-4 pt-4">
+                        <div className="flex flex-col gap-4 pt-4 shrink-0">
                             <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest">
                                 Finalizar Cadastro
                             </Button>
@@ -558,34 +697,38 @@ export default function RegistrationsPage() {
             </Dialog>
 
             <Dialog open={isAddLandlordOpen} onOpenChange={setIsAddLandlordOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
-                    <div className="px-10 py-12 bg-blue-600 group relative overflow-hidden">
+                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-[2rem] md:rounded-[2.5rem] p-0 border-none shadow-2xl bg-card">
+                    <div className="px-6 py-8 md:px-10 md:py-12 bg-blue-600 group relative overflow-hidden shrink-0">
                         <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
                             <User className="h-32 w-32 text-white fill-current" />
                         </div>
                         <div className="relative z-10 space-y-2">
-                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Novo Locador</DialogTitle>
-                            <DialogDescription className="text-blue-100/80 text-lg font-medium tracking-tight">
+                            <DialogTitle className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">Novo Locador</DialogTitle>
+                            <DialogDescription className="text-blue-100/80 text-sm md:text-lg font-medium tracking-tight">
                                 Adicionar um proprietário de imóvel.
                             </DialogDescription>
                         </div>
                     </div>
-                    <form onSubmit={handleAddLandlord} className="p-10 space-y-8">
+                    <form onSubmit={handleAddLandlord} className="p-6 md:p-10 space-y-8">
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="lname" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome Completo</Label>
-                                <Input id="lname" required value={newLandlord.name} onChange={e => setNewLandlord({ ...newLandlord, name: e.target.value })} placeholder="Ex: João da Silva Santos" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
+                                <Input id="lname" required value={newLandlord.name} onChange={e => setNewLandlord({ ...newLandlord, name: e.target.value })} placeholder="Ex: João da Silva Santos" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="lemail" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">E-mail para Contato</Label>
-                                <Input id="lemail" type="email" value={newLandlord.email} onChange={e => setNewLandlord({ ...newLandlord, email: e.target.value })} placeholder="Ex: joao@email.com" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
+                                <Input id="lemail" type="email" value={newLandlord.email} onChange={e => setNewLandlord({ ...newLandlord, email: e.target.value })} placeholder="Ex: joao@email.com" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="lphone" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Telefone</Label>
+                                <Input id="lphone" value={newLandlord.phone} onChange={e => setNewLandlord({ ...newLandlord, phone: e.target.value })} placeholder="Ex: (11) 99999-9999" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="lcpf" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">CPF</Label>
-                                <Input id="lcpf" required value={newLandlord.cpf} onChange={e => setNewLandlord({ ...newLandlord, cpf: e.target.value })} placeholder="Ex: 000.000.000-00" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
+                                <Input id="lcpf" required value={newLandlord.cpf} onChange={e => setNewLandlord({ ...newLandlord, cpf: e.target.value })} placeholder="Ex: 000.000.000-00" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-4 pt-4">
+                        <div className="flex flex-col gap-4 pt-4 shrink-0">
                             <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-blue-600 hover:bg-blue-700 text-white uppercase tracking-widest">
                                 Cadastrar Locador
                             </Button>
@@ -598,34 +741,38 @@ export default function RegistrationsPage() {
             </Dialog>
 
             <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
-                <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
-                    <div className="px-10 py-12 bg-emerald-600 group relative overflow-hidden">
+                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto rounded-[2rem] md:rounded-[2.5rem] p-0 border-none shadow-2xl bg-card">
+                    <div className="px-6 py-8 md:px-10 md:py-12 bg-emerald-600 group relative overflow-hidden shrink-0">
                         <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-700">
                             <Users className="h-32 w-32 text-white fill-current" />
                         </div>
                         <div className="relative z-10 space-y-2">
-                            <DialogTitle className="text-4xl font-black tracking-tight text-white leading-none">Novo Inquilino</DialogTitle>
-                            <DialogDescription className="text-emerald-100/80 text-lg font-medium tracking-tight">
+                            <DialogTitle className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">Novo Inquilino</DialogTitle>
+                            <DialogDescription className="text-emerald-100/80 text-sm md:text-lg font-medium tracking-tight">
                                 Adicionar um locatário ao sistema.
                             </DialogDescription>
                         </div>
                     </div>
-                    <form onSubmit={handleAddTenant} className="p-10 space-y-8">
+                    <form onSubmit={handleAddTenant} className="p-6 md:p-10 space-y-8">
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="tname" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome Completo</Label>
-                                <Input id="tname" required value={newTenant.name} onChange={e => setNewTenant({ ...newTenant, name: e.target.value })} placeholder="Ex: Maria Oliveira Costa" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
+                                <Input id="tname" required value={newTenant.name} onChange={e => setNewTenant({ ...newTenant, name: e.target.value })} placeholder="Ex: Maria Oliveira Costa" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="temail" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">E-mail para Contato</Label>
-                                <Input id="temail" type="email" value={newTenant.email} onChange={e => setNewTenant({ ...newTenant, email: e.target.value })} placeholder="Ex: maria@email.com" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
+                                <Input id="temail" type="email" value={newTenant.email} onChange={e => setNewTenant({ ...newTenant, email: e.target.value })} placeholder="Ex: maria@email.com" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="tphone" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Telefone</Label>
+                                <Input id="tphone" value={newTenant.phone} onChange={e => setNewTenant({ ...newTenant, phone: e.target.value })} placeholder="Ex: (11) 99999-9999" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="tcpf" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">CPF</Label>
-                                <Input id="tcpf" required value={newTenant.cpf} onChange={e => setNewTenant({ ...newTenant, cpf: e.target.value })} placeholder="Ex: 000.000.000-00" className="h-16 rounded-2xl bg-muted/30 border-border/50 font-bold px-6 text-lg" />
+                                <Input id="tcpf" required value={newTenant.cpf} onChange={e => setNewTenant({ ...newTenant, cpf: e.target.value })} placeholder="Ex: 000.000.000-00" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-4 pt-4">
+                        <div className="flex flex-col gap-4 pt-4 shrink-0">
                             <Button type="submit" className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-emerald-600 hover:bg-emerald-700 text-white uppercase tracking-widest">
                                 Cadastrar Inquilino
                             </Button>
