@@ -452,7 +452,7 @@ export default function ActiveInspection() {
                                                     }, {})
                                                 ).map(([categoryName, items]: [string, InspectionItem[]]) => {
                                                     const categoryKey = `${env.id}-${categoryName}`;
-                                                    const isCatCollapsed = collapsedInternalCategories[categoryKey] ?? false;
+                                                    const isCatCollapsed = collapsedInternalCategories[categoryKey] ?? true;
 
                                                     return (
                                                         <div key={categoryName} className="space-y-3">
@@ -467,28 +467,47 @@ export default function ActiveInspection() {
                                                             {!isCatCollapsed && (
                                                                 <div className="bg-muted/30 rounded-3xl p-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
                                                                     {items.map((item) => (
-                                                                        <div key={item.id} className="flex items-center justify-between p-3 bg-card rounded-2xl shadow-sm border border-border/10">
-                                                                            <span className="text-sm font-bold text-foreground/80 px-2 truncate flex-1">{item.name}</span>
-                                                                            <div className="flex gap-1">
-                                                                                <button 
-                                                                                    onClick={() => updateItem(env.id, item.id, { status: item.status === 'ok' ? 'pending' : 'ok' })}
-                                                                                    className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
-                                                                                        item.status === 'ok' ? 'bg-emerald-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600'
-                                                                                    }`}
-                                                                                >
-                                                                                    OK
-                                                                                </button>
-                                                                                <button 
-                                                                                    onClick={() => updateItem(env.id, item.id, { status: item.status === 'not_ok' ? 'pending' : 'not_ok' })}
-                                                                                    className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
-                                                                                        item.status === 'not_ok' ? 'bg-red-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-red-500/10 hover:text-red-600'
-                                                                                    }`}
-                                                                                >
-                                                                                    AVARIA
-                                                                                </button>
+                                                                        <div key={item.id} className="space-y-2">
+                                                                            <div className="flex items-center justify-between p-3 bg-card rounded-2xl shadow-sm border border-border/10">
+                                                                                <span className="text-sm font-bold text-foreground/80 px-2 truncate flex-1">{item.name}</span>
+                                                                                <div className="flex gap-1">
+                                                                                    <button 
+                                                                                        onClick={() => updateItem(env.id, item.id, { status: item.status === 'ok' ? 'pending' : 'ok' })}
+                                                                                        className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
+                                                                                            item.status === 'ok' ? 'bg-emerald-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600'
+                                                                                        }`}
+                                                                                    >
+                                                                                        OK
+                                                                                    </button>
+                                                                                    <button 
+                                                                                        onClick={() => updateItem(env.id, item.id, { status: item.status === 'not_ok' ? 'pending' : 'not_ok' })}
+                                                                                        className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
+                                                                                            item.status === 'not_ok' ? 'bg-red-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-red-500/10 hover:text-red-600'
+                                                                                        }`}
+                                                                                    >
+                                                                                        AVARIA
+                                                                                    </button>
+                                                                                </div>
                                                                             </div>
+                                                                            {item.status === 'not_ok' && (
+                                                                                <div className="px-2 pb-2 animate-in zoom-in-95 duration-200">
+                                                                                    <Input 
+                                                                                        placeholder="Descreva a avaria em texto livre..."
+                                                                                        value={item.observation || ''}
+                                                                                        onChange={(e) => updateItem(env.id, item.id, { observation: e.target.value })}
+                                                                                        className="h-10 rounded-xl bg-white border-2 border-red-100 shadow-inner font-bold text-xs px-4 focus-visible:ring-red-200"
+                                                                                    />
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     ))}
+                                                                    <Button 
+                                                                        variant="ghost" 
+                                                                        className="w-full h-10 rounded-xl border border-dashed border-primary/20 text-primary hover:bg-primary/5 font-black text-[9px] uppercase tracking-widest mt-1"
+                                                                        onClick={() => addItemToEnv(env.id, categoryName)}
+                                                                    >
+                                                                        <Plus className="h-3 w-3 mr-1" /> Adicionar Item em {categoryName}
+                                                                    </Button>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -499,11 +518,11 @@ export default function ActiveInspection() {
                                                         variant="ghost" 
                                                         className="flex-1 h-12 rounded-2xl border-2 border-dashed border-primary/10 text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2"
                                                         onClick={() => {
-                                                            const cat = prompt('Nome da categoria (ex: Pintura, Elétrica):');
-                                                            if (cat) addItemToEnv(env.id, cat);
+                                                            const catName = prompt('Nome da nova categoria (ex: Pintura, Elétrica):');
+                                                            if (catName) addItemToEnv(env.id, catName);
                                                         }}
                                                     >
-                                                        <Plus className="h-4 w-4" /> Item
+                                                        <Plus className="h-4 w-4" /> Nova Categoria
                                                     </Button>
                                                     <Button 
                                                         variant="secondary" 
