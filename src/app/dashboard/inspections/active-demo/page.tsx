@@ -76,6 +76,7 @@ export default function ActiveInspection() {
     const [keys, setKeys] = useState<{description: string, quantity: number}[]>([]);
     const [agreement, setAgreement] = useState('');
     const [inspectionData, setInspectionData] = useState<any>(null);
+    const [isFinishing, setIsFinishing] = useState(false);
 
     const handleSaveAsTemplate = async (env: Environment) => {
         try {
@@ -364,13 +365,38 @@ export default function ActiveInspection() {
 
     const handleFinish = async () => {
         if (inspectionId && isSupabaseConfigured) {
+            setIsFinishing(true);
             try {
-                await updateInspection(inspectionId, { status: 'completed' });
+                // Ensure all data is saved
+                const cleanEnvs = JSON.parse(JSON.stringify(environments));
+                for (const env of cleanEnvs) {
+                    if (env.generalPhotos) {
+                        env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? `blob-ref:gen-${env.id}-${p.slice(-5)}` : p);
+                    }
+                    if (env.items) {
+                        env.items.forEach((item: InspectionItem) => {
+                            if (item.photo && item.photo.startsWith('blob:')) {
+                                item.photo = `blob-ref:item-${item.id}`;
+                            }
+                        });
+                    }
+                }
+
+                await updateInspection(inspectionId, { 
+                    status: 'completed',
+                    environments: cleanEnvs,
+                    meters: meters as any,
+                    keys: keys as any,
+                    agreementTerm: agreement
+                });
+                
                 await deleteDraft(inspectionId);
                 router.push(`/dashboard/inspections/summary-demo?id=${inspectionId}`);
             } catch (err) {
                 console.error(err);
                 alert('Erro ao finalizar vistoria.');
+            } finally {
+                setIsFinishing(false);
             }
         } else {
             router.push('/dashboard/inspections/summary-demo');
@@ -750,10 +776,10 @@ export default function ActiveInspection() {
                     </Button>
                     <Button 
                         className="flex-[2] h-14 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-emerald-500/20 transition-all active:scale-[0.98] bg-emerald-600 hover:bg-emerald-700 text-white"
-                        disabled={environments.length === 0 || isSavingSupabase} 
+                        disabled={environments.length === 0 || isSavingSupabase || isFinishing} 
                         onClick={handleFinish}
                     >
-                        <FileCheck2 className="h-5 w-5" />
+                        {isFinishing ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileCheck2 className="h-5 w-5" />}
                         Finalizar
                     </Button>
                 </div>

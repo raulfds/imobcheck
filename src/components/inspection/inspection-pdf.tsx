@@ -176,8 +176,50 @@ export const InspectionPDF = ({ inspection, tenant }: Props) => {
                     </View>
                 ))}
 
+                {/* Meters Section */}
+                {inspection.meters && (
+                    <View wrap={false}>
+                        <Text style={styles.sectionTitle}>Leitura de Medidores</Text>
+                        <View style={styles.row}>
+                            <Text style={styles.itemLabel}>Energia (Luz)</Text>
+                            <Text style={styles.itemNote}>{inspection.meters.light || 'Não informada'}</Text>
+                        </View>
+                        <View style={styles.row}>
+                            <Text style={styles.itemLabel}>Água</Text>
+                            <Text style={styles.itemNote}>{inspection.meters.water || 'Não informada'}</Text>
+                        </View>
+                        <View style={styles.row}>
+                            <Text style={styles.itemLabel}>Gás</Text>
+                            <Text style={styles.itemNote}>{inspection.meters.gas || 'Não informada'}</Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* Keys Section */}
+                {inspection.keys && inspection.keys.length > 0 && (
+                    <View wrap={false}>
+                        <Text style={styles.sectionTitle}>Controle de Chaves</Text>
+                        {inspection.keys.map((key, idx) => (
+                            <View key={idx} style={styles.row}>
+                                <Text style={styles.itemLabel}>{key.description}</Text>
+                                <Text style={styles.itemNote}>{key.quantity} Unidade(s)</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {/* Agreement Section */}
+                {inspection.agreementTerm && (
+                    <View wrap={false}>
+                        <Text style={styles.sectionTitle}>Termo de Aceite</Text>
+                        <Text style={{ fontSize: 9, fontStyle: 'italic', color: '#555', padding: 5 }}>
+                            "{inspection.agreementTerm}"
+                        </Text>
+                    </View>
+                )}
+
                 <Text style={styles.footer}>
-                    Este documento é parte integrante do contrato de locação. Gerado por Vistorify.
+                    Este documento é parte integrante do contrato de locação. Gerado por Vistorify em {new Date().toLocaleDateString('pt-BR')}.
                 </Text>
             </Page>
 

@@ -58,25 +58,54 @@ export default function InspectionSummary() {
 
     useEffect(() => {
         async function loadData() {
-            if (!id || !isSupabaseConfigured) {
-                setLoading(false);
-                return;
+            const DRAFT_ID = 'active-inspection-demo';
+            
+            // Try Supabase first if ID is present
+            if (id && isSupabaseConfigured) {
+                try {
+                    const insp = await fetchInspection(id);
+                    if (insp) {
+                        setInspection(insp);
+                        const [p, c, l] = await Promise.all([
+                            fetchProperty(insp.propertyId),
+                            fetchClient(insp.clientId),
+                            insp.landlordId ? fetchLandlord(insp.landlordId) : Promise.resolve(null)
+                        ]);
+                        setProperty(p);
+                        setClient(c);
+                        setLandlord(l);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Failed to load from Supabase:', err);
+                }
             }
+
+            // Fallback to IndexedDB (Demo Mode)
             try {
-                const insp = await fetchInspection(id);
-                if (insp) {
-                    setInspection(insp);
-                    const [p, c, l] = await Promise.all([
-                        fetchProperty(insp.propertyId),
-                        fetchClient(insp.clientId),
-                        insp.landlordId ? fetchLandlord(insp.landlordId) : Promise.resolve(null)
-                    ]);
-                    setProperty(p);
-                    setClient(c);
-                    setLandlord(l);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { getDraft } = await import('@/lib/db');
+                const draft = await getDraft(id || DRAFT_ID);
+                if (draft) {
+                    // Convert draft to Inspection type
+                    const mockInspection: Inspection = {
+                        id: draft.id,
+                        tenantId: draft.tenantId,
+                        propertyId: '',
+                        clientId: '',
+                        type: 'entry',
+                        status: 'completed',
+                        date: new Date(draft.updatedAt).toISOString().split('T')[0],
+                        environments: draft.environments,
+                        meters: draft.meters,
+                        keys: draft.keys,
+                        agreementTerm: draft.agreement
+                    };
+                    setInspection(mockInspection);
                 }
             } catch (err) {
-                console.error('Failed to load summary data:', err);
+                console.error('Failed to load from IndexedDB:', err);
             } finally {
                 setLoading(false);
             }

@@ -12,7 +12,7 @@ const getAdminClient = () => {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!url || !key) {
-        throw new Error('Supabase admin credentials not found in environment.');
+        return null;
     }
 
     return createClient(url, key, {
@@ -35,6 +35,8 @@ export async function adminSaveUser(userData: {
     temp_password?: string;
 }) {
     const admin = getAdminClient();
+    if (!admin) return { success: false, error: 'Admin credentials missing.' };
+    
     const email = userData.email.toLowerCase();
 
     try {
@@ -102,6 +104,8 @@ export async function finalizeUserPassword(userData: {
     newPassword: string;
 }) {
     const admin = getAdminClient();
+    if (!admin) return { success: false, error: 'Admin credentials missing.' };
+
     const email = userData.email.toLowerCase();
     console.log(`[ADMIN] Finalizing user ${email}...`);
 
@@ -182,6 +186,8 @@ export async function finalizeUserPassword(userData: {
  */
 export async function adminResetPassword(userId: string, email: string, name: string) {
     const admin = getAdminClient();
+    if (!admin) return { success: false, error: 'Admin credentials missing.' };
+
     const tempPassword = Math.random().toString(36).slice(-8);
     console.log(`[ADMIN] Resetting password for ${email} (${userId})...`);
 
