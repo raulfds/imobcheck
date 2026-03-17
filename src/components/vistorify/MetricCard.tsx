@@ -16,11 +16,6 @@ export function MetricCard({ title, value, subtext, trend = 'neutral', icon, ico
 
     return (
         <div className="bg-card rounded-2xl border border-border p-6 shadow-sm hover:shadow-md transition-all hover:border-primary/50 group relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <span className={`material-symbols-outlined !text-6xl ${iconColor}`}>
-                    {icon}
-                </span>
-            </div>
             <div className="flex flex-col justify-between h-full relative z-10">
                 <div className="flex justify-between items-start mb-4">
                     <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-[0.2em]">{title}</p>

@@ -8,6 +8,8 @@ import { LayoutDashboard, ClipboardCheck, Users, FileText, Settings, LogOut, Pac
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import Link from 'next/link';
+
 export default function TenantLayout({ children }: { children: React.ReactNode }) {
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
@@ -32,23 +34,23 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                     <SidebarMenu className="gap-1 mt-4">
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild tooltip="Dashboard" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
-                                <a href="/dashboard" className="flex items-center gap-3">
+                                <Link href="/dashboard" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground`}>
                                         <LayoutDashboard className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Dashboard</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild tooltip="Vistorias" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/dashboard/inspections" className="flex items-center gap-3">
+                                <Link href="/dashboard/inspections" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
                                         <ClipboardCheck className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Vistorias</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
@@ -58,45 +60,45 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
 
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild tooltip="Cadastros" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/dashboard/registrations" className="flex items-center gap-3">
+                                <Link href="/dashboard/registrations" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
                                         <FileText className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Imóveis & Clientes</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild tooltip="Equipe" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/dashboard/team" className="flex items-center gap-3">
+                                <Link href="/dashboard/team" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
                                         <Users className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Equipe</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild tooltip="Meu Plano" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/dashboard/plan" className="flex items-center gap-3">
+                                <Link href="/dashboard/plan" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
                                         <Package className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Meu Plano</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild tooltip="Configurações" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/dashboard/settings" className="flex items-center gap-3">
+                                <Link href="/dashboard/settings" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
                                         <Settings className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Configurações</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
