@@ -280,32 +280,32 @@ export default function ActiveInspection() {
     if (activeEnvId) {
         const env = environments.find((e) => e.id === activeEnvId)!;
         return (
-            <div className="max-w-2xl mx-auto space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center justify-between sticky top-0 z-40 bg-background/80 backdrop-blur-md py-4 -mx-4 px-4 border-b border-border/40">
-                    <div className="flex items-center gap-4">
-                        <Button variant="secondary" size="icon" className="h-12 w-12 rounded-2xl shadow-md" onClick={() => setActiveEnvId(null)}>
+            <div className="max-w-2xl mx-auto space-y-6 md:space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 md:px-0">
+                <div className="flex items-center justify-between sticky top-0 z-40 bg-background/80 backdrop-blur-md py-3 md:py-4 -mx-4 px-4 border-b border-border/40">
+                    <div className="flex items-center gap-3 md:gap-4">
+                        <Button variant="secondary" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl shadow-md" onClick={() => setActiveEnvId(null)}>
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <div>
-                            <h2 className="text-2xl font-black tracking-tight">{env.name}</h2>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-primary italic">Conferência de Itens</p>
+                            <h2 className="text-lg md:text-2xl font-black tracking-tight truncate max-w-[150px] md:max-w-none">{env.name}</h2>
+                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-primary italic">Conferência</p>
                         </div>
                     </div>
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-none font-black px-4 py-1.5 rounded-full">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-none font-black px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-xs">
                         {env.items.filter(i => i.status !== 'pending').length}/{env.items.length}
                     </Badge>
                 </div>
 
                 <Tabs defaultValue="items" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 h-16 bg-muted/40 p-1.5 rounded-2xl mb-8">
-                        <TabsTrigger value="items" className="rounded-xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all gap-2">
-                            <Layout className="h-4 w-4" /> Checklist
+                    <TabsList className="grid w-full grid-cols-2 h-14 md:h-16 bg-muted/40 p-1 md:p-1.5 rounded-xl md:rounded-2xl mb-6 md:mb-8">
+                        <TabsTrigger value="items" className="rounded-lg md:rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-background transition-all gap-1.5 md:gap-2">
+                            <Layout className="h-3.5 w-3.5 md:h-4 md:w-4" /> Checklist
                         </TabsTrigger>
-                        <TabsTrigger value="photos" className="rounded-xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all gap-2">
-                            <ImageIcon className="h-4 w-4" /> Fotos Gerais
+                        <TabsTrigger value="photos" className="rounded-lg md:rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-background transition-all gap-1.5 md:gap-2">
+                            <ImageIcon className="h-3.5 w-3.5 md:h-4 md:w-4" /> Fotos
                         </TabsTrigger>
-                        <TabsTrigger value="validation" className="rounded-xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-xl transition-all gap-2">
-                            <FileCheck2 className="h-4 w-4" /> Validação
+                        <TabsTrigger value="validation" className="rounded-lg md:rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-background transition-all gap-1.5 md:gap-2">
+                            <FileCheck2 className="h-3.5 w-3.5 md:h-4 md:w-4" /> Laudo
                         </TabsTrigger>
                     </TabsList>
 

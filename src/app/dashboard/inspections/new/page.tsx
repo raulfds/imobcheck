@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { 
     Loader2, 
     ClipboardList, 
     ArrowRight, 
     CheckCircle2, 
-    Zap,
     Building2,
     Users2,
     Settings2,
@@ -25,6 +23,7 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { QuickAddProperty } from '@/components/inspections/quick-add-property';
 import { QuickAddClient } from '@/components/inspections/quick-add-client';
 import { QuickAddLandlord } from '@/components/inspections/quick-add-landlord';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 
 export default function NewInspection() {
     const router = useRouter();
@@ -105,12 +104,31 @@ export default function NewInspection() {
         }
     };
 
+    // Options for searchable selects
+    const propertyOptions = properties.map(p => ({
+        id: p.id,
+        label: p.address,
+        searchValue: `${p.address} ${p.cep || ''} ${p.numero || ''}`,
+    }));
+
+    const clientOptions = clients.map(c => ({
+        id: c.id,
+        label: c.name,
+        searchValue: `${c.name} ${c.cpf || ''}`,
+    }));
+
+    const landlordOptions = landlords.map(l => ({
+        id: l.id,
+        label: l.name,
+        searchValue: `${l.name} ${l.cpf || ''}`,
+    }));
+
     return (
-        <div className="max-w-3xl mx-auto space-y-10 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-3xl mx-auto space-y-8 md:space-y-12 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 px-4 md:px-0">
                 <div className="space-y-4">
-                    <Breadcrumb>
+                    <Breadcrumb className="hidden sm:block">
                         <BreadcrumbList>
                             <BreadcrumbItem>
                                 <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
@@ -126,135 +144,127 @@ export default function NewInspection() {
                         </BreadcrumbList>
                     </Breadcrumb>
                     <div className="space-y-2">
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Nova Vistoria</h1>
-                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Vistorias seguras, objetivas e datadas.</p>
+                        <h1 className="text-3xl md:text-6xl font-black tracking-tighter text-foreground leading-[0.85]">Configurar<br/>Nova Vistoria</h1>
+                        <p className="text-muted-foreground text-xs md:text-lg font-medium tracking-tight">Preencha os dados básicos para iniciar o laudo eletrônico.</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 px-4 md:px-0">
                 {/* Main Form */}
-                <div className="md:col-span-2 space-y-8">
-                    <Card className="border-none shadow-2xl bg-card overflow-hidden rounded-[2.5rem]">
-                        <CardHeader className="px-10 pt-10 pb-6 border-b border-border/40 bg-muted/20">
+                <div className="lg:col-span-2 space-y-6 md:space-y-8">
+                    <Card className="border-none shadow-premium bg-card overflow-hidden rounded-2xl md:rounded-[2.5rem]">
+                        <CardHeader className="px-6 md:px-10 pt-8 md:pt-10 pb-6 border-b border-border/40 bg-muted/20">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                     <Settings2 className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl font-black tracking-tight">Configurações do Laudo</CardTitle>
-                                    <CardDescription className="text-xs font-bold uppercase tracking-widest opacity-70">Identificação das partes e imóvel</CardDescription>
+                                    <CardTitle className="text-lg md:text-xl font-black tracking-tight uppercase">Identificação das Partes</CardTitle>
+                                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest opacity-60">Imóvel, Locador e Locatário</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="px-10 py-10 space-y-8">
+                        <CardContent className="px-6 md:px-10 py-8 md:py-10 space-y-8 md:space-y-10">
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                                     <Loader2 className="h-12 w-12 animate-spin text-primary/40" />
-                                    <p className="text-xs font-black uppercase tracking-widest opacity-40">Consultando Base...</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Consultando Base...</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                         <div className="flex items-center justify-between ml-1">
                                             <Label htmlFor="property" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                <Building2 className="h-3 w-3" /> Imóvel do Portfólio
+                                                <Building2 className="h-3 w-3" /> Imóvel do Processo
                                             </Label>
                                             <QuickAddProperty agencyId={agencyId} onSuccess={handlePropertyAdded} />
                                         </div>
-                                        <Select value={propertyId} onValueChange={(v: string | null) => { if (v) setPropertyId(v); }}>
-                                            <SelectTrigger id="property" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
-                                                <SelectValue placeholder={properties.length === 0 ? 'Nenhum imóvel cadastrado' : 'Selecione o imóvel'} />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                                                {properties.map(p => (
-                                                    <SelectItem key={p.id} value={p.id} className="rounded-xl py-3 font-bold">{p.address}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <SearchableSelect
+                                            options={propertyOptions}
+                                            value={propertyId}
+                                            onValueChange={setPropertyId}
+                                            placeholder="Selecione ou busque por endereço/CEP..."
+                                            searchPlaceholder="Digite endereço ou CEP..."
+                                            emptyText="Imóvel não encontrado."
+                                        />
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                                        <div className="space-y-4">
                                             <div className="flex items-center justify-between ml-1">
                                                 <Label htmlFor="landlord" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                    <Users2 className="h-3 w-3" /> Locador (Dono)
+                                                    <Users2 className="h-3 w-3" /> Locador
                                                 </Label>
                                                 <QuickAddLandlord agencyId={agencyId} onSuccess={handleLandlordAdded} />
                                             </div>
-                                            <Select value={landlordId} onValueChange={(v: string | null) => { if (v) setLandlordId(v); }}>
-                                                <SelectTrigger id="landlord" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
-                                                    <SelectValue placeholder="Selecione..." />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                                                    {landlords.map(l => (
-                                                        <SelectItem key={l.id} value={l.id} className="rounded-xl py-3 font-bold">{l.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <SearchableSelect
+                                                options={landlordOptions}
+                                                value={landlordId}
+                                                onValueChange={setLandlordId}
+                                                placeholder="Nome ou CPF..."
+                                                searchPlaceholder="Digite nome ou CPF..."
+                                            />
                                         </div>
 
-                                        <div className="space-y-3">
+                                        <div className="space-y-4">
                                             <div className="flex items-center justify-between ml-1">
                                                 <Label htmlFor="client" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                                     <Users2 className="h-3 w-3" /> Locatário
                                                 </Label>
                                                 <QuickAddClient agencyId={agencyId} onSuccess={handleClientAdded} />
                                             </div>
-                                            <Select value={clientId} onValueChange={(v: string | null) => { if (v) setClientId(v); }}>
-                                                <SelectTrigger id="client" className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus:ring-primary/20">
-                                                    <SelectValue placeholder="Selecione..." />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                                                    {clients.map(c => (
-                                                        <SelectItem key={c.id} value={c.id} className="rounded-xl py-3 font-bold">{c.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <SearchableSelect
+                                                options={clientOptions}
+                                                value={clientId}
+                                                onValueChange={setClientId}
+                                                placeholder="Nome ou CPF..."
+                                                searchPlaceholder="Digite nome ou CPF..."
+                                            />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <Label htmlFor="type" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Modalidade de Vistoria</Label>
-                                        <div className="grid grid-cols-3 gap-4">
+                                    <div className="pt-4 border-t border-border/40 space-y-6">
+                                        <Label htmlFor="type" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Modalidade da Vistoria</Label>
+                                        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-4">
                                             <button 
                                                 onClick={() => setType('entry')}
-                                                className={`p-4 rounded-[1.5rem] border-4 transition-all flex flex-col items-center gap-2 ${
+                                                className={`p-5 rounded-2xl md:rounded-[1.5rem] border-2 md:border-4 transition-all flex flex-row xs:flex-col items-center gap-4 xs:gap-3 ${
                                                     type === 'entry' 
-                                                    ? 'border-emerald-500 bg-emerald-500/5 text-emerald-700 shadow-xl' 
-                                                    : 'border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                                                    ? 'border-emerald-500 bg-emerald-500/5 text-emerald-700 shadow-lg' 
+                                                    : 'border-transparent bg-muted/40 text-muted-foreground hover:bg-muted/60'
                                                 }`}
                                             >
-                                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${type === 'entry' ? 'bg-emerald-500 text-white' : 'bg-muted/50'}`}>
-                                                    <ClipboardList className="h-5 w-5" />
+                                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${type === 'entry' ? 'bg-emerald-500 text-white' : 'bg-muted/50'}`}>
+                                                    <ClipboardList className="h-6 w-6" />
                                                 </div>
-                                                <span className="font-black text-[10px] uppercase tracking-wider">Entrada</span>
+                                                <span className="font-black text-[10px] md:text-xs uppercase tracking-widest">Entrada</span>
                                             </button>
                                             <button 
                                                 onClick={() => setType('exit')}
-                                                className={`p-4 rounded-[1.5rem] border-4 transition-all flex flex-col items-center gap-2 ${
+                                                className={`p-5 rounded-2xl md:rounded-[1.5rem] border-2 md:border-4 transition-all flex flex-row xs:flex-col items-center gap-4 xs:gap-3 ${
                                                     type === 'exit' 
-                                                    ? 'border-amber-500 bg-amber-500/5 text-amber-700 shadow-xl' 
-                                                    : 'border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                                                    ? 'border-amber-500 bg-amber-500/5 text-amber-700 shadow-lg' 
+                                                    : 'border-transparent bg-muted/40 text-muted-foreground hover:bg-muted/60'
                                                 }`}
                                             >
-                                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${type === 'exit' ? 'bg-amber-500 text-white' : 'bg-muted/50'}`}>
-                                                    <Play className="h-5 w-5 rotate-90" />
+                                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${type === 'exit' ? 'bg-amber-500 text-white' : 'bg-muted/50'}`}>
+                                                    <Play className="h-6 w-6 rotate-90" />
                                                 </div>
-                                                <span className="font-black text-[10px] uppercase tracking-wider">Saída</span>
+                                                <span className="font-black text-[10px] md:text-xs uppercase tracking-widest">Saída</span>
                                             </button>
                                             <button 
                                                 onClick={() => setType('verification')}
-                                                className={`p-4 rounded-[1.5rem] border-4 transition-all flex flex-col items-center gap-2 ${
+                                                className={`p-5 rounded-2xl md:rounded-[1.5rem] border-2 md:border-4 transition-all flex flex-row xs:flex-col items-center gap-4 xs:gap-3 ${
                                                     type === 'verification' 
-                                                    ? 'border-blue-500 bg-blue-500/5 text-blue-700 shadow-xl' 
-                                                    : 'border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                                                    ? 'border-blue-500 bg-blue-500/5 text-blue-700 shadow-lg' 
+                                                    : 'border-transparent bg-muted/40 text-muted-foreground hover:bg-muted/60'
                                                 }`}
                                             >
-                                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${type === 'verification' ? 'bg-blue-500 text-white' : 'bg-muted/50'}`}>
-                                                    <CheckCircle2 className="h-5 w-5" />
+                                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${type === 'verification' ? 'bg-blue-500 text-white' : 'bg-muted/50'}`}>
+                                                    <CheckCircle2 className="h-6 w-6" />
                                                 </div>
-                                                <span className="font-black text-[10px] uppercase tracking-wider">Constatação</span>
+                                                <span className="font-black text-[10px] md:text-xs uppercase tracking-widest">Constatação</span>
                                             </button>
                                         </div>
                                     </div>
@@ -264,7 +274,7 @@ export default function NewInspection() {
                     </Card>
 
                     <Button
-                        className="w-full h-20 rounded-[2.5rem] font-black text-xl shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground gap-4 group"
+                        className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-2xl shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground gap-4 group"
                         onClick={handleStart}
                         disabled={!propertyId || !clientId || !landlordId || loading || starting}
                     >
@@ -273,7 +283,7 @@ export default function NewInspection() {
                         ) : (
                             <>
                                 Iniciar Vistoria Técnica 
-                                <ArrowRight className="h-6 w-6 group-hover:translate-x-2 transition-transform" />
+                                <ArrowRight className="h-5 w-5 md:h-8 md:w-8 group-hover:translate-x-3 transition-transform" />
                             </>
                         )}
                     </Button>

@@ -111,9 +111,9 @@ export default function InspectionsPage() {
     return (
         <div className="space-y-12 w-full pb-10">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8">
                 <div className="space-y-4">
-                    <Breadcrumb>
+                    <Breadcrumb className="hidden sm:block">
                         <BreadcrumbList>
                             <BreadcrumbItem>
                                 <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
@@ -132,47 +132,47 @@ export default function InspectionsPage() {
                             </span>
                             Sistema de Gestão
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Vistorias Técnicas</h1>
-                        <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Gerencie o ciclo completo de laudos e inspeções de imóveis.</p>
+                        <h1 className="text-2xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Vistorias Técnicas</h1>
+                        <p className="text-muted-foreground text-xs md:text-lg font-medium tracking-tight">Gerencie o ciclo completo de laudos e inspeções.</p>
                     </div>
                 </div>
-                <Link href="/dashboard/inspections/new">
-                    <Button size="lg" className="h-16 px-10 rounded-2xl font-black shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all gap-3 bg-primary text-primary-foreground text-sm uppercase tracking-widest">
+                <Link href="/dashboard/inspections/new" className="w-full md:w-auto">
+                    <Button size="lg" className="h-14 md:h-16 w-full md:px-10 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all gap-3 bg-primary text-primary-foreground text-xs md:text-sm uppercase tracking-widest">
                         <Plus className="h-5 w-5 stroke-[3px]" /> Nova Vistoria
                     </Button>
                 </Link>
             </div>
 
             {/* Filters and Search */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
                 <div className="lg:col-span-3">
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
-                            <Search className="h-6 w-6 stroke-[2.5px]" />
+                        <div className="absolute inset-y-0 left-5 md:left-6 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+                            <Search className="h-5 w-5 md:h-6 md:w-6 stroke-[2.5px]" />
                         </div>
                         <Input 
-                            placeholder="Buscar por endereço do imóvel, código ou locatário..." 
-                            className="h-20 pl-16 pr-8 rounded-3xl bg-card border-border/50 shadow-premium font-bold text-lg focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground/50 placeholder:font-medium"
+                            placeholder="Buscar endereço ou inquilino..." 
+                            className="h-14 md:h-20 pl-14 md:pl-16 pr-8 rounded-2xl md:rounded-3xl bg-card border-border/50 shadow-sm font-bold text-base md:text-lg focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground/50 placeholder:font-medium"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
-                <Button variant="outline" className="h-20 rounded-3xl px-8 font-black gap-3 uppercase tracking-widest text-xs border-border/50 bg-card hover:bg-muted/50 shadow-sm transition-all">
-                    <Filter className="h-5 w-5" /> Filtros Avançados
+                <Button variant="outline" className="h-14 md:h-20 rounded-2xl md:rounded-3xl px-8 font-black gap-3 uppercase tracking-widest text-[10px] md:text-xs border-border/50 bg-card hover:bg-muted/50 shadow-sm transition-all">
+                    <Filter className="h-5 w-5" /> Filtros
                 </Button>
             </div>
 
             {/* Inspections List */}
-            <div className="bg-card border border-border rounded-[2.5rem] shadow-premium overflow-hidden">
-                <div className="px-10 py-10 border-b border-border bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div className="space-y-1.5">
-                        <h3 className="text-2xl font-black tracking-tight text-foreground uppercase leading-none">Histórico de Atividade</h3>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">
-                            Mostrando {filteredInspections.length} de {inspections.length} registros no sistema
+            <div className="bg-card border border-border rounded-2xl md:rounded-[2.5rem] shadow-premium overflow-hidden">
+                <div className="px-6 py-6 md:px-10 md:py-10 border-b border-border bg-muted/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="space-y-1.5 text-center sm:text-left">
+                        <h3 className="text-lg md:text-2xl font-black tracking-tight text-foreground uppercase leading-none">Histórico</h3>
+                        <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">
+                            {filteredInspections.length} vistorias encontradas
                         </p>
                     </div>
-                    <div className="flex items-center gap-4 bg-background px-6 py-3 rounded-2xl border border-border/50">
+                    <div className="hidden sm:flex items-center gap-4 bg-background px-6 py-3 rounded-2xl border border-border/50">
                         <div className="flex -space-x-3">
                             {[1, 2, 3].map(i => (
                                 <div key={i} className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center overflow-hidden">
@@ -184,7 +184,73 @@ export default function InspectionsPage() {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* Mobile Card List (Visible on mobile only) */}
+                <div className="grid md:hidden grid-cols-1 gap-4 p-4">
+                    {filteredInspections.length === 0 ? (
+                        <div className="py-20 text-center flex flex-col items-center gap-4">
+                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                                <ClipboardCheck className="h-8 w-8 text-muted-foreground/30" />
+                            </div>
+                            <p className="font-black text-sm uppercase tracking-widest text-foreground">Nenhuma vistoria</p>
+                        </div>
+                    ) : (
+                        filteredInspections.map(i => {
+                            const property = properties[i.propertyId];
+                            const client = clients[i.clientId];
+                            const isOngoing = i.status === 'ongoing';
+                            return (
+                                <div key={i.id} className="bg-muted/30 rounded-2xl p-5 border border-border/50 space-y-4" onClick={() => window.location.href = `/dashboard/inspections/${i.id}`}>
+                                    <div className="flex items-start justify-between">
+                                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                                            i.type === 'entry' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                                        }`}>
+                                            <Home className="h-6 w-6" />
+                                        </div>
+                                        <Badge variant={isOngoing ? "warning" : "success"} className="font-black text-[9px] uppercase px-3 py-1 rounded-lg">
+                                            {isOngoing ? 'Em Aberto' : 'Concluído'}
+                                        </Badge>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-black text-foreground text-base tracking-tight truncate leading-tight">
+                                            {property?.address || 'Imóvel Excluído'}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${
+                                                i.type === 'entry' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
+                                            }`}>
+                                                {i.type === 'entry' ? 'ENTRADA' : 'SAÍDA'}
+                                            </span>
+                                            <span className="text-[10px] font-bold text-muted-foreground opacity-60">{new Date(i.date).toLocaleDateString('pt-BR')}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-2 border-t border-border/20">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                                            <User className="h-3.5 w-3.5 text-primary" />
+                                            <span className="truncate max-w-[120px]">{client?.name || 'Locatário N/C'}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {isOngoing ? (
+                                                <Link href={`/dashboard/inspections/active-demo?id=${i.id}`}>
+                                                    <Button size="sm" className="h-9 px-4 rounded-lg font-black bg-blue-600 hover:bg-blue-700 text-[9px] uppercase tracking-widest">
+                                                        Continuar
+                                                    </Button>
+                                                </Link>
+                                            ) : (
+                                                <Link href={`/dashboard/inspections/summary-demo?id=${i.id}`}>
+                                                    <Button variant="secondary" size="sm" className="h-9 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest border border-border/50">
+                                                        Ver
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="hover:bg-transparent border-b border-border bg-muted/20 h-20">
@@ -205,7 +271,7 @@ export default function InspectionsPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <p className="font-black text-lg uppercase tracking-widest text-foreground">Nenhuma vistoria</p>
-                                                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Não encontramos registros para sua busca. Tente outros termos.</p>
+                                                <p className="text-sm font-medium text-muted-foreground leading-relaxed">Não encontramos registros para sua busca.</p>
                                             </div>
                                         </div>
                                     </TableCell>

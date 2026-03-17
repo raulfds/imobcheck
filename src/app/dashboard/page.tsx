@@ -62,7 +62,7 @@ export default function TenantDashboard() {
     const completionRate = inspections.length ? Math.round((completedCount / inspections.length) * 100) : 0;
 
     return (
-        <div className="space-y-12 w-full pb-10">
+        <div className="space-y-6 md:space-y-12 w-full pb-10">
             {/* Hero Header */}
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 md:gap-8 mb-4">
                 <div className="max-w-3xl space-y-4">
@@ -73,34 +73,34 @@ export default function TenantDashboard() {
                         </span>
                         Sistema Online
                     </div>
-                    <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tighter leading-[0.9]">Painel Principal</h2>
-                    <p className="text-muted-foreground text-base md:text-lg lg:text-xl font-medium tracking-tight max-w-2xl">Acompanhe métricas de vistorias e pendências críticas com precisão.</p>
+                    <h2 className="text-2xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tighter leading-[0.9]">Painel Principal</h2>
+                    <p className="text-muted-foreground text-sm md:text-lg lg:text-xl font-medium tracking-tight max-w-2xl">Acompanhe métricas de vistorias e pendências críticas com precisão.</p>
                 </div>
             </div>
 
-            {/* Metric Grid - Responsive columns */}
-            <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Metric Grid - Responsive columns: 2 columns on mobile-large */}
+            <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
                 <MetricCard
-                    title="Vistorias Totais"
+                    title="Vistorias"
                     value={inspections.length}
                     subtext={`${ongoingCount} pendentes`}
                     icon="fact_check"
                 />
                 <MetricCard
-                    title="Taxa de Conclusão"
+                    title="Conclusão"
                     value={`${completionRate}%`}
                     subtext="ESTÁVEL"
                     icon="analytics"
                     trend={completionRate > 80 ? 'up' : 'neutral'}
                 />
                 <MetricCard
-                    title="Imóveis Ativos"
+                    title="Imóveis"
                     value={propertyCount}
                     subtext="Cadastrados"
                     icon="corporate_fare"
                 />
                 <MetricCard
-                    title="Alertas Críticos"
+                    title="Alertas"
                     value={ongoingCount > 5 ? '07' : '02'}
                     subtext="Verificar hoje"
                     icon="error"
@@ -112,7 +112,7 @@ export default function TenantDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
                 {/* Recent Compliance Issues */}
                 <div className="lg:col-span-1 space-y-6 md:space-y-8">
-                    <div className="bg-card border border-border rounded-xl md:rounded-2xl p-6 md:p-8 shadow-sm">
+                    <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
                         <div className="flex items-center justify-between mb-6 md:mb-8">
                             <h4 className="text-base md:text-lg font-black tracking-tight text-foreground uppercase">Avisos</h4>
                             <span className="text-[9px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded uppercase tracking-widest">Tempo Real</span>
