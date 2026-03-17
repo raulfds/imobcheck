@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 import { 
     ChevronRight,
     PlusCircle,
@@ -19,6 +20,7 @@ import { IssueListItem } from '@/components/vistorify/IssueListItem';
 
 export default function TenantDashboard() {
     const { user } = useAuth();
+    const router = useRouter();
     const agencyId = user?.tenantId ?? '';
 
     const [inspections, setInspections] = useState<Inspection[]>([]);
@@ -148,14 +150,17 @@ export default function TenantDashboard() {
                                 </div>
                             )}
                         </div>
-                        <button className="w-full mt-6 md:mt-8 py-3 md:py-4 text-[9px] md:text-[10px] font-black text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all uppercase tracking-[0.2em] border border-transparent hover:border-primary/10">
+                        <button 
+                            onClick={() => router.push('/dashboard/inspections')}
+                            className="w-full mt-6 md:mt-8 py-3 md:py-4 text-[9px] md:text-[10px] font-black text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all uppercase tracking-[0.2em] border border-transparent hover:border-primary/10"
+                        >
                             Ver Todos os Avisos
                         </button>
                     </div>
                     
                     <div className="grid gap-4">
                         <button 
-                            onClick={() => window.location.href = '/dashboard/inspections/new'}
+                            onClick={() => router.push('/dashboard/inspections/new')}
                             className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
@@ -172,7 +177,7 @@ export default function TenantDashboard() {
                         </button>
 
                         <button 
-                            onClick={() => window.location.href = '/dashboard/registrations'}
+                            onClick={() => router.push('/dashboard/registrations')}
                             className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left group relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
@@ -189,7 +194,7 @@ export default function TenantDashboard() {
                         </button>
 
                         <button 
-                            onClick={() => window.location.href = '/dashboard/team'}
+                            onClick={() => router.push('/dashboard/team')}
                             className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/5 transition-all text-left group relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
@@ -231,13 +236,13 @@ export default function TenantDashboard() {
                                 <h3 className="text-xl md:text-2xl font-black tracking-tight text-foreground uppercase leading-none">Atividade Recente</h3>
                                 <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Últimas vistorias registradas</p>
                             </div>
-                            <Button variant="outline" className="text-[9px] md:text-[10px] font-black text-primary hover:text-primary hover:bg-primary/5 uppercase tracking-widest rounded-lg md:rounded-xl px-4 md:px-6 h-10 md:h-11 border-primary/20 w-full sm:w-auto" onClick={() => window.location.href = '/dashboard/inspections'}>
+                            <Button variant="outline" className="text-[9px] md:text-[10px] font-black text-primary hover:text-primary hover:bg-primary/5 uppercase tracking-widest rounded-lg md:rounded-xl px-4 md:px-6 h-10 md:h-11 border-primary/20 w-full sm:w-auto" onClick={() => router.push('/dashboard/inspections')}>
                                 VER TUDO <ChevronRight className="h-4 w-4 ml-2" />
                             </Button>
                         </div>
                         <div className="flex-1 divide-y divide-border">
                             {recentInspections.map((inspection) => (
-                                <div key={inspection.id} className="group px-6 md:px-10 py-6 md:py-8 flex items-center gap-4 md:gap-8 hover:bg-muted/30 transition-all cursor-pointer" onClick={() => window.location.href = `/dashboard/inspections/${inspection.id}`}>
+                                <div key={inspection.id} className="group px-6 md:px-10 py-6 md:py-8 flex items-center gap-4 md:gap-8 hover:bg-muted/30 transition-all cursor-pointer" onClick={() => router.push(`/dashboard/inspections/${inspection.id}`)}>
                                     <div className={`h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 border transition-all group-hover:scale-105 group-hover:shadow-lg ${
                                         inspection.status === 'completed' 
                                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-emerald-500/5'
