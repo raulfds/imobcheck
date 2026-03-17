@@ -9,11 +9,13 @@ import {
     PlusCircle,
     Building2,
     Users as UsersIcon,
-    History
+    History,
+    Trash2,
+    Play
 } from 'lucide-react';
 import { Inspection } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
-import { fetchInspections, fetchProperties, fetchClients } from '@/lib/database';
+import { fetchInspections, fetchProperties, fetchClients, deleteInspection } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { MetricCard } from '@/components/vistorify/MetricCard';
 import { IssueListItem } from '@/components/vistorify/IssueListItem';
@@ -43,6 +45,20 @@ export default function TenantDashboard() {
             setLoading(false);
         }
     }, [agencyId]);
+
+    const handleDeleteInspection = async (id: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Tem certeza que deseja excluir esta vistoria?')) return;
+        
+        try {
+            if (isSupabaseConfigured) await deleteInspection(id);
+            setInspections(prev => prev.filter(i => i.id !== id));
+        } catch (err) {
+            console.error('Delete inspection error:', err);
+            alert('Erro ao excluir vistoria.');
+        }
+    };
 
     useEffect(() => { loadStats(); }, [loadStats]);
 
@@ -203,14 +219,33 @@ export default function TenantDashboard() {
                                         </div>
                                         <p className="text-base md:text-lg font-black text-foreground group-hover:text-primary transition-colors truncate tracking-tight">Imóvel #{inspection.propertyId.substring(0, 8)}</p>
                                     </div>
-                                    <div className="hidden sm:flex flex-col items-end gap-2 pr-2">
-                                        <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-1 rounded-lg border ${
-                                            inspection.status === 'completed' 
-                                                ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500' 
-                                                : 'bg-amber-500/5 border-amber-500/10 text-amber-500'
-                                        }`}>
-                                            {inspection.status === 'completed' ? 'CONCLUÍDO' : 'EM ANDAMENTO'}
-                                        </span>
+                                    <div className="hidden sm:flex items-center gap-3 pr-2">
+                                        {inspection.status === 'ongoing' ? (
+                                            <>
+                                                <Button 
+                                                    size="sm" 
+                                                    className="h-9 px-4 rounded-xl font-black gap-2 bg-blue-600 hover:bg-blue-700 text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/10"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(`/dashboard/inspections/active-demo?id=${inspection.id}`);
+                                                    }}
+                                                >
+                                                    <Play className="h-3.5 w-3.5 fill-current" /> Continuar
+                                                </Button>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-9 w-9 rounded-xl hover:bg-destructive hover:text-white transition-all text-muted-foreground"
+                                                    onClick={(e) => handleDeleteInspection(inspection.id, e)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-1 rounded-lg border bg-emerald-500/5 border-emerald-500/10 text-emerald-500">
+                                                CONCLUÍDO
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             ))}
