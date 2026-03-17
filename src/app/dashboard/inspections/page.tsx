@@ -16,18 +16,24 @@ import {
     ClipboardCheck,
     ArrowRight,
     Filter,
-    Play
+    Play,
+    Edit3
 } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { useAuth } from '@/components/auth/auth-provider';
 import { Inspection, Property, Client } from '@/types';
 import {
-    fetchInspections, deleteInspection,
-    fetchProperties, fetchClients
+    fetchInspections, deleteInspection, updateInspection,
+    fetchProperties, fetchClients, fetchLandlords
 } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { mockInspections, mockProperties, mockClients } from '@/lib/mock-data';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Landlord } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function InspectionsPage() {
     const { user } = useAuth();
@@ -36,8 +42,17 @@ export default function InspectionsPage() {
     const [inspections, setInspections] = useState<Inspection[]>([]);
     const [properties, setProperties] = useState<Record<string, Property>>({});
     const [clients, setClients] = useState<Record<string, Client>>({});
+    const [allLandlords, setAllLandlords] = useState<Landlord[]>([]);
+    const [allProperties, setAllProperties] = useState<Property[]>([]);
+    const [allClients, setAllClients] = useState<Client[]>([]);
+    
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Editing State
+    const [editingInspection, setEditingInspection] = useState<Inspection | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -47,11 +62,15 @@ export default function InspectionsPage() {
             let cls: Client[] = [];
 
             if (isSupabaseConfigured) {
-                [insps, props, cls] = await Promise.all([
+                const [insps, props, cls, lords] = await Promise.all([
                     fetchInspections(agencyId),
                     fetchProperties(agencyId),
                     fetchClients(agencyId),
+                    fetchLandlords(agencyId)
                 ]);
+                setAllProperties(props);
+                setAllClients(cls);
+                setAllLandlords(lords);
             } else {
                 insps = mockInspections.filter(i => i.tenantId === agencyId);
                 props = mockProperties.filter(p => p.tenantId === agencyId);
@@ -77,6 +96,36 @@ export default function InspectionsPage() {
     }, [agencyId]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    const handleEdit = (insp: Inspection, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setEditingInspection({ ...insp });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdate = async () => {
+        if (!editingInspection) return;
+        setSaving(true);
+        try {
+            if (isSupabaseConfigured) {
+                await updateInspection(editingInspection.id, {
+                    propertyId: editingInspection.propertyId,
+                    clientId: editingInspection.clientId,
+                    landlordId: editingInspection.landlordId,
+                    type: editingInspection.type,
+                    date: editingInspection.date
+                });
+            }
+            setInspections(prev => prev.map(i => i.id === editingInspection.id ? editingInspection : i));
+            setIsEditModalOpen(false);
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao atualizar vistoria.');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.preventDefault();
@@ -356,6 +405,14 @@ export default function InspectionsPage() {
                                                     <Button 
                                                         variant="ghost" 
                                                         size="icon" 
+                                                        className="h-12 w-12 rounded-xl hover:bg-muted shadow-sm transition-all" 
+                                                        onClick={(e) => handleEdit(i, e)}
+                                                    >
+                                                        <Edit3 className="h-4.5 w-4.5" />
+                                                    </Button>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
                                                         className="h-12 w-12 rounded-xl hover:bg-destructive shadow-sm hover:text-destructive-foreground transition-all group/delete" 
                                                         onClick={(e) => handleDelete(i.id, e)}
                                                     >
@@ -371,6 +428,83 @@ export default function InspectionsPage() {
                     </Table>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none bg-card shadow-2xl">
+                    <DialogHeader className="px-10 pt-10 pb-6 bg-muted/20 border-b border-border/40">
+                        <DialogTitle className="text-2xl font-black tracking-tight uppercase">Editar Vistoria</DialogTitle>
+                        <DialogDescription className="text-xs font-bold uppercase tracking-widest opacity-60">Altere os dados básicos deste laudo</DialogDescription>
+                    </DialogHeader>
+                    
+                    {editingInspection && (
+                        <div className="p-10 space-y-8">
+                            <div className="space-y-4">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Imóvel</Label>
+                                <SearchableSelect
+                                    options={allProperties.map(p => ({ id: p.id, label: p.address, searchValue: p.address }))}
+                                    value={editingInspection.propertyId}
+                                    onValueChange={(val) => setEditingInspection({ ...editingInspection, propertyId: val })}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Inquilino</Label>
+                                    <SearchableSelect
+                                        options={allClients.map(c => ({ id: c.id, label: c.name, searchValue: c.name }))}
+                                        value={editingInspection.clientId}
+                                        onValueChange={(val) => setEditingInspection({ ...editingInspection, clientId: val })}
+                                    />
+                                </div>
+                                <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Locador</Label>
+                                    <SearchableSelect
+                                        options={allLandlords.map(l => ({ id: l.id, label: l.name, searchValue: l.name }))}
+                                        value={editingInspection.landlordId || ''}
+                                        onValueChange={(val) => setEditingInspection({ ...editingInspection, landlordId: val })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tipo</Label>
+                                    <Select 
+                                        value={editingInspection.type} 
+                                        onValueChange={(val: any) => setEditingInspection({ ...editingInspection, type: val })}
+                                    >
+                                        <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none font-bold">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="entry">Entrada</SelectItem>
+                                            <SelectItem value="exit">Saída</SelectItem>
+                                            <SelectItem value="verification">Constatação</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Data</Label>
+                                    <Input 
+                                        type="date" 
+                                        value={editingInspection.date.split('T')[0]} 
+                                        onChange={(e) => setEditingInspection({ ...editingInspection, date: e.target.value })}
+                                        className="h-12 rounded-xl bg-muted/30 border-none font-bold"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="px-10 pb-10 pt-4 flex gap-4">
+                        <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+                        <Button className="rounded-xl font-black px-8 shadow-xl shadow-primary/20" onClick={handleUpdate} disabled={saving}>
+                            {saving ? 'Salvando...' : 'Salvar Alterações'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

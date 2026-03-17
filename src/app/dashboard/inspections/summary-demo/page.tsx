@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { InspectionEnvironment, Tenant } from '@/types';
+import { Inspection, InspectionEnvironment, Property, Client, Landlord, Tenant } from '@/types';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InspectionPDF } from '@/components/inspection/inspection-pdf';
 import { downloadAllPhotos, uploadToGoogleDrive } from '@/lib/export-utils';
@@ -28,76 +29,76 @@ import {
     Flame,
     Key,
     UserCheck,
-    FileCheck2
+    FileCheck2,
+    Loader2,
+    RotateCcw
 } from 'lucide-react';
+import { fetchInspection, fetchProperty, fetchClient, fetchLandlord, updateInspection } from '@/lib/database';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { useAuth } from '@/components/auth/auth-provider';
 
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 
 export default function InspectionSummary() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
+    const { user } = useAuth();
+    const agencyId = user?.tenantId;
+
+    const [loading, setLoading] = useState(true);
+    const [inspection, setInspection] = useState<Inspection | null>(null);
+    const [property, setProperty] = useState<Property | null>(null);
+    const [client, setClient] = useState<Client | null>(null);
+    const [landlord, setLandlord] = useState<Landlord | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadUrl, setUploadUrl] = useState<string | null>(null);
+    const [isReopening, setIsReopening] = useState(false);
 
-    // Mock data for demo - in production this would be loaded via fetch
-    const inspection = {
-        id: 'demo-123',
-        tenantId: 'demo-tenant',
-        propertyId: 'demo-property',
-        clientId: 'demo-client',
-        status: 'completed' as const,
-        type: 'entry' as const,
-        date: new Date().toISOString(),
-        startTime: '14:30',
-        environments: [
-            {
-                id: 'e1',
-                name: 'Sala de Estar',
-                generalPhotos: [
-                    'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=800&auto=format&fit=crop',
-                    'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=800&auto=format&fit=crop'
-                ],
-                items: [
-                    { id: 'i1', name: 'Piso Laminado', status: 'ok' as const },
-                    { id: 'i2', name: 'Pintura Paredes', status: 'not_ok' as const, defect: 'Riscado', observation: 'Marca de móvel na parede sul.' },
-                    { id: 'i3', name: 'Janelas', status: 'ok' as const }
-                ]
-            },
-            {
-                id: 'e2',
-                name: 'Cozinha',
-                generalPhotos: [
-                    'https://images.unsplash.com/photo-1556911223-e153e9d37293?q=80&w=800&auto=format&fit=crop'
-                ],
-                items: [
-                    { id: 'i4', name: 'Bancada Granito', status: 'ok' as const },
-                    { id: 'i5', name: 'Torneira', status: 'ok' as const }
-                ]
+    useEffect(() => {
+        async function loadData() {
+            if (!id || !isSupabaseConfigured) {
+                setLoading(false);
+                return;
             }
-        ] as InspectionEnvironment[],
-        meters: { light: '045892', water: '001243', gas: '0894' },
-        keys: [
-            { description: 'Chave Principal (Porta)', quantity: 2 },
-            { description: 'Controle Garagem', quantity: 1 }
-        ],
-        agreementTerm: 'As partes declaram que conferiram o imóvel e aceitam o estado de conservação descrito neste auto de vistoria para fins de locação.',
-    };
-    
+            try {
+                const insp = await fetchInspection(id);
+                if (insp) {
+                    setInspection(insp);
+                    const [p, c, l] = await Promise.all([
+                        fetchProperty(insp.propertyId),
+                        fetchClient(insp.clientId),
+                        insp.landlordId ? fetchLandlord(insp.landlordId) : Promise.resolve(null)
+                    ]);
+                    setProperty(p);
+                    setClient(c);
+                    setLandlord(l);
+                }
+            } catch (err) {
+                console.error('Failed to load summary data:', err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadData();
+    }, [id]);
+
     const tenant = { 
-        id: 'demo-tenant',
-        name: 'Imobiliária Silva LTDA',
-        email: 'contato@silva.com.br',
-        phone: '(11) 98765-4321',
+        id: agencyId || 'demo-tenant',
+        name: 'Imobiliária', // Fallback
         status: 'active' as const,
         plan: 'Premium',
-        logo: undefined 
     } as Tenant;
 
     const handleDownloadPhotos = async () => {
+        if (!inspection) return;
         const success = await downloadAllPhotos(inspection.environments);
         if (!success) alert('Nenhuma foto encontrada para baixar.');
     };
 
     const handleGoogleDriveUpload = async () => {
+        if (!inspection) return;
         setIsUploading(true);
         try {
             const result = await uploadToGoogleDrive(new Blob(['mock pdf content']), `Vistoria-${inspection.id}.pdf`);
@@ -109,6 +110,40 @@ export default function InspectionSummary() {
             setIsUploading(false);
         }
     };
+
+    const handleReopen = async () => {
+        if (!id || isReopening) return;
+        if (!confirm('Deseja reabrir esta vistoria? O status voltará para "em andamento".')) return;
+        
+        setIsReopening(true);
+        try {
+            await updateInspection(id, { status: 'ongoing' });
+            router.push(`/dashboard/inspections/active-demo?id=${id}`);
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao reabrir vistoria.');
+        } finally {
+            setIsReopening(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary/40" />
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Processando Laudo...</p>
+            </div>
+        );
+    }
+
+    if (!inspection) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <p className="text-xl font-black">Vistoria não encontrada.</p>
+                <Button onClick={() => router.push('/dashboard/inspections')}>Voltar para Lista</Button>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in zoom-in-95 duration-700">
@@ -145,8 +180,8 @@ export default function InspectionSummary() {
                                 <MapPin className="h-6 w-6" />
                             </div>
                             <div className="space-y-1">
-                                <p className="font-black text-foreground text-lg leading-tight">Edifício Alpha Tower</p>
-                                <p className="text-sm text-muted-foreground font-medium italic">Rua das Flores, 123 - Apt 42<br />São Paulo, SP</p>
+                                <p className="font-black text-foreground text-lg leading-tight">{property?.address || 'Imóvel'}</p>
+                                <p className="text-sm text-muted-foreground font-medium italic">{property?.cep ? `CEP: ${property.cep}` : ''}<br />{property?.numero ? `Nº ${property.numero}` : ''}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -167,9 +202,9 @@ export default function InspectionSummary() {
                                 JS
                             </div>
                             <div className="space-y-1">
-                                <p className="font-black text-foreground text-lg leading-tight">João Silva de Souza</p>
+                                <p className="font-black text-foreground text-lg leading-tight">{landlord?.name || 'Não informado'}</p>
                                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground pt-1">
-                                    <ShieldCheck className="h-3 w-3" /> CPF: ***.***.123-45
+                                    <ShieldCheck className="h-3 w-3" /> CPF: {landlord?.cpf || '***.***.***-**'}
                                 </div>
                             </div>
                         </div>
@@ -191,9 +226,9 @@ export default function InspectionSummary() {
                                 AO
                             </div>
                             <div className="space-y-1">
-                                <p className="font-black text-foreground text-lg leading-tight">Ana Oliveira</p>
+                                <p className="font-black text-foreground text-lg leading-tight">{client?.name || 'Inquilino'}</p>
                                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground pt-1">
-                                    <ShieldCheck className="h-3 w-3" /> CPF: ***.***.890-00
+                                    <ShieldCheck className="h-3 w-3" /> CPF: {client?.cpf || '***.***.***-**'}
                                 </div>
                             </div>
                         </div>
@@ -218,7 +253,7 @@ export default function InspectionSummary() {
                     </div>
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-700">Registro Temporal</p>
-                        <p className="font-bold text-blue-900 leading-tight">Datado: {new Date().toLocaleDateString('pt-BR')} às {inspection.startTime}</p>
+                        <p className="font-bold text-blue-900 leading-tight">Datado: {new Date(inspection.date).toLocaleDateString('pt-BR')} às {inspection.startTime || '--:--'}</p>
                     </div>
                 </Card>
                 <Card className="border-none shadow-lg bg-indigo-500/5 rounded-3xl p-6 flex items-center gap-4 border border-indigo-500/10">
@@ -324,21 +359,21 @@ export default function InspectionSummary() {
                                 <Zap className="h-5 w-5" />
                             </div>
                             <p className="text-[10px] font-black uppercase text-muted-foreground">Luz</p>
-                            <p className="font-black text-lg">{inspection.meters.light}</p>
+                            <p className="font-black text-lg">{inspection.meters?.light || '--'}</p>
                         </div>
                         <div className="text-center space-y-2">
                             <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center mx-auto">
                                 <Droplets className="h-5 w-5" />
                             </div>
                             <p className="text-[10px] font-black uppercase text-muted-foreground">Água</p>
-                            <p className="font-black text-lg">{inspection.meters.water}</p>
+                            <p className="font-black text-lg">{inspection.meters?.water || '--'}</p>
                         </div>
                         <div className="text-center space-y-2">
                             <div className="h-12 w-12 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center mx-auto">
                                 <Flame className="h-5 w-5" />
                             </div>
                             <p className="text-[10px] font-black uppercase text-muted-foreground">Gás</p>
-                            <p className="font-black text-lg">{inspection.meters.gas}</p>
+                            <p className="font-black text-lg">{inspection.meters?.gas || '--'}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -353,7 +388,9 @@ export default function InspectionSummary() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-8 space-y-4">
-                        {inspection.keys.map((k, i) => (
+                        {!inspection.keys || inspection.keys.length === 0 ? (
+                            <p className="text-xs italic opacity-40">Nenhuma chave registrada</p>
+                        ) : inspection.keys.map((k, i) => (
                             <div key={i} className="flex justify-between items-center bg-muted/30 p-3 rounded-xl">
                                 <div className="flex items-center gap-3">
                                     <div className="h-8 w-8 rounded-lg bg-background flex items-center justify-center shadow-sm">
@@ -470,6 +507,21 @@ export default function InspectionSummary() {
                             <div className="text-center">
                                 <p className="font-black text-lg uppercase tracking-widest">{isUploading ? 'Subindo...' : 'Google Drive'}</p>
                                 <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mt-1">Backup na Nuvem</p>
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button className="w-full group shadow-lg hover:shadow-2xl transition-all" onClick={handleReopen} disabled={isReopening}>
+                        <div className="h-full rounded-[2rem] bg-orange-600 text-white p-8 flex flex-col items-center gap-4 group-hover:scale-[1.02] active:scale-[0.98] transition-transform relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:rotate-12 transition-transform">
+                                <RotateCcw className="h-20 w-20" />
+                            </div>
+                            <div className="h-14 w-14 rounded-2xl bg-white/10 flex items-center justify-center">
+                                <RotateCcw className={`h-7 w-7 ${isReopening ? 'animate-spin' : ''}`} />
+                            </div>
+                            <div className="text-center">
+                                <p className="font-black text-lg uppercase tracking-widest">{isReopening ? 'Processando...' : 'Reabrir Vistoria'}</p>
+                                <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-1">Voltar ao Checklist</p>
                             </div>
                         </div>
                     </button>

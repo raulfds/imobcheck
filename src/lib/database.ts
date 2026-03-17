@@ -443,6 +443,27 @@ export async function deleteLandlord(id: string): Promise<void> {
     if (error) throw error;
 }
 
+export async function fetchProperty(id: string): Promise<Property | null> {
+    if (!isSupabaseConfigured) return null;
+    const { data, error } = await supabase.from('properties').select('*').eq('id', id).single();
+    if (error) return null;
+    return rowToProperty(data);
+}
+
+export async function fetchClient(id: string): Promise<Client | null> {
+    if (!isSupabaseConfigured) return null;
+    const { data, error } = await supabase.from('clients').select('*').eq('id', id).single();
+    if (error) return null;
+    return rowToClient(data);
+}
+
+export async function fetchLandlord(id: string): Promise<Landlord | null> {
+    if (!isSupabaseConfigured) return null;
+    const { data, error } = await supabase.from('landlords').select('*').eq('id', id).single();
+    if (error) return null;
+    return rowToLandlord(data);
+}
+
 // ─── CLIENTS (locatários) ─────────────────────────────────────────────────────
 
 export async function fetchClients(agencyId: string): Promise<Client[]> {
@@ -528,6 +549,8 @@ export async function updateInspection(id: string, updates: Partial<Inspection>)
         ...(updates.keys !== undefined && { keys: updates.keys }),
         ...(updates.agreementTerm !== undefined && { agreement_term: updates.agreementTerm }),
         ...(updates.signatures !== undefined && { signatures: updates.signatures }),
+        ...(updates.type !== undefined && { type: updates.type }),
+        ...(updates.date !== undefined && { date: updates.date }),
     }).eq('id', id);
     if (error) throw error;
 }

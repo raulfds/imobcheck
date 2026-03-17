@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,13 +32,17 @@ import {
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 /* eslint-disable @next/next/no-img-element */
-import { saveDraft, getDraft, saveBlob, getBlob, purgeOldDrafts } from '@/lib/db';
-import { fetchRoomTemplates, saveRoomTemplate } from '@/lib/database';
+import { saveDraft, getDraft, saveBlob, getBlob, purgeOldDrafts, deleteDraft } from '@/lib/db';
+import { fetchRoomTemplates, saveRoomTemplate, fetchInspection, updateInspection } from '@/lib/database';
 import { useAuth } from '@/components/auth/auth-provider';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 const DRAFT_ID = 'active-inspection-demo';
 
 export default function ActiveInspection() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const inspectionId = searchParams.get('id');
     const { user } = useAuth();
     const agencyId = user?.tenantId || 'tenant-1'; 
     
@@ -52,6 +57,7 @@ export default function ActiveInspection() {
     const [meters, setMeters] = useState({ light: '', water: '', gas: '' });
     const [keys, setKeys] = useState<{description: string, quantity: number}[]>([]);
     const [agreement, setAgreement] = useState('');
+    const [inspectionData, setInspectionData] = useState<any>(null);
 
     const handleSaveAsTemplate = async (env: Environment) => {
         try {
@@ -91,46 +97,67 @@ export default function ActiveInspection() {
             try {
                 const tmpls = await fetchRoomTemplates(agencyId);
                 setAvailableTemplates(tmpls);
-            } catch (err) {
-                console.error('Failed to fetch templates:', err);
-            }
 
-            const draft = await getDraft(DRAFT_ID);
-            let initialEnvs = [];
+                if (inspectionId && isSupabaseConfigured) {
+                    const insp = await fetchInspection(inspectionId);
+                    if (insp) {
+                        setInspectionData(insp);
+                        
+                        // Check if we have a local draft for this specific ID
+                        const draft = await getDraft(inspectionId);
+                        let initialEnvs = [];
 
-            if (draft && draft.environments && draft.environments.length > 0) {
-                initialEnvs = JSON.parse(JSON.stringify(draft.environments));
-
-                for (const env of initialEnvs) {
-                    if (env.generalPhotos) {
-                        for (let i = 0; i < env.generalPhotos.length; i++) {
-                            const key = env.generalPhotos[i];
-                            if (key.startsWith('blob-ref:')) {
-                                const blob = await getBlob(key);
-                                if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                        if (draft && draft.environments && draft.environments.length > 0) {
+                            initialEnvs = JSON.parse(JSON.stringify(draft.environments));
+                            // Restore blobs
+                            for (const env of initialEnvs) {
+                                if (env.generalPhotos) {
+                                    for (let i = 0; i < env.generalPhotos.length; i++) {
+                                        const key = env.generalPhotos[i];
+                                        if (key.startsWith('blob-ref:')) {
+                                            const blob = await getBlob(key);
+                                            if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                                        }
+                                    }
+                                }
+                                if (env.items) {
+                                    for (const item of env.items) {
+                                        if (item.photo && item.photo.startsWith('blob-ref:')) {
+                                            const blob = await getBlob(item.photo);
+                                            if (blob) item.photo = URL.createObjectURL(blob);
+                                        }
+                                    }
+                                }
                             }
+                            setEnvironments(initialEnvs);
+                            if (draft.meters) setMeters(draft.meters);
+                            if (draft.keys) setKeys(draft.keys);
+                            if (draft.agreement) setAgreement(draft.agreement);
+                        } else {
+                            // No local draft, use database data
+                            setEnvironments(insp.environments || []);
+                            if (insp.meters) setMeters(insp.meters as any);
+                            if (insp.keys) setKeys(insp.keys as any);
+                            if (insp.agreementTerm) setAgreement(insp.agreementTerm);
                         }
                     }
-                    if (env.items) {
-                        for (const item of env.items) {
-                            if (item.photo && item.photo.startsWith('blob-ref:')) {
-                                const blob = await getBlob(item.photo);
-                                if (blob) item.photo = URL.createObjectURL(blob);
-                            }
-                        }
+                } else {
+                    // Fallback to demo draft ID if no ID provided (legacy behavior)
+                    const draft = await getDraft(DRAFT_ID);
+                    if (draft) {
+                        setEnvironments(draft.environments || []);
+                        if (draft.meters) setMeters(draft.meters);
+                        if (draft.keys) setKeys(draft.keys);
+                        if (draft.agreement) setAgreement(draft.agreement);
                     }
                 }
-                setEnvironments(initialEnvs);
-                if (draft.meters) setMeters(draft.meters);
-                if (draft.keys) setKeys(draft.keys);
-                if (draft.agreement) setAgreement(draft.agreement);
-            } else {
-                setEnvironments([]);
+            } catch (err) {
+                console.error('Failed to init inspection:', err);
             }
             setIsLoading(false);
         }
         init();
-    }, [agencyId]);
+    }, [agencyId, inspectionId]);
 
     useEffect(() => {
         if (!isLoading) {
@@ -147,9 +174,21 @@ export default function ActiveInspection() {
                     });
                 }
             }
-            saveDraft(DRAFT_ID, agencyId, cleanEnvs, { meters, keys, agreement });
+            
+            const currentId = inspectionId || DRAFT_ID;
+            saveDraft(currentId, agencyId, cleanEnvs, { meters, keys, agreement });
+            
+            // Auto-save to Supabase if we have an ID
+            if (inspectionId && isSupabaseConfigured) {
+                updateInspection(inspectionId, {
+                    environments: cleanEnvs,
+                    meters: meters as any,
+                    keys: keys as any,
+                    agreementTerm: agreement
+                }).catch(e => console.error('Supabase auto-save failed:', e));
+            }
         }
-    }, [environments, isLoading, agencyId]);
+    }, [environments, isLoading, agencyId, inspectionId, meters, keys, agreement]);
 
     const stats = {
         total: environments.reduce((acc, env) => acc + (env.items?.length || 0), 0),
@@ -257,8 +296,19 @@ export default function ActiveInspection() {
         }
     };
 
-    const handleFinish = () => {
-        window.location.href = '/dashboard/inspections/summary-demo';
+    const handleFinish = async () => {
+        if (inspectionId && isSupabaseConfigured) {
+            try {
+                await updateInspection(inspectionId, { status: 'completed' });
+                await deleteDraft(inspectionId);
+                router.push(`/dashboard/inspections/summary-demo?id=${inspectionId}`);
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao finalizar vistoria.');
+            }
+        } else {
+            router.push('/dashboard/inspections/summary-demo');
+        }
     };
 
     if (isLoading) {
