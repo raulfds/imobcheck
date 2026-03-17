@@ -199,7 +199,15 @@ export default function TenantDashboard() {
                         </div>
                         <div className="flex-1 divide-y divide-border">
                             {recentInspections.map((inspection) => (
-                                <div key={inspection.id} className="group px-6 md:px-10 py-6 md:py-8 flex items-center gap-4 md:gap-8 hover:bg-muted/30 transition-all cursor-pointer" onClick={() => router.push(`/dashboard/inspections/${inspection.id}`)}>
+                                <div 
+                                    key={inspection.id} 
+                                    className="group px-6 md:px-10 py-6 md:py-8 flex items-center gap-4 md:gap-8 hover:bg-muted/30 transition-all cursor-pointer" 
+                                    onClick={() => router.push(
+                                        inspection.status === 'completed' 
+                                            ? `/dashboard/inspections/summary-demo?id=${inspection.id}` 
+                                            : `/dashboard/inspections/active-demo?id=${inspection.id}`
+                                    )}
+                                >
                                     <div className={`h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 border transition-all group-hover:scale-105 group-hover:shadow-lg ${
                                         inspection.status === 'completed' 
                                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-emerald-500/5'

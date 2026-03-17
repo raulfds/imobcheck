@@ -251,16 +251,26 @@ export default function InspectionsPage() {
                             const client = clients[i.clientId];
                             const isOngoing = i.status === 'ongoing';
                             return (
-                                <div key={i.id} className="bg-muted/30 rounded-2xl p-5 border border-border/50 space-y-4" onClick={() => window.location.href = `/dashboard/inspections/${i.id}`}>
+                                <div key={i.id} className="bg-muted/30 rounded-2xl p-5 border border-border/50 space-y-4">
                                     <div className="flex items-start justify-between">
                                         <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border ${
                                             i.type === 'entry' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                                         }`}>
                                             <Home className="h-6 w-6" />
                                         </div>
-                                        <Badge variant={isOngoing ? "warning" : "success"} className="font-black text-[9px] uppercase px-3 py-1 rounded-lg">
-                                            {isOngoing ? 'Em Aberto' : 'Concluído'}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={isOngoing ? "warning" : "success"} className="font-black text-[9px] uppercase px-3 py-1 rounded-lg">
+                                                {isOngoing ? 'Em Aberto' : 'Concluído'}
+                                            </Badge>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-8 w-8 rounded-lg hover:bg-destructive hover:text-white transition-all text-muted-foreground/50"
+                                                onClick={(e) => handleDelete(i.id, e)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </div>
                                     <div className="space-y-1">
                                         <p className="font-black text-foreground text-base tracking-tight truncate leading-tight">
@@ -282,17 +292,22 @@ export default function InspectionsPage() {
                                         </div>
                                         <div className="flex gap-2">
                                             {isOngoing ? (
-                                                <Link href={`/dashboard/inspections/active-demo?id=${i.id}`}>
-                                                    <Button size="sm" className="h-9 px-4 rounded-lg font-black bg-blue-600 hover:bg-blue-700 text-[9px] uppercase tracking-widest">
-                                                        Continuar
-                                                    </Button>
-                                                </Link>
+                                                <Button 
+                                                    size="sm" 
+                                                    className="h-9 px-4 rounded-lg font-black bg-blue-600 hover:bg-blue-700 text-[9px] uppercase tracking-widest"
+                                                    onClick={() => window.location.href = `/dashboard/inspections/active-demo?id=${i.id}`}
+                                                >
+                                                    Continuar
+                                                </Button>
                                             ) : (
-                                                <Link href={`/dashboard/inspections/summary-demo?id=${i.id}`}>
-                                                    <Button variant="secondary" size="sm" className="h-9 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest border border-border/50">
-                                                        Ver
-                                                    </Button>
-                                                </Link>
+                                                <Button 
+                                                    variant="secondary" 
+                                                    size="sm" 
+                                                    className="h-9 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest border border-border/50"
+                                                    onClick={() => window.location.href = `/dashboard/inspections/summary-demo?id=${i.id}`}
+                                                >
+                                                    Ver
+                                                </Button>
                                             )}
                                         </div>
                                     </div>
