@@ -28,7 +28,20 @@ import {
     Zap,
     Flame,
     Key,
-    FileCheck2
+    FileCheck2,
+    ChevronDown,
+    ChevronUp,
+    Home,
+    Sofa,
+    Utensils,
+    Bed,
+    Bath,
+    Coffee,
+    Car,
+    Trees,
+    ImagePlus,
+    Edit2,
+    MoreVertical
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 /* eslint-disable @next/next/no-img-element */
@@ -49,6 +62,9 @@ export default function ActiveInspection() {
     const [environments, setEnvironments] = useState<Environment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeEnvId, setActiveEnvId] = useState<string | null>(null);
+    const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+    const [targetedEnvId, setTargetedEnvId] = useState<string | null>(null);
+    const [photoName, setPhotoName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
@@ -209,6 +225,29 @@ export default function ActiveInspection() {
         }));
     };
 
+    const addItemToEnv = (envId: string, category: string) => {
+        const itemName = prompt('Nome do novo item:');
+        if (!itemName) return;
+
+        const newItem: InspectionItem = {
+            id: `it-custom-${Date.now()}`,
+            name: itemName,
+            category: category,
+            status: 'pending',
+            defect: '',
+            observation: '',
+            photo: undefined,
+        };
+
+        setEnvironments(envs => envs.map(env => {
+            if (env.id !== envId) return env;
+            return {
+                ...env,
+                items: [...env.items, newItem]
+            };
+        }));
+    };
+
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, envId: string) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
@@ -246,19 +285,20 @@ export default function ActiveInspection() {
         }));
     };
 
-    const handleAddEnvironment = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleAddEnvironment = (e?: React.FormEvent, templateFromGrid?: string) => {
+        if (e) e.preventDefault();
 
         let templateItems: { name: string, category: string }[] = [
             { name: 'Limpeza Geral', category: 'Geral' },
             { name: 'Pintura', category: 'Geral' }
         ];
-        let envName = customTemplateName || 'Novo Ambiente';
+        
+        const templateToUse = templateFromGrid || selectedTemplateName;
+        let envName = templateFromGrid || customTemplateName || 'Novo Ambiente';
 
-        if (selectedTemplateName !== 'custom') {
-            const template = availableTemplates.find(t => t.nome === selectedTemplateName);
+        if (templateToUse !== 'custom') {
+            const template = availableTemplates.find(t => t.nome === templateToUse);
             if (template) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 templateItems = template.categorias.flatMap((cat: any) =>
                     cat.itens.map((it: string) => ({ name: it, category: cat.nome }))
                 );
@@ -327,312 +367,12 @@ export default function ActiveInspection() {
     }
 
     // ─── AMBIENTE ATIVO (Checklist Detalhado) ───
-    if (activeEnvId) {
-        const env = environments.find((e) => e.id === activeEnvId)!;
-        return (
-            <div className="max-w-2xl mx-auto space-y-6 md:space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500 px-4 md:px-0">
-                <div className="flex items-center justify-between sticky top-0 z-40 bg-background/80 backdrop-blur-md py-3 md:py-4 -mx-4 px-4 border-b border-border/40">
-                    <div className="flex items-center gap-3 md:gap-4">
-                        <Button variant="secondary" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl shadow-md" onClick={() => setActiveEnvId(null)}>
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <div>
-                            <h2 className="text-lg md:text-2xl font-black tracking-tight truncate max-w-[150px] md:max-w-none">{env.name}</h2>
-                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-primary italic">Conferência</p>
-                        </div>
-                    </div>
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-none font-black px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-xs">
-                        {env.items.filter(i => i.status !== 'pending').length}/{env.items.length}
-                    </Badge>
-                </div>
 
-                <Tabs defaultValue="items" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 h-14 md:h-16 bg-muted/40 p-1 md:p-1.5 rounded-xl md:rounded-2xl mb-6 md:mb-8">
-                        <TabsTrigger value="items" className="rounded-lg md:rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-background transition-all gap-1.5 md:gap-2">
-                            <Layout className="h-3.5 w-3.5 md:h-4 md:w-4" /> Checklist
-                        </TabsTrigger>
-                        <TabsTrigger value="photos" className="rounded-lg md:rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-background transition-all gap-1.5 md:gap-2">
-                            <ImageIcon className="h-3.5 w-3.5 md:h-4 md:w-4" /> Fotos
-                        </TabsTrigger>
-                        <TabsTrigger value="validation" className="rounded-lg md:rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest data-[state=active]:bg-background transition-all gap-1.5 md:gap-2">
-                            <FileCheck2 className="h-3.5 w-3.5 md:h-4 md:w-4" /> Laudo
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="items" className="space-y-10">
-                        {Object.entries(
-                            env.items.reduce((acc: Record<string, InspectionItem[]>, item: InspectionItem) => {
-                                const cat = item.category || 'Geral';
-                                if (!acc[cat]) acc[cat] = [];
-                                acc[cat].push(item);
-                                return acc;
-                            }, {})
-                        ).map(([categoryName, items]: [string, InspectionItem[]]) => (
-                            <div key={categoryName} className="space-y-6">
-                                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                                    <h3 className="text-xs font-black text-foreground uppercase tracking-widest">
-                                        {categoryName}
-                                    </h3>
-                                    <div className="h-px bg-border/40 flex-1" />
-                                </div>
-                                {items.map((item: InspectionItem) => (
-                                    <Card key={item.id} className={`overflow-hidden border-none shadow-xl transition-all rounded-[1.5rem] ${
-                                        item.status === 'not_ok' ? 'bg-red-50/30 ring-2 ring-red-500/20' : 
-                                        item.status === 'ok' ? 'bg-emerald-50/30' : 'bg-card'
-                                    }`}>
-                                        <CardContent className="p-8 space-y-6">
-                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                                                <span className="font-black text-xl tracking-tight leading-tight">{item.name}</span>
-                                                <div className="flex gap-3 w-full md:w-auto">
-                                                    <Button
-                                                        className={`flex-1 md:flex-none h-12 px-6 rounded-xl font-black transition-all gap-2 ${
-                                                            item.status === 'ok' 
-                                                            ? 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20' 
-                                                            : 'bg-muted/50 hover:bg-emerald-50 text-emerald-600'
-                                                        }`}
-                                                        onClick={() => updateItem(env.id, item.id, { status: 'ok' })}
-                                                    >
-                                                        <Check className="h-5 w-5" /> OK
-                                                    </Button>
-                                                    <Button
-                                                        variant="destructive"
-                                                        className={`flex-1 md:flex-none h-12 px-6 rounded-xl font-black transition-all gap-2 ${
-                                                            item.status === 'not_ok' 
-                                                            ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20' 
-                                                            : 'bg-muted/50 hover:bg-red-50 text-red-600'
-                                                        }`}
-                                                        onClick={() => updateItem(env.id, item.id, { status: 'not_ok' })}
-                                                    >
-                                                        <AlertCircle className="h-5 w-5" /> AVARIA
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {item.status === 'not_ok' && (
-                                                <div className="space-y-6 bg-white/40 p-6 rounded-2xl animate-in fade-in zoom-in-95">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div className="space-y-2">
-                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Natureza do Defeito</Label>
-                                                            <Select value={item.defect || ""} onValueChange={(v) => updateItem(env.id, item.id, { defect: v || undefined })}>
-                                                                <SelectTrigger className="h-12 rounded-xl bg-card border-none shadow-sm font-bold">
-                                                                    <SelectValue placeholder="Selecione o problema" />
-                                                                </SelectTrigger>
-                                                                <SelectContent className="rounded-xl border-none shadow-2xl">
-                                                                    <SelectItem value="Riscado" className="font-bold">Riscado / Manchado</SelectItem>
-                                                                    <SelectItem value="Quebrado" className="font-bold">Quebrado / Danificado</SelectItem>
-                                                                    <SelectItem value="Faltando" className="font-bold">Faltando Peça</SelectItem>
-                                                                    <SelectItem value="Sujo" className="font-bold">Sujeira Excessiva</SelectItem>
-                                                                    <SelectItem value="Outro" className="font-bold text-primary">Outro (Descrever)</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Observações Técnicas</Label>
-                                                            <Input
-                                                                placeholder="Detalhes adicionais..."
-                                                                className="h-12 rounded-xl bg-card border-none shadow-sm font-bold"
-                                                                value={item.observation}
-                                                                onChange={(e) => updateItem(env.id, item.id, { observation: e.target.value })}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        ))}
-                    </TabsContent>
-
-                    <TabsContent value="photos" className="space-y-8 animate-in fade-in duration-500">
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            style={{ display: 'none' }} 
-                            accept="image/*" 
-                            multiple
-                            capture="environment"
-                            onChange={(e) => handlePhotoUpload(e, env.id)}
-                        />
-                        <div className="grid grid-cols-2 gap-6">
-                            {(env.generalPhotos || []).map((photo: string, i: number) => (
-                                <div key={i} className="aspect-square relative rounded-3xl overflow-hidden border shadow-lg group">
-                                    <img src={photo} alt={`Foto geral ${i + 1}`} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex items-end">
-                                        <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-black text-[10px]">EVIDÊNCIA {i + 1}</Badge>
-                                    </div>
-                                    <Button 
-                                        variant="destructive" 
-                                        size="icon" 
-                                        className="absolute top-2 right-2 h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => deletePhoto(env.id, photo)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                            <button
-                                className="aspect-square rounded-3xl border-2 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center justify-center gap-3 hover:bg-primary/10 hover:border-primary/40 transition-all group"
-                                onClick={() => addGeneralPhoto()}
-                            >
-                                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                    <Plus className="h-6 w-6" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary text-center px-2">Adicionar Foto (Câmera/Galeria)</span>
-                            </button>
-                        </div>
-                        <div className="bg-foreground p-6 rounded-[2rem] text-card-foreground flex gap-4 items-center">
-                            <AlertCircle className="h-10 w-10 text-primary shrink-0 transition-transform group-hover:scale-110" />
-                            <p className="text-xs font-medium italic opacity-80">
-                                <span className="font-black not-italic block mb-1">DICA DO ESPECIALISTA</span>
-                                Tire fotos de todos os ângulos do ambiente. Elas servem como prova do estado geral de conservação.
-                            </p>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="validation" className="space-y-10 animate-in fade-in duration-500">
-                        <section className="space-y-6">
-                            <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">Leitura de Medidores</h3>
-                                <div className="h-px bg-border/40 flex-1" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <Card className="border-none shadow-xl bg-card rounded-3xl overflow-hidden">
-                                    <div className="p-6 space-y-4">
-                                        <div className="h-10 w-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-600">
-                                            <Zap className="h-5 w-5" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Luz (CPFL / Enel)</Label>
-                                            <Input 
-                                                value={meters.light} 
-                                                onChange={(e) => setMeters({...meters, light: e.target.value})}
-                                                placeholder="000000" 
-                                                className="border-none bg-muted/40 h-12 rounded-xl font-black text-lg p-4"
-                                            />
-                                        </div>
-                                    </div>
-                                </Card>
-                                <Card className="border-none shadow-xl bg-card rounded-3xl overflow-hidden">
-                                    <div className="p-6 space-y-4">
-                                        <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
-                                            <Droplets className="h-5 w-5" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Água (Sabesp / ETC)</Label>
-                                            <Input 
-                                                value={meters.water} 
-                                                onChange={(e) => setMeters({...meters, water: e.target.value})}
-                                                placeholder="000000" 
-                                                className="border-none bg-muted/40 h-12 rounded-xl font-black text-lg p-4"
-                                            />
-                                        </div>
-                                    </div>
-                                </Card>
-                                <Card className="border-none shadow-xl bg-card rounded-3xl overflow-hidden">
-                                    <div className="p-6 space-y-4">
-                                        <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600">
-                                            <Flame className="h-5 w-5" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-50">Gás (Comgás / ETC)</Label>
-                                            <Input 
-                                                value={meters.gas} 
-                                                onChange={(e) => setMeters({...meters, gas: e.target.value})}
-                                                placeholder="000000" 
-                                                className="border-none bg-muted/40 h-12 rounded-xl font-black text-lg p-4"
-                                            />
-                                        </div>
-                                    </div>
-                                </Card>
-                            </div>
-                        </section>
-
-                        <section className="space-y-6">
-                            <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">Controle de Chaves</h3>
-                                <div className="h-px bg-border/40 flex-1" />
-                            </div>
-                            <Card className="border-none shadow-xl bg-card rounded-[2rem] overflow-hidden">
-                                <div className="p-8 space-y-6">
-                                    {keys.length === 0 ? (
-                                        <div className="text-center py-6 bg-muted/20 border-2 border-dashed border-border/40 rounded-2xl flex flex-col items-center gap-4">
-                                            <Key className="h-8 w-8 text-muted-foreground/40" />
-                                            <p className="text-xs font-bold uppercase tracking-widest opacity-40 italic">Nenhuma chave registrada</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {keys.map((k, idx) => (
-                                                <div key={idx} className="flex items-center gap-4 bg-muted/20 p-4 rounded-2xl border border-border/10">
-                                                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                                        <Key className="h-4 w-4" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <p className="text-sm font-black">{k.description}</p>
-                                                        <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{k.quantity} UNIDADE(S)</p>
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" onClick={() => setKeys(keys.filter((_, i) => i !== idx))} className="h-8 w-8 text-red-500 hover:bg-red-50 rounded-lg">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Button 
-                                            variant="outline" 
-                                            className="h-12 rounded-xl font-black border-dashed border-primary/20 text-primary bg-primary/5 hover:bg-primary/10"
-                                            onClick={() => {
-                                                const desc = prompt('Descrição da Chave/Controle/Tag:');
-                                                const qty = prompt('Quantidade:');
-                                                if (desc && qty) setKeys([...keys, { description: desc, quantity: parseInt(qty) || 1 }]);
-                                            }}
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" /> Nova Chave
-                                        </Button>
-                                    </div>
-                                </div>
-                            </Card>
-                        </section>
-
-                        <section className="space-y-6">
-                            <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                                <h3 className="text-xs font-black text-foreground uppercase tracking-widest">Termo de Concordância</h3>
-                                <div className="h-px bg-border/40 flex-1" />
-                            </div>
-                            <Card className="border-none shadow-xl bg-card rounded-[2rem] overflow-hidden">
-                                <div className="p-8 space-y-4">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Declaração Final</Label>
-                                    <Textarea 
-                                        value={agreement}
-                                        onChange={(e) => setAgreement(e.target.value)}
-                                        placeholder="As partes declaram estar de acordo com o estado do imóvel..."
-                                        className="min-h-[150px] rounded-2xl bg-muted/40 border-none p-6 font-medium italic shadow-inner"
-                                    />
-                                </div>
-                            </Card>
-                        </section>
-                    </TabsContent>
-                </Tabs>
-
-                {/* Footer Actions for Active Env */}
-                <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-xl border-t border-border/40 z-50 flex gap-4 max-w-2xl mx-auto rounded-t-[2.5rem] shadow-2xl">
-                    <Button variant="secondary" className="h-14 flex-1 rounded-2xl font-black gap-2 shadow-md border-none" onClick={() => handleSaveAsTemplate(env)}>
-                        <Save className="h-5 w-5" /> Salvar Modelo
-                    </Button>
-                    <Button className="h-14 flex-[2] rounded-2xl font-black text-lg shadow-xl shadow-primary/20 bg-primary text-primary-foreground" onClick={() => setActiveEnvId(null)}>
-                        Concluir <ArrowLeft className="h-5 w-5 rotate-180" />
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
-    // ─── LISTAGEM DE AMBIENTES (Visão Geral) ───
+    // ─── PÁGINA DE VISTORIA (Visão Geral em Sessões) ───
     return (
-        <div className="max-w-xl mx-auto space-y-10 pb-32 animate-in fade-in duration-700">
-            <div className="flex flex-col gap-6">
+        <div className="max-w-2xl mx-auto space-y-12 pb-40 animate-in fade-in duration-700 px-4">
+            {/* Header / Progresso */}
+            <div className="flex flex-col gap-6 pt-6">
                 <div className="space-y-2">
                     <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Vistoria Ativa</h1>
                     <div className="flex justify-between items-end">
@@ -652,100 +392,322 @@ export default function ActiveInspection() {
                 </div>
             </div>
 
-            <div className="grid gap-6">
-                {environments.length === 0 && (
-                    <div className="text-center py-20 bg-muted/20 border-2 border-dashed border-border/40 rounded-[2.5rem] flex flex-col items-center gap-6">
-                        <div className="h-20 w-20 rounded-[2rem] bg-background flex items-center justify-center shadow-xl text-primary/20">
-                            <Layout className="h-10 w-10" />
-                        </div>
-                        <div className="space-y-2">
-                            <p className="font-black text-xl uppercase tracking-tight">Vistoria Vazia</p>
-                            <p className="text-muted-foreground font-medium italic">Adicione o primeiro ambiente para começar o laudo.</p>
-                        </div>
-                        <Button className="h-12 px-8 rounded-xl font-black gap-2" onClick={() => setIsAddEnvModalOpen(true)}>
-                            <Plus className="h-5 w-5" /> Adicionar Cômodo
-                        </Button>
-                    </div>
-                )}
-                
-                {environments.map((env) => {
-                    const envChecked = env.items?.filter((i: InspectionItem) => i.status !== 'pending').length || 0;
-                    const itemsDone = env.items?.length > 0 && envChecked === env.items.length;
-                    const photosCount = (env.generalPhotos || []).length;
-                    const hasDefects = env.items.some(i => i.status === 'not_ok');
-
-                    return (
-                        <Card
-                            key={env.id}
-                            className={`group cursor-pointer border-none shadow-xl transition-all rounded-[1.8rem] hover:scale-[1.02] active:scale-[0.98] ${
-                                itemsDone ? 'bg-emerald-50/20' : 'bg-card'
-                            }`}
-                            onClick={() => setActiveEnvId(env.id)}
-                        >
-                            <CardContent className="p-6 flex flex-row items-center gap-5">
-                                <div className={`h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-3 ${
-                                    itemsDone ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
-                                }`}>
-                                    {itemsDone ? <Check className="h-8 w-8" /> : <Layout className="h-8 w-8" />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="text-lg font-black tracking-tight truncate">{env.name}</h3>
-                                        {hasDefects && <Badge variant="destructive" className="h-4 w-4 p-0 flex items-center justify-center rounded-full"><AlertCircle className="h-3 w-3" /></Badge>}
-                                    </div>
-                                    <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
-                                        <span>{envChecked}/{env.items?.length || 0} Itens</span>
-                                        {photosCount > 0 && (
-                                            <>
-                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/30"></span>
-                                                <span className="flex items-center gap-1.5">
-                                                    <Camera className="h-3 w-3" /> {photosCount} Fotos
-                                                </span>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-10 w-10 text-muted-foreground hover:bg-red-500 hover:text-white rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                        onClick={(e) => removeEnvironment(env.id, e)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                    <ChevronRight className="h-6 w-6 text-primary transition-transform group-hover:translate-x-1" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-
-                {environments.length > 0 && (
-                    <Button
-                        variant="outline"
-                        className="h-24 border-2 border-dashed border-primary/20 rounded-[2rem] bg-primary/5 flex flex-col gap-2 hover:bg-primary/10 hover:border-primary/40 transition-all font-black uppercase text-[10px] tracking-widest text-primary"
+            {/* 1. SESSÃO: AMBIENTES */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                    <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Ambientes</h3>
+                    <div className="h-px bg-border/40 flex-1" />
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 rounded-xl font-black text-[10px] uppercase tracking-widest gap-2 bg-primary/5 text-primary hover:bg-primary/10"
                         onClick={() => setIsAddEnvModalOpen(true)}
                     >
-                        <Plus className="h-8 w-8" />
-                        Adicionar Novo Ambiente
+                        <Plus className="h-3 w-3" /> Adicionar
                     </Button>
+                </div>
+
+                {environments.length === 0 && (
+                    <div className="text-center py-12 bg-muted/5 border-2 border-dashed border-border/20 rounded-[2rem] flex flex-col items-center gap-4">
+                        <div className="h-16 w-16 rounded-2xl bg-background flex items-center justify-center shadow-lg text-primary/20">
+                            <Layout className="h-8 w-8" />
+                        </div>
+                        <div className="space-y-1">
+                            <p className="font-black text-lg uppercase tracking-tight text-foreground/40">Nenhum Ambiente</p>
+                            <p className="text-muted-foreground text-xs font-medium italic">Adicione o primeiro cômodo acima.</p>
+                        </div>
+                    </div>
                 )}
-            </div>
+
+                <div className="grid gap-6">
+                    {environments.map((env) => {
+                        const envChecked = env.items?.filter((i: InspectionItem) => i.status !== 'pending').length || 0;
+                        const itemsDone = env.items?.length > 0 && envChecked === env.items.length;
+                        const photosCount = (env.generalPhotos || []).length;
+                        const isExpanded = activeEnvId === env.id;
+
+                        return (
+                            <Card
+                                key={env.id}
+                                className={`group border-none shadow-xl transition-all rounded-[2.5rem] overflow-hidden ${
+                                    isExpanded ? 'ring-2 ring-primary/20 shadow-2xl' : 'bg-card'
+                                }`}
+                            >
+                                <CardContent className="p-0">
+                                    <div 
+                                        className="flex items-center p-6 gap-4 cursor-pointer"
+                                        onClick={() => setActiveEnvId(isExpanded ? null : env.id)}
+                                    >
+                                        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
+                                            itemsDone ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
+                                        }`}>
+                                            {itemsDone ? <Check className="h-7 w-7" /> : <Layout className="h-7 w-7" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-xl font-black tracking-tight truncate">{env.name}</h3>
+                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
+                                                <span>{envChecked}/{env.items?.length || 0} Itens</span>
+                                                {photosCount > 0 && <span className="text-primary font-black">• {photosCount} Fotos</span>}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button 
+                                                variant="secondary" 
+                                                size="icon" 
+                                                className="h-10 w-10 rounded-xl"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setTargetedEnvId(env.id);
+                                                    setIsPhotoModalOpen(true);
+                                                }}
+                                            >
+                                                <Camera className="h-5 w-5" />
+                                            </Button>
+                                            {isExpanded ? <ChevronUp className="h-6 w-6 text-primary" /> : <ChevronDown className="h-6 w-6 text-muted-foreground/40" />}
+                                        </div>
+                                    </div>
+
+                                    {isExpanded && (
+                                        <div className="px-6 pb-8 space-y-8 animate-in slide-in-from-top-4 duration-300">
+                                            {/* Checklist de Itens Integrado */}
+                                            <div className="space-y-4">
+                                                {Object.entries(
+                                                    env.items.reduce((acc: Record<string, InspectionItem[]>, item: InspectionItem) => {
+                                                        const cat = item.category || 'Geral';
+                                                        if (!acc[cat]) acc[cat] = [];
+                                                        acc[cat].push(item);
+                                                        return acc;
+                                                    }, {})
+                                                ).map(([categoryName, items]: [string, InspectionItem[]]) => (
+                                                    <div key={categoryName} className="space-y-3">
+                                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-2">{categoryName}</p>
+                                                        <div className="bg-muted/30 rounded-3xl p-2 space-y-1">
+                                                            {items.map((item) => (
+                                                                <div key={item.id} className="flex items-center justify-between p-3 bg-card rounded-2xl shadow-sm border border-border/10">
+                                                                    <span className="text-sm font-bold text-foreground/80 px-2 truncate flex-1">{item.name}</span>
+                                                                    <div className="flex gap-1">
+                                                                        <button 
+                                                                            onClick={() => updateItem(env.id, item.id, { status: item.status === 'ok' ? 'pending' : 'ok' })}
+                                                                            className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
+                                                                                item.status === 'ok' ? 'bg-emerald-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600'
+                                                                            }`}
+                                                                        >
+                                                                            OK
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => updateItem(env.id, item.id, { status: item.status === 'not_ok' ? 'pending' : 'not_ok' })}
+                                                                            className={`h-9 px-4 rounded-xl font-black text-[9px] transition-all ${
+                                                                                item.status === 'not_ok' ? 'bg-red-600 text-white shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-red-500/10 hover:text-red-600'
+                                                                            }`}
+                                                                        >
+                                                                            AVARIA
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <Button 
+                                                    variant="ghost" 
+                                                    className="w-full h-12 rounded-2xl border-2 border-dashed border-primary/10 text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest gap-2"
+                                                    onClick={() => {
+                                                        const cat = prompt('Nome da categoria (ex: Pintura, Elétrica):');
+                                                        if (cat) addItemToEnv(env.id, cat);
+                                                    }}
+                                                >
+                                                    <Plus className="h-4 w-4" /> Adicionar Item
+                                                </Button>
+                                            </div>
+
+                                            {/* Fotos do Ambiente */}
+                                            {photosCount > 0 && (
+                                                <div className="space-y-3">
+                                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-2">Fotos do Ambiente</p>
+                                                    <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar px-1">
+                                                        {(env.generalPhotos || []).map((photo, i) => (
+                                                            <div key={i} className="relative group/photo shrink-0">
+                                                                <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-white shadow-lg">
+                                                                    <img src={photo} alt="" className="w-full h-full object-cover" />
+                                                                </div>
+                                                                <button 
+                                                                    onClick={() => deletePhoto(env.id, photo)}
+                                                                    className="absolute -top-2 -right-2 h-7 w-7 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="flex gap-3 pt-4 border-t border-border/40">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    className="h-10 text-red-500 font-bold text-xs hover:bg-red-50 rounded-xl"
+                                                    onClick={(e) => removeEnvironment(env.id, e)}
+                                                >
+                                                    Excluir Ambiente
+                                                </Button>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    className="h-10 text-primary font-bold text-xs hover:bg-primary/5 rounded-xl ml-auto"
+                                                    onClick={() => handleSaveAsTemplate(env)}
+                                                >
+                                                    Salvar como Modelo
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* 2. SESSÃO: DADOS DE LEITURA */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                    <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Dados de Leitura</h3>
+                    <div className="h-px bg-border/40 flex-1" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                        { id: 'light', label: 'Luz', icon: Zap, color: 'yellow', value: meters.light },
+                        { id: 'water', label: 'Água', icon: Droplets, color: 'blue', value: meters.water },
+                        { id: 'gas', label: 'Gás', icon: Flame, color: 'orange', value: meters.gas },
+                    ].map((m) => (
+                        <Card key={m.id} className="border-none shadow-premium bg-card rounded-[2rem] overflow-hidden group">
+                            <div className="p-6 flex items-center gap-4">
+                                <div className={`h-12 w-12 rounded-2xl bg-${m.color}-500/10 flex items-center justify-center text-${m.color}-600`}>
+                                    <m.icon className="h-6 w-6" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <Input 
+                                        value={m.value} 
+                                        onChange={(e) => setMeters({...meters, [m.id]: e.target.value})}
+                                        placeholder={`Leitura ${m.label}`} 
+                                        className="border-none bg-muted/40 h-11 rounded-xl font-black text-lg p-4 shadow-inner focus-visible:ring-primary/20"
+                                    />
+                                </div>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            </section>
+
+            {/* 3. SESSÃO: CHAVES */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                    <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Chaves</h3>
+                    <div className="h-px bg-border/40 flex-1" />
+                </div>
+                <Card className="border-none shadow-xl bg-card rounded-[2.5rem] overflow-hidden">
+                    <div className="p-6 space-y-4">
+                        {keys.length > 0 && (
+                            <div className="grid gap-3">
+                                {keys.map((k, idx) => (
+                                    <div key={idx} className="flex items-center gap-4 bg-muted/30 p-4 rounded-[1.5rem] border border-border/10">
+                                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                            <Key className="h-5 w-5" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-sm tracking-tight">{k.description}</p>
+                                            <p className="text-[9px] font-black opacity-40 uppercase tracking-widest">{k.quantity} un</p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" onClick={() => setKeys(keys.filter((_, i) => i !== idx))} className="h-9 w-9 text-red-500 hover:bg-red-50 rounded-xl">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <Button 
+                            variant="outline" 
+                            className="w-full h-14 rounded-2xl font-black border-dashed border-primary/20 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm gap-3"
+                            onClick={() => {
+                                const desc = prompt('Descrição da Chave:');
+                                const qty = prompt('Quantidade:');
+                                if (desc && qty) setKeys([...keys, { description: desc, quantity: parseInt(qty) || 1 }]);
+                            }}
+                        >
+                            <Plus className="h-4 w-4" /> Nova Chave
+                        </Button>
+                    </div>
+                </Card>
+            </section>
+
+            {/* 4. SESSÃO: TERMO */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
+                    <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Termo de Concordância</h3>
+                    <div className="h-px bg-border/40 flex-1" />
+                </div>
+                <Card className="border-none shadow-xl bg-card rounded-[2.5rem] overflow-hidden">
+                    <div className="p-6">
+                        <Textarea 
+                            value={agreement}
+                            onChange={(e) => setAgreement(e.target.value)}
+                            placeholder="As partes declaram estar de acordo..."
+                            className="min-h-[150px] rounded-2xl bg-muted/40 border-none p-6 font-medium italic shadow-inner focus-visible:ring-primary/20"
+                        />
+                    </div>
+                </Card>
+            </section>
+
+            {/* Photo Upload Dialog (Shared) */}
+            <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
+                <DialogContent className="rounded-[2.5rem] p-8 border-none shadow-2xl max-w-sm mx-auto">
+                    <DialogTitle className="text-2xl font-black tracking-tighter">Nova Foto</DialogTitle>
+                    <DialogDescription className="text-xs font-medium italic opacity-60">Adicione uma imagem para este ambiente.</DialogDescription>
+                    
+                    <div className="space-y-6 pt-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            <input 
+                                type="file" 
+                                id="env-photo-upload"
+                                className="hidden" 
+                                accept="image/*"
+                                multiple
+                                capture="environment"
+                                onChange={(e) => {
+                                    if (targetedEnvId) {
+                                        handlePhotoUpload(e, targetedEnvId);
+                                        setIsPhotoModalOpen(false);
+                                    }
+                                }}
+                            />
+                            <Button 
+                                className="h-16 rounded-[1.2rem] bg-primary text-white font-black text-lg gap-3 shadow-xl shadow-primary/20"
+                                onClick={() => document.getElementById('env-photo-upload')?.click()}
+                            >
+                                <Camera className="h-7 w-7" /> Abrir Câmera
+                            </Button>
+                            <div className="text-center opacity-40">
+                                <span className="text-[9px] font-black uppercase tracking-widest italic">Ou selecione fotos da galeria</span>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Bottom Actions Bar */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-xl border-t border-border/40 z-50 max-w-xl mx-auto rounded-t-[2.5rem] shadow-2xl">
-                <Button 
-                    className="w-full h-16 rounded-2xl font-black text-xl gap-3 shadow-2xl shadow-primary/30 transition-all disabled:opacity-40"
-                    disabled={progress < 100 || environments.length === 0} 
-                    onClick={handleFinish}
-                >
-                    <FileText className="h-6 w-6" />
-                    Gerar Laudo Final
-                </Button>
+            <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-background/80 backdrop-blur-xl border-t border-border/40 z-50">
+                <div className="max-w-xl mx-auto">
+                    <Button 
+                        className="w-full h-14 rounded-2xl font-black text-lg gap-3 shadow-2xl shadow-emerald-500/20 transition-all active:scale-[0.98] bg-emerald-600 hover:bg-emerald-700 text-white"
+                        disabled={environments.length === 0} 
+                        onClick={handleFinish}
+                    >
+                        <FileCheck2 className="h-5 w-5" />
+                        Finalizar e Gerar Laudo
+                    </Button>
+                </div>
             </div>
 
-            {/* Modal de Adição de Ambiente */}
+            {/* Add Env Modal */}
             <Dialog open={isAddEnvModalOpen} onOpenChange={setIsAddEnvModalOpen}>
                 <DialogContent className="sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-card">
                     <div className="bg-primary p-12 text-primary-foreground relative overflow-hidden group">
