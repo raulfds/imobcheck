@@ -288,26 +288,6 @@ export const InspectionPDF = ({ inspection, tenant, property, landlord, client }
                         </View>
                     </View>
                 )}
-
-                {/* Signatures */}
-                <View style={styles.signatures} wrap={false}>
-                    <View style={styles.signatureBox}>
-                        <View style={styles.signatureLine} />
-                        <Text style={styles.signatureName}>{landlord?.name || 'Locador(a)'}</Text>
-                        <Text style={styles.signatureCpf}>CPF: {landlord?.cpf || 'Não informado'}</Text>
-                        <Text style={{ fontSize: 8, marginTop: 2, color: '#888' }}>Locador(a)</Text>
-                    </View>
-                    <View style={styles.signatureBox}>
-                        <View style={styles.signatureLine} />
-                        <Text style={styles.signatureName}>{client?.name || 'Locatário(a)'}</Text>
-                        <Text style={styles.signatureCpf}>CPF: {client?.cpf || 'Não informado'}</Text>
-                        <Text style={{ fontSize: 8, marginTop: 2, color: '#888' }}>Locatário(a)</Text>
-                    </View>
-                </View>
-
-                <Text style={styles.footer} fixed>
-                    Este documento é parte integrante do contrato de locação. Gerado por Vistorify em {new Date().toLocaleDateString('pt-BR')}.
-                </Text>
             </Page>
         </Document>
     );
