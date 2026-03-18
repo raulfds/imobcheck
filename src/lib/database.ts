@@ -8,6 +8,7 @@ import {
     Tenant, Property, Landlord, Client, Inspection, InspectionEnvironment, RoomTemplate, SubscriptionPlan, User
 } from '@/types';
 import { adminSaveUser, adminResetPassword as serverAdminResetPassword } from '@/app/actions/auth-actions';
+import { GLOBAL_ROOM_TEMPLATES } from './presets';
 
 // ─── MOCK DATA (Fallback) ───────────────────────────────────────────────────
 let MOCK_PLANS: SubscriptionPlan[] = [];
@@ -213,7 +214,7 @@ export async function deleteAgency(id: string): Promise<void> {
 // ─── ROOM TEMPLATES ──────────────────────────────────────────────────────────
 
 export async function fetchRoomTemplates(agencyId?: string): Promise<RoomTemplate[]> {
-    if (!isSupabaseConfigured) return [];
+    if (!isSupabaseConfigured) return GLOBAL_ROOM_TEMPLATES;
     
     let query = supabase.from('room_templates').select('*');
     
@@ -226,8 +227,11 @@ export async function fetchRoomTemplates(agencyId?: string): Promise<RoomTemplat
     }
     
     const { data, error } = await query.order('name');
-    if (error) throw error;
-    return (data ?? []).map(rowToRoomTemplate);
+    if (error) return GLOBAL_ROOM_TEMPLATES;
+    
+    // If DB returned nothing (e.g. table empty), fall back to built-in presets
+    const results = (data ?? []).map(rowToRoomTemplate);
+    return results.length > 0 ? results : GLOBAL_ROOM_TEMPLATES;
 }
 
 export async function saveRoomTemplate(template: RoomTemplate, agencyId?: string): Promise<void> {

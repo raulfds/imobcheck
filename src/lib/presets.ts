@@ -8,6 +8,44 @@ import { RoomTemplate } from "@/types";
 // Fallback templates to use if Supabase is not reachable or empty
 export const GLOBAL_ROOM_TEMPLATES: RoomTemplate[] = [
     {
+      "nome": "Sala",
+      "categorias": [
+        {
+          "nome": "Estrutural",
+          "itens": ["Paredes", "Pintura", "Piso/Revestimento", "Rodapé", "Teto/Gesso", "Porta Principal", "Janela/Porta-Balcão", "Soleira"]
+        },
+        {
+          "nome": "Elétrico",
+          "itens": ["Interruptores", "Tomadas", "Pontos de TV", "Pontos de Internet", "Luminária/Lustre", "Ponto de Ar Condicionado", "Campainha (Interface)"]
+        },
+        {
+          "nome": "Mobiliário/Acessórios",
+          "itens": ["Painel de TV", "Cortinas/Persianas"]
+        }
+      ]
+    },
+    {
+      "nome": "Área de Serviço",
+      "categorias": [
+        {
+          "nome": "Estrutural",
+          "itens": ["Paredes", "Pintura", "Piso", "Teto", "Janela", "Porta"]
+        },
+        {
+          "nome": "Hidráulico/Gás",
+          "itens": ["Tanque", "Torneira do Tanque", "Ponto Máquina de Lavar (Água)", "Ponto Máquina de Lavar (Esgoto)", "Ralo", "Aquecedor a Gás", "Registro do Aquecedor", "Duto de Exaustão"]
+        },
+        {
+          "nome": "Elétrico",
+          "itens": ["Tomada Máquina de Lavar (20A)", "Interruptores", "Luminária"]
+        },
+        {
+          "nome": "Mobiliário/Acessórios",
+          "itens": ["Armário", "Varal"]
+        }
+      ]
+    },
+    {
       "nome": "Banheiro",
       "categorias": [
         {

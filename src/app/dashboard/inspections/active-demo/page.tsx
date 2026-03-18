@@ -42,7 +42,10 @@ import {
     Trees,
     ImagePlus,
     Edit2,
-    MoreVertical
+    MoreVertical,
+    Copy,
+    PenLine,
+    X
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 /* eslint-disable @next/next/no-img-element */
@@ -71,6 +74,9 @@ export default function ActiveInspection() {
     const blobKeyMapRef = useRef<Record<string, string>>({});
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+
+    const [editingEnvId, setEditingEnvId] = useState<string | null>(null);
+    const [editingEnvName, setEditingEnvName] = useState('');
 
     // Insurance-related state
     const [meters, setMeters] = useState({ light: '', water: '', gas: '' });
@@ -319,24 +325,23 @@ export default function ActiveInspection() {
         }));
     };
 
-    const handleAddEnvironment = (e?: React.FormEvent, templateFromGrid?: string) => {
+    const handleAddEnvironment = (e?: React.FormEvent, templateFromGrid?: string, customNameArg?: string) => {
         if (e) e.preventDefault();
 
+        const templateToUse = templateFromGrid || selectedTemplateName;
+        let envName = customNameArg || customTemplateName || templateToUse || 'Novo Ambiente';
         let templateItems: { name: string, category: string }[] = [
             { name: 'Limpeza Geral', category: 'Geral' },
             { name: 'Pintura', category: 'Geral' }
         ];
-        
-        const templateToUse = templateFromGrid || selectedTemplateName;
-        let envName = templateFromGrid || customTemplateName || 'Novo Ambiente';
 
-        if (templateToUse !== 'custom') {
+        if (templateToUse && templateToUse !== 'custom') {
             const template = availableTemplates.find(t => t.nome === templateToUse);
             if (template) {
                 templateItems = template.categorias.flatMap((cat: any) =>
                     cat.itens.map((it: string) => ({ name: it, category: cat.nome }))
                 );
-                envName = template.nome;
+                if (!customNameArg) envName = template.nome;
             }
         }
 
@@ -363,11 +368,49 @@ export default function ActiveInspection() {
         setActiveEnvId(newEnvId);
     };
 
-    const removeEnvironment = (envId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const removeEnvironment = (envId: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         if (confirm('Tem certeza que deseja remover este ambiente da vistoria?')) {
-            setEnvironments(environments.filter(env => env.id !== envId));
+            const nextEnvs = environments.filter(env => env.id !== envId);
+            setEnvironments(nextEnvs);
+            if (activeEnvId === envId) {
+                setActiveEnvId(nextEnvs.length > 0 ? nextEnvs[0].id : null);
+            }
         }
+    };
+
+    const duplicateEnvironment = (envId: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        const envToCopy = environments.find(env => env.id === envId);
+        if (!envToCopy) return;
+
+        const newEnvId = `env-copy-${Date.now()}`;
+        const newEnv: Environment = {
+            ...envToCopy,
+            id: newEnvId,
+            name: `${envToCopy.name} (Cópia)`,
+            generalPhotos: [],
+            items: envToCopy.items.map((it, i) => ({
+                id: `it-${newEnvId}-${i}`,
+                name: it.name,
+                category: it.category,
+                status: 'pending',
+                photo: undefined,
+                observation: '',
+                defect: ''
+            }))
+        };
+        setEnvironments([...environments, newEnv]);
+        setActiveEnvId(newEnvId);
+    };
+
+    const saveRenamedEnv = (envId: string) => {
+        if (!editingEnvName.trim()) {
+            setEditingEnvId(null);
+            return;
+        }
+        setEnvironments(envs => envs.map(e => e.id === envId ? { ...e, name: editingEnvName.trim() } : e));
+        setEditingEnvId(null);
     };
 
     const handleFinish = async () => {
@@ -462,43 +505,73 @@ export default function ActiveInspection() {
                     </div>
                 )}
 
-                <div className="grid gap-6">
-                    {environments.map((env) => {
-                        const envChecked = env.items?.filter((i: InspectionItem) => i.status !== 'pending').length || 0;
-                        const itemsDone = env.items?.length > 0 && envChecked === env.items.length;
-                        const photosCount = (env.generalPhotos || []).length;
-                        const isExpanded = activeEnvId === env.id;
+                {/* Horizontal Tabs for Environments */}
+                {environments.length > 0 && (
+                    <Tabs value={activeEnvId || environments[0].id} onValueChange={setActiveEnvId} className="w-full">
+                        <TabsList className="w-full justify-start overflow-x-auto bg-transparent h-auto p-0 gap-2 pb-2 no-scrollbar">
+                            {environments.map((env) => (
+                                <TabsTrigger 
+                                    key={env.id} 
+                                    value={env.id}
+                                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xl rounded-2xl px-6 py-3 font-black tracking-tight"
+                                >
+                                    {env.name}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
 
-                        return (
-                            <Card
-                                key={env.id}
-                                className={`group border-none shadow-xl transition-all rounded-[2.5rem] overflow-hidden ${
-                                    isExpanded ? 'ring-2 ring-primary/20 shadow-2xl' : 'bg-card'
-                                }`}
-                            >
-                                <CardContent className="p-0">
-                                    <div 
-                                        className="flex items-center p-6 gap-4 cursor-pointer"
-                                        onClick={() => setActiveEnvId(isExpanded ? null : env.id)}
-                                    >
-                                        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
-                                            itemsDone ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
-                                        }`}>
-                                            {itemsDone ? <Check className="h-7 w-7" /> : <Layout className="h-7 w-7" />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="text-xl font-black tracking-tight truncate">{env.name}</h3>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
-                                                {env.items?.length || 0} Itens
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {isExpanded ? <ChevronUp className="h-6 w-6 text-primary" /> : <ChevronDown className="h-6 w-6 text-muted-foreground/40" />}
-                                        </div>
-                                    </div>
+                        {environments.map((env) => {
+                            const envChecked = env.items?.filter((i: InspectionItem) => i.status !== 'pending').length || 0;
+                            const itemsDone = env.items?.length > 0 && envChecked === env.items.length;
+                            const photosCount = (env.generalPhotos || []).length;
 
-                                    {isExpanded && (
-                                        <div className="px-6 pb-8 space-y-8 animate-in slide-in-from-top-4 duration-300">
+                            return (
+                                <TabsContent key={env.id} value={env.id} className="mt-4 outline-none">
+                                    <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden p-6 border border-border/10">
+                                        
+                                        {/* Environment Header Actions */}
+                                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/40">
+                                            {editingEnvId === env.id ? (
+                                                <div className="flex items-center gap-2 flex-1 mr-4">
+                                                    <Input 
+                                                        value={editingEnvName} 
+                                                        onChange={e => setEditingEnvName(e.target.value)} 
+                                                        className="h-12 text-xl font-black bg-muted/40 rounded-xl border-none shadow-inner"
+                                                        autoFocus
+                                                        onKeyDown={e => e.key === 'Enter' && saveRenamedEnv(env.id)}
+                                                    />
+                                                    <Button onClick={() => saveRenamedEnv(env.id)} className="h-12 w-12 rounded-xl p-0 shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"><Check className="h-5 w-5"/></Button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
+                                                        itemsDone ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-primary/10 text-primary'
+                                                    }`}>
+                                                        {itemsDone ? <Check className="h-6 w-6" /> : <Layout className="h-6 w-6" />}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-2xl font-black tracking-tight flex items-center gap-2">
+                                                            {env.name}
+                                                            <button title="Renomear" onClick={() => { setEditingEnvId(env.id); setEditingEnvName(env.name); }} className="text-muted-foreground hover:text-primary transition-colors h-6 w-6 inline-flex items-center justify-center rounded-md"><PenLine className="h-4 w-4"/></button>
+                                                        </h3>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
+                                                            {env.items?.length || 0} Itens • {photosCount} Fotos
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <Button title="Duplicar" variant="ghost" size="icon" className="h-10 w-10 text-primary bg-primary/5 hover:bg-primary/10 rounded-xl" onClick={(e) => duplicateEnvironment(env.id, e)}>
+                                                    <Copy className="h-4 w-4"/>
+                                                </Button>
+                                                <Button title="Excluir" variant="ghost" size="icon" className="h-10 w-10 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl" onClick={(e) => removeEnvironment(env.id, e)}>
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-8 animate-in slide-in-from-top-4 duration-300">
                                             {/* Checklist de Itens Integrado */}
                                             <div className="space-y-4">
                                                 {Object.entries(
@@ -617,15 +690,7 @@ export default function ActiveInspection() {
                                                     </div>
                                                 </div>
                                             )}
-
                                             <div className="flex gap-3 pt-4 border-t border-border/40">
-                                                <Button 
-                                                    variant="ghost" 
-                                                    className="h-10 text-red-500 font-bold text-xs hover:bg-red-50 rounded-xl"
-                                                    onClick={(e) => removeEnvironment(env.id, e)}
-                                                >
-                                                    Excluir Ambiente
-                                                </Button>
                                                 <Button 
                                                     variant="ghost" 
                                                     className="h-10 text-primary font-bold text-xs hover:bg-primary/5 rounded-xl ml-auto"
@@ -635,12 +700,12 @@ export default function ActiveInspection() {
                                                 </Button>
                                             </div>
                                         </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </div>
+                                    </div>
+                                </TabsContent>
+                            );
+                        })}
+                    </Tabs>
+                )}
             </section>
 
             {/* 2. SESSÃO: DADOS DE LEITURA */}
@@ -802,59 +867,35 @@ export default function ActiveInspection() {
                             Selecione o cômodo para iniciar a conferência.
                         </DialogDescription>
                     </div>
-                    <form onSubmit={handleAddEnvironment} className="p-10 space-y-8 bg-card">
-                        <div className="space-y-6">
-                            <div className="space-y-3">
-                                <Label htmlFor="template" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Modelo de Checklist</Label>
-                                <Select value={selectedTemplateName} onValueChange={(val) => setSelectedTemplateName(val || '')}>
-                                    <SelectTrigger className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6">
-                                        <SelectValue placeholder="Escolha um cômodo..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                                        <SelectItem value="custom" className="font-black text-primary rounded-xl py-3 px-4 mb-2 bg-primary/5">
-                                            + Criar Manualmente
-                                        </SelectItem>
-                                        <div className="max-h-[300px] overflow-auto pr-1">
-                                            {availableTemplates.map((tmpl, idx) => (
-                                                <SelectItem key={idx} value={tmpl.nome} className="rounded-xl py-3 px-4 font-bold border-b last:border-0 border-border/10">
-                                                    <div className="flex items-center justify-between w-full">
-                                                        <span>{tmpl.nome}</span>
-                                                        {!tmpl.agency_id ?
-                                                            <Badge variant="outline" className="text-[8px] h-4 py-0 px-1 bg-emerald-500 text-white border-none ml-2">PADRÃO</Badge> :
-                                                            <Badge variant="outline" className="text-[8px] h-4 py-0 px-1 bg-blue-500 text-white border-none ml-2">SALVO</Badge>
-                                                        }
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </div>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {selectedTemplateName === 'custom' && (
-                                <div className="space-y-3 pt-6 border-t border-border/40 animate-in slide-in-from-top-4">
-                                    <Label htmlFor="customName" className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Identificação do Espaço</Label>
-                                    <Input
-                                        id="customName"
-                                        placeholder="Ex: Área Gourmet, Garagem 2..."
-                                        value={customTemplateName}
-                                        onChange={(e) => setCustomTemplateName(e.target.value)}
-                                        required
-                                        className="h-14 rounded-2xl bg-primary/5 border-none shadow-inner font-bold px-6 text-primary"
-                                    />
-                                    <p className="text-[10px] text-muted-foreground font-medium italic mt-1">Este ambiente terá apenas itens de limpeza e pintura por padrão.</p>
-                                </div>
-                            )}
+                    <div className="p-8 space-y-4 bg-card max-h-[70vh] overflow-y-auto no-scrollbar">
+                        <div className="grid grid-cols-2 gap-3">
+                            {availableTemplates.map((tmpl, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => { handleAddEnvironment(undefined, tmpl.nome); setIsAddEnvModalOpen(false); }}
+                                    className="flex flex-col items-start justify-center p-4 bg-muted/40 hover:bg-primary/10 hover:text-primary rounded-2xl border border-border/40 transition-all gap-1 text-left"
+                                >
+                                    <span className="text-xs font-black tracking-tight leading-tight w-full truncate">{tmpl.nome}</span>
+                                    <span className="text-[9px] font-bold opacity-50 uppercase tracking-widest">{tmpl.categorias?.length || 0} categorias</span>
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const name = prompt('Nome do ambiente:');
+                                    if (name) { handleAddEnvironment(undefined, 'custom', name); setIsAddEnvModalOpen(false); }
+                                }}
+                                className="flex flex-col items-center justify-center p-4 bg-primary/5 hover:bg-primary/10 text-primary border-2 border-dashed border-primary/20 rounded-2xl transition-all gap-2"
+                            >
+                                <Plus className="h-6 w-6" />
+                                <span className="text-[10px] font-black uppercase tracking-tight text-center leading-tight">Novo Ambiente</span>
+                            </button>
                         </div>
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button type="submit" size="lg" className="h-14 rounded-2xl font-black shadow-xl shadow-primary/20" disabled={!selectedTemplateName || (selectedTemplateName === 'custom' && !customTemplateName)}>
-                                Confirmar e Ir
-                            </Button>
-                            <Button type="button" variant="ghost" className="h-12 rounded-2xl font-bold opacity-60 hover:opacity-100" onClick={() => setIsAddEnvModalOpen(false)}>
-                                Desistir
-                            </Button>
-                        </div>
-                    </form>
+                        <Button type="button" variant="ghost" className="w-full h-12 rounded-2xl font-bold opacity-60 hover:opacity-100 bg-muted/50" onClick={() => setIsAddEnvModalOpen(false)}>
+                            Cancelar
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
