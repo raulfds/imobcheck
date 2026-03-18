@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
-import { Inspection, Tenant } from '@/types';
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
+import { Inspection, Tenant, Property, Landlord, Client } from '@/types';
 
 // Register fonts if needed
 // Font.register({ family: 'Inter', src: '...' });
@@ -99,14 +99,40 @@ const styles = StyleSheet.create({
         borderTopColor: '#eee',
         paddingTop: 10,
     },
+    signatures: {
+        marginTop: 60,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+    },
+    signatureBox: {
+        width: '40%',
+        alignItems: 'center',
+    },
+    signatureLine: {
+        width: '100%',
+        borderBottomWidth: 1,
+        borderBottomColor: '#000',
+        marginBottom: 5,
+    },
+    signatureName: {
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    signatureCpf: {
+        fontSize: 8,
+        color: '#555',
+    }
 });
 
 interface Props {
     inspection: Inspection;
     tenant: Tenant;
+    property?: Property | null;
+    landlord?: Landlord | null;
+    client?: Client | null;
 }
 
-export const InspectionPDF = ({ inspection, tenant }: Props) => {
+export const InspectionPDF = ({ inspection, tenant, property, landlord, client }: Props) => {
     // Collect all photos for the annex
     const annexPhotos: { src: string | null; label: string; ref?: string; isGeneral?: boolean }[] = [];
 
@@ -151,30 +177,26 @@ export const InspectionPDF = ({ inspection, tenant }: Props) => {
                     </View>
                 </View>
 
-                {/* Tenant/Client Info */}
+                {/* Main Information Section */}
                 <View style={{ marginBottom: 20 }}>
-                    <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>Dados do Locatário:</Text>
-                    <Text>Nome: Ana Oliveira</Text>
-                    <Text>Imóvel: Rua das Flores, 123 - Apt 42, São Paulo, SP</Text>
-                </View>
-
-                {/* Inspection List */}
-                {inspection.environments.map((env) => (
-                    <View key={env.id} wrap={false}>
-                        <Text style={styles.sectionTitle}>{env.name}</Text>
-                        {env.items.map((item) => (
-                            <View key={item.id} style={styles.row}>
-                                <Text style={styles.itemLabel}>{item.name}</Text>
-                                <Text style={[styles.itemStatus, { color: item.status === 'ok' ? '#28a745' : '#dc3545' }]}>
-                                    {item.status === 'ok' ? 'OK' : 'NÃO OK'}
-                                </Text>
-                                <Text style={styles.itemNote}>
-                                    {item.status === 'not_ok' ? `${item.defect}: ${item.observation}` : (item.photo ? '(Com foto)' : '-')}
-                                </Text>
-                            </View>
-                        ))}
+                    <Text style={styles.sectionTitle}>Informações Principais da Vistoria</Text>
+                    <View style={styles.row}>
+                        <Text style={styles.itemLabel}>Endereço do Imóvel</Text>
+                        <Text style={styles.itemNote}>{property?.address || 'Não informado'}</Text>
                     </View>
-                ))}
+                    <View style={styles.row}>
+                        <Text style={styles.itemLabel}>Locador(a)</Text>
+                        <Text style={styles.itemNote}>{landlord?.name || 'Não informado'} {landlord?.cpf ? `(CPF: ${landlord.cpf})` : ''}</Text>
+                    </View>
+                    <View style={styles.row}>
+                        <Text style={styles.itemLabel}>Locatário(a)</Text>
+                        <Text style={styles.itemNote}>{client?.name || 'Não informado'} {client?.cpf ? `(CPF: ${client.cpf})` : ''}</Text>
+                    </View>
+                    <View style={styles.row}>
+                        <Text style={styles.itemLabel}>Data e Tipo</Text>
+                        <Text style={styles.itemNote}>{inspection.date} - {inspection.type === 'entry' ? 'Entrada' : 'Saída'}</Text>
+                    </View>
+                </View>
 
                 {/* Meters Section */}
                 {inspection.meters && (
@@ -211,35 +233,82 @@ export const InspectionPDF = ({ inspection, tenant }: Props) => {
                 {/* Agreement Section */}
                 {inspection.agreementTerm && (
                     <View wrap={false}>
-                        <Text style={styles.sectionTitle}>Termo de Aceite</Text>
+                        <Text style={styles.sectionTitle}>Termo de Aceite do Laudo</Text>
                         <Text style={{ fontSize: 9, fontStyle: 'italic', color: '#555', padding: 5 }}>
                             "{inspection.agreementTerm}"
                         </Text>
                     </View>
                 )}
 
-                <Text style={styles.footer}>
+                {/* Inspection List */}
+                <View style={{ marginTop: 20 }}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 10 }}>Itens da Vistoria</Text>
+                    {inspection.environments.map((env) => (
+                        <View key={env.id} wrap={false} style={{ marginBottom: 15 }}>
+                            <Text style={{ fontSize: 11, fontWeight: 'bold', marginBottom: 5, backgroundColor: '#f0f0f0', padding: 4 }}>{env.name}</Text>
+                            {env.items.filter(i => i.status !== 'pending').map((item) => (
+                                <View key={item.id} style={styles.row}>
+                                    <Text style={styles.itemLabel}>{item.name}</Text>
+                                    <Text style={[styles.itemStatus, { color: item.status === 'ok' ? '#28a745' : '#dc3545' }]}>
+                                        {item.status === 'ok' ? 'OK' : 'AVARIA'}
+                                    </Text>
+                                    <Text style={styles.itemNote}>
+                                        {item.status === 'not_ok' ? `${item.observation || item.defect}` : (item.photo ? '(Com foto)' : '-')}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    ))}
+                </View>
+
+                <Text style={styles.footer} fixed>
                     Este documento é parte integrante do contrato de locação. Gerado por Vistorify em {new Date().toLocaleDateString('pt-BR')}.
                 </Text>
             </Page>
 
-            {/* Photo Annex */}
-            {annexPhotos.length > 0 && (
-                <Page size="A4" style={styles.page}>
-                    <Text style={styles.sectionTitle}>Anexo Fotográfico Completo</Text>
-                    <View style={styles.photoContainer}>
-                        {annexPhotos.map((photo, idx) => (
-                            <View key={idx} style={styles.photoBox} wrap={false}>
-                                <Text style={styles.photoLabel}>{photo.label}</Text>
-                                <View style={[styles.photo, { borderStyle: 'dashed', borderWidth: 1, borderColor: '#ccc', justifyContent: 'center', alignItems: 'center' }]}>
-                                    <Text style={{ fontSize: 8 }}>[Espaço para Foto de Alta Resolução]</Text>
-                                    {photo.ref && <Text style={{ fontSize: 6 }}>Ref: {photo.ref}</Text>}
+            {/* Annex & Signatures Page */}
+            <Page size="A4" style={styles.page}>
+                {annexPhotos.length > 0 && (
+                    <View>
+                        <Text style={styles.sectionTitle}>Anexo Fotográfico Completo</Text>
+                        <View style={styles.photoContainer}>
+                            {annexPhotos.map((photo, idx) => (
+                                <View key={idx} style={styles.photoBox} wrap={false}>
+                                    <Text style={styles.photoLabel}>{photo.label}</Text>
+                                    {photo.src ? (
+                                        <Image src={photo.src} style={[styles.photo, { objectFit: 'contain' }]} />
+                                    ) : (
+                                        <View style={[styles.photo, { borderStyle: 'dashed', borderWidth: 1, borderColor: '#ccc', justifyContent: 'center', alignItems: 'center' }]}>
+                                            <Text style={{ fontSize: 8 }}>Erro ao carregar imagem</Text>
+                                        </View>
+                                    )}
+                                    {photo.ref && <Text style={{ fontSize: 6, textAlign: 'center', marginTop: 2 }}>Obs: {photo.ref}</Text>}
                                 </View>
-                            </View>
-                        ))}
+                            ))}
+                        </View>
                     </View>
-                </Page>
-            )}
+                )}
+
+                {/* Signatures */}
+                <View style={styles.signatures} wrap={false}>
+                    <View style={styles.signatureBox}>
+                        <View style={styles.signatureLine} />
+                        <Text style={styles.signatureName}>{landlord?.name || 'Locador(a)'}</Text>
+                        <Text style={styles.signatureCpf}>CPF: {landlord?.cpf || 'Não informado'}</Text>
+                        <Text style={{ fontSize: 8, marginTop: 2, color: '#888' }}>Locador(a)</Text>
+                    </View>
+                    <View style={styles.signatureBox}>
+                        <View style={styles.signatureLine} />
+                        <Text style={styles.signatureName}>{client?.name || 'Locatário(a)'}</Text>
+                        <Text style={styles.signatureCpf}>CPF: {client?.cpf || 'Não informado'}</Text>
+                        <Text style={{ fontSize: 8, marginTop: 2, color: '#888' }}>Locatário(a)</Text>
+                    </View>
+                </View>
+
+                <Text style={styles.footer} fixed>
+                    Este documento é parte integrante do contrato de locação. Gerado por Vistorify em {new Date().toLocaleDateString('pt-BR')}.
+                </Text>
+            </Page>
         </Document>
     );
 };

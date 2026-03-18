@@ -68,6 +68,7 @@ export default function ActiveInspection() {
     const [targetedEnvId, setTargetedEnvId] = useState<string | null>(null);
     const [photoName, setPhotoName] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const blobKeyMapRef = useRef<Record<string, string>>({});
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
 
@@ -126,32 +127,37 @@ export default function ActiveInspection() {
                         const draft = await getDraft(inspectionId);
                         let initialEnvs = [];
 
-                        if (draft && draft.environments && draft.environments.length > 0) {
-                            initialEnvs = JSON.parse(JSON.stringify(draft.environments));
-                            // Restore blobs
-                            for (const env of initialEnvs) {
-                                if (env.generalPhotos) {
-                                    for (let i = 0; i < env.generalPhotos.length; i++) {
-                                        const key = env.generalPhotos[i];
-                                        if (key.startsWith('blob-ref:')) {
-                                            const blob = await getBlob(key);
-                                            if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                        if (draft) {
+                            if (draft.environments && draft.environments.length > 0) {
+                                initialEnvs = JSON.parse(JSON.stringify(draft.environments));
+                                // Restore blobs
+                                for (const env of initialEnvs) {
+                                    if (env.generalPhotos) {
+                                        for (let i = 0; i < env.generalPhotos.length; i++) {
+                                            const key = env.generalPhotos[i];
+                                            if (key.startsWith('blob-ref:')) {
+                                                const blob = await getBlob(key);
+                                                if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                                            }
+                                        }
+                                    }
+                                    if (env.items) {
+                                        for (const item of env.items) {
+                                            if (item.photo && item.photo.startsWith('blob-ref:')) {
+                                                const blob = await getBlob(item.photo);
+                                                if (blob) item.photo = URL.createObjectURL(blob);
+                                            }
                                         }
                                     }
                                 }
-                                if (env.items) {
-                                    for (const item of env.items) {
-                                        if (item.photo && item.photo.startsWith('blob-ref:')) {
-                                            const blob = await getBlob(item.photo);
-                                            if (blob) item.photo = URL.createObjectURL(blob);
-                                        }
-                                    }
-                                }
+                                setEnvironments(initialEnvs);
+                            } else {
+                                setEnvironments(insp.environments || []);
                             }
-                            setEnvironments(initialEnvs);
-                            if (draft.meters) setMeters(draft.meters);
-                            if (draft.keys) setKeys(draft.keys);
-                            if (draft.agreement) setAgreement(draft.agreement);
+                            
+                            setMeters(draft.meters && Object.keys(draft.meters).length > 0 ? draft.meters : insp.meters || { light: '', water: '', gas: '' });
+                            setKeys(draft.keys && draft.keys.length > 0 ? draft.keys : insp.keys || []);
+                            setAgreement(draft.agreement || insp.agreementTerm || '');
                         } else {
                             // No local draft, use database data
                             setEnvironments(insp.environments || []);
@@ -183,12 +189,12 @@ export default function ActiveInspection() {
             const cleanEnvs = JSON.parse(JSON.stringify(environments));
             for (const env of cleanEnvs) {
                 if (env.generalPhotos) {
-                    env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? `blob-ref:gen-${env.id}-${p.slice(-5)}` : p);
+                    env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? (blobKeyMapRef.current[p] || `blob-ref:gen-${env.id}-${p.slice(-5)}`) : p);
                 }
                 if (env.items) {
                     env.items.forEach((item: InspectionItem) => {
                         if (item.photo && item.photo.startsWith('blob:')) {
-                            item.photo = `blob-ref:item-${item.id}`;
+                            item.photo = blobKeyMapRef.current[item.photo] || `blob-ref:item-${item.id}`;
                         }
                     });
                 }
@@ -207,12 +213,12 @@ export default function ActiveInspection() {
             const cleanEnvs = JSON.parse(JSON.stringify(environments));
             for (const env of cleanEnvs) {
                 if (env.generalPhotos) {
-                    env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? `blob-ref:gen-${env.id}-${p.slice(-5)}` : p);
+                    env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? (blobKeyMapRef.current[p] || `blob-ref:gen-${env.id}-${p.slice(-5)}`) : p);
                 }
                 if (env.items) {
                     env.items.forEach((item: InspectionItem) => {
                         if (item.photo && item.photo.startsWith('blob:')) {
-                            item.photo = `blob-ref:item-${item.id}`;
+                            item.photo = blobKeyMapRef.current[item.photo] || `blob-ref:item-${item.id}`;
                         }
                     });
                 }
@@ -285,6 +291,7 @@ export default function ActiveInspection() {
             const key = `blob-ref:gen-${envId}-${Date.now()}-${i}`;
             await saveBlob(key, blob);
             const url = URL.createObjectURL(blob);
+            blobKeyMapRef.current[url] = key;
 
             setEnvironments(envs => envs.map(env => {
                 if (env.id !== envId) return env;
@@ -371,12 +378,12 @@ export default function ActiveInspection() {
                 const cleanEnvs = JSON.parse(JSON.stringify(environments));
                 for (const env of cleanEnvs) {
                     if (env.generalPhotos) {
-                        env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? `blob-ref:gen-${env.id}-${p.slice(-5)}` : p);
+                        env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? (blobKeyMapRef.current[p] || `blob-ref:gen-${env.id}-${p.slice(-5)}`) : p);
                     }
                     if (env.items) {
                         env.items.forEach((item: InspectionItem) => {
                             if (item.photo && item.photo.startsWith('blob:')) {
-                                item.photo = `blob-ref:item-${item.id}`;
+                                item.photo = blobKeyMapRef.current[item.photo] || `blob-ref:item-${item.id}`;
                             }
                         });
                     }
