@@ -153,6 +153,16 @@ export async function fetchAgencies(): Promise<Tenant[]> {
     return (data ?? []).map(rowToTenant);
 }
 
+export async function fetchAgency(id: string): Promise<Tenant | null> {
+    if (!isSupabaseConfigured) return null;
+    const { data, error } = await supabase.from('agencies').select('*').eq('id', id).single();
+    if (error) {
+        console.error('fetchAgency error:', error);
+        return null;
+    }
+    return data ? rowToTenant(data) : null;
+}
+
 
 export async function createAgency(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
     const { data, error } = await supabase.from('agencies').insert({

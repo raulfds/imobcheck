@@ -33,7 +33,7 @@ import {
     Loader2,
     RotateCcw
 } from 'lucide-react';
-import { fetchInspection, fetchProperty, fetchClient, fetchLandlord, updateInspection } from '@/lib/database';
+import { fetchInspection, fetchProperty, fetchClient, fetchLandlord, updateInspection, fetchAgency } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/components/auth/auth-provider';
 
@@ -55,6 +55,8 @@ export default function InspectionSummary() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadUrl, setUploadUrl] = useState<string | null>(null);
     const [isReopening, setIsReopening] = useState(false);
+    const [signAsAgency, setSignAsAgency] = useState(false);
+    const [tenant, setTenant] = useState<Tenant | null>(null);
 
     useEffect(() => {
         async function loadData() {
@@ -90,14 +92,16 @@ export default function InspectionSummary() {
                         }
 
                         setInspection(insp);
-                        const [p, c, l] = await Promise.all([
+                        const [p, c, l, t] = await Promise.all([
                             fetchProperty(insp.propertyId),
                             fetchClient(insp.clientId),
-                            insp.landlordId ? fetchLandlord(insp.landlordId) : Promise.resolve(null)
+                            insp.landlordId ? fetchLandlord(insp.landlordId) : Promise.resolve(null),
+                            fetchAgency(insp.tenantId)
                         ]);
                         setProperty(p);
                         setClient(c);
                         setLandlord(l);
+                        if (t) setTenant(t);
                         setLoading(false);
                         return;
                     }
@@ -127,6 +131,10 @@ export default function InspectionSummary() {
                         agreementTerm: draft.agreement
                     };
                     setInspection(mockInspection);
+                    if (isSupabaseConfigured) {
+                        const t = await fetchAgency(draft.tenantId);
+                        if (t) setTenant(t);
+                    }
                 }
             } catch (err) {
                 console.error('Failed to load from IndexedDB:', err);
@@ -137,12 +145,12 @@ export default function InspectionSummary() {
         loadData();
     }, [id]);
 
-    const tenant = { 
+    const displayTenant = tenant || ({ 
         id: agencyId || 'demo-tenant',
         name: 'Imobiliária', // Fallback
         status: 'active' as const,
         plan: 'Premium',
-    } as Tenant;
+    } as Tenant);
 
     const handleDownloadPhotos = async () => {
         if (!inspection) return;
@@ -413,9 +421,28 @@ export default function InspectionSummary() {
                     <div className="h-px bg-border flex-1" />
                 </div>
                 
+                {/* Agency Signature Toggle */}
+                {displayTenant && (
+                    <div className="flex items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50">
+                        <input
+                            type="checkbox"
+                            id="signAsAgencyToggle"
+                            checked={signAsAgency}
+                            onChange={(e) => setSignAsAgency(e.target.checked)}
+                            className="w-5 h-5 rounded border-gray-300 text-foreground focus:ring-foreground transition-all cursor-pointer accent-foreground"
+                        />
+                        <div className="flex gap-2 items-center">
+                            <label htmlFor="signAsAgencyToggle" className="text-sm font-bold text-foreground cursor-pointer select-none">
+                                Assinar como Imobiliária (por procuração)
+                            </label>
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground ml-2">Locador será ignorado nas assinaturas</span>
+                        </div>
+                    </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <PDFDownloadLink
-                        document={<InspectionPDF inspection={inspection} tenant={tenant} property={property} landlord={landlord} client={client} />}
+                        document={<InspectionPDF inspection={inspection} tenant={displayTenant} property={property} landlord={landlord} client={client} signAsAgency={signAsAgency} />}
                         fileName={`Relatório-Vistoria-${inspection.id}.pdf`}
                         className="w-full"
                     >
