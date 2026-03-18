@@ -69,6 +69,12 @@
 @layer base {
   * {
     border-color: var(--border);
+    box-sizing: border-box;
+  }
+
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   body {

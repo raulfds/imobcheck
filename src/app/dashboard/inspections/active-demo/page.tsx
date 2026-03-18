@@ -472,7 +472,7 @@ export default function ActiveInspection() {
 
     // ─── PÁGINA DE VISTORIA (Visão Geral em Sessões) ───
     return (
-        <div className="max-w-2xl mx-auto space-y-8 pb-40 animate-in fade-in duration-700 px-4">
+        <div className="w-full max-w-2xl mx-auto space-y-8 pb-40 animate-in fade-in duration-700 px-3">
             {/* Header Simples */}
             <div className="pt-8 pb-2">
                 <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-foreground leading-none">Vistoria Ativa</h1>
@@ -527,7 +527,7 @@ export default function ActiveInspection() {
 
                             return (
                                 <TabsContent key={env.id} value={env.id} className="mt-4 outline-none">
-                                    <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden p-6 border border-border/10">
+                                    <div className="bg-card rounded-[2rem] shadow-xl overflow-hidden p-3 sm:p-4 border border-border/10">
                                         
                                         {/* Environment Header Actions */}
                                         <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/40">
@@ -835,7 +835,7 @@ export default function ActiveInspection() {
             </Dialog>
 
             {/* Bottom Actions Bar */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-background/80 backdrop-blur-xl border-t border-border/40 z-50">
+            <div className="fixed bottom-0 left-0 right-0 px-3 pb-6 pt-3 bg-background/80 backdrop-blur-xl border-t border-border/40 z-50 w-full">
                 <div className="max-w-xl mx-auto flex gap-4">
                     <Button 
                         variant="outline"

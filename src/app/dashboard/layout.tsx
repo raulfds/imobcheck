@@ -45,8 +45,8 @@ const ContentWrapper = ({ children, user, router, logout }: { children: React.Re
 
     const mainContent = (
         <main className="flex-1 flex flex-col min-h-0 w-full overflow-y-auto overflow-x-hidden pt-0">
-            <div className="p-0 sm:p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full flex-1">
-                <div className="max-w-7xl mx-auto w-full px-4 md:px-0">
+            <div className="py-0 sm:py-4 md:py-8 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full flex-1">
+                <div className="max-w-7xl mx-auto w-full">
                     {children}
                 </div>
             </div>
@@ -74,7 +74,7 @@ const ContentWrapper = ({ children, user, router, logout }: { children: React.Re
 
     if (isMobile) {
         return (
-            <div className="flex flex-col flex-1 min-w-0 h-screen overflow-hidden bg-background">
+            <div className="flex flex-col flex-1 min-w-0 w-full max-w-full h-screen overflow-x-hidden bg-background">
                 {header}
                 {mainContent}
             </div>
