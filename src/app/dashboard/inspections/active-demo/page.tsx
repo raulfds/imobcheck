@@ -780,23 +780,7 @@ export default function ActiveInspection() {
                 </Card>
             </section>
 
-            {/* 4. SESSÃO: TERMO */}
-            <section className="space-y-6">
-                <div className="flex items-center gap-3 border-l-4 border-primary pl-4">
-                    <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Termo de Concordância</h3>
-                    <div className="h-px bg-border/40 flex-1" />
-                </div>
-                <Card className="border-none shadow-xl bg-card rounded-[2.5rem] overflow-hidden">
-                    <div className="p-6">
-                        <Textarea 
-                            value={agreement}
-                            onChange={(e) => setAgreement(e.target.value)}
-                            placeholder="As partes declaram estar de acordo..."
-                            className="min-h-[150px] rounded-2xl bg-muted/40 border-none p-6 font-medium italic shadow-inner focus-visible:ring-primary/20"
-                        />
-                    </div>
-                </Card>
-            </section>
+
 
             {/* Photo Upload Dialog (Shared) */}
             <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
