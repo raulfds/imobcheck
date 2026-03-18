@@ -785,35 +785,53 @@ export default function ActiveInspection() {
             {/* Photo Upload Dialog (Shared) */}
             <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
                 <DialogContent className="rounded-[2.5rem] p-8 border-none shadow-2xl max-w-sm mx-auto">
-                    <DialogTitle className="text-2xl font-black tracking-tighter">Nova Foto</DialogTitle>
-                    <DialogDescription className="text-xs font-medium italic opacity-60">Adicione uma imagem para este ambiente.</DialogDescription>
+                    <DialogTitle className="text-2xl font-black tracking-tighter">Adicionar Fotos</DialogTitle>
+                    <DialogDescription className="text-xs font-medium italic opacity-60">Escolha como deseja adicionar imagens ao ambiente.</DialogDescription>
                     
-                    <div className="space-y-6 pt-4">
-                        <div className="grid grid-cols-1 gap-4">
-                            <input 
-                                type="file" 
-                                id="env-photo-upload"
-                                className="hidden" 
-                                accept="image/*"
-                                multiple
-                                capture="environment"
-                                onChange={(e) => {
-                                    if (targetedEnvId) {
-                                        handlePhotoUpload(e, targetedEnvId);
-                                        setIsPhotoModalOpen(false);
-                                    }
-                                }}
-                            />
-                            <Button 
-                                className="h-16 rounded-[1.2rem] bg-primary text-white font-black text-lg gap-3 shadow-xl shadow-primary/20"
-                                onClick={() => document.getElementById('env-photo-upload')?.click()}
-                            >
-                                <Camera className="h-7 w-7" /> Abrir Câmera
-                            </Button>
-                            <div className="text-center opacity-40">
-                                <span className="text-[9px] font-black uppercase tracking-widest italic">Ou selecione fotos da galeria</span>
-                            </div>
-                        </div>
+                    {/* Camera input: capture=environment → abre câmera diretamente */}
+                    <input 
+                        type="file" 
+                        id="env-photo-camera"
+                        className="hidden" 
+                        accept="image/*"
+                        capture="environment"
+                        onChange={(e) => {
+                            if (targetedEnvId) {
+                                handlePhotoUpload(e, targetedEnvId);
+                                setIsPhotoModalOpen(false);
+                            }
+                        }}
+                    />
+
+                    {/* Gallery input: sem capture → abre seletor de arquivos/galeria */}
+                    <input 
+                        type="file" 
+                        id="env-photo-gallery"
+                        className="hidden" 
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                            if (targetedEnvId) {
+                                handlePhotoUpload(e, targetedEnvId);
+                                setIsPhotoModalOpen(false);
+                            }
+                        }}
+                    />
+
+                    <div className="space-y-3 pt-2">
+                        <Button 
+                            className="w-full h-16 rounded-[1.2rem] bg-primary text-white font-black text-base gap-3 shadow-xl shadow-primary/20"
+                            onClick={() => document.getElementById('env-photo-camera')?.click()}
+                        >
+                            <Camera className="h-6 w-6" /> Abrir Câmera
+                        </Button>
+                        <Button 
+                            variant="outline"
+                            className="w-full h-14 rounded-[1.2rem] border-2 border-primary/20 text-primary font-black text-base gap-3 hover:bg-primary/5"
+                            onClick={() => document.getElementById('env-photo-gallery')?.click()}
+                        >
+                            <ImageIcon className="h-5 w-5" /> Selecionar da Galeria
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
