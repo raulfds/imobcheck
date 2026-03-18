@@ -18,7 +18,7 @@ export function Logo({ className }: { className?: string }) {
   }
 
   const isDark = resolvedTheme === 'dark'
-  const logoSrc = isDark ? "/vistorify_logo_white.png" : "/vistorify_logo2_preto.jpg-removebg-preview.png"
+  const logoSrc = isDark ? "/vistorify-logo-dark.png" : "/vistorify-logo-light.png"
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
@@ -27,7 +27,7 @@ export function Logo({ className }: { className?: string }) {
         alt="Vistorify Logo" 
         width={180} 
         height={60} 
-        className={cn("object-contain", isDark && "brightness-200")}
+        className={cn("object-contain")}
         style={{ height: 'auto' }}
         priority
       />
