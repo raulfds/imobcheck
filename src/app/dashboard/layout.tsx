@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/components/auth/auth-provider';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { LayoutDashboard, ClipboardCheck, Users, FileText, Settings, LogOut, Package, Plus, PanelLeft, Building, User } from 'lucide-react';
@@ -92,6 +92,7 @@ const ContentWrapper = ({ children, user, router, logout }: { children: React.Re
 export default function TenantLayout({ children }: { children: React.ReactNode }) {
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!isLoading && (!user || (user.role !== 'CLIENT_ADMIN' && user.role !== 'INSPECTOR'))) {
@@ -112,9 +113,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                 <SidebarContent className="px-4 bg-sidebar">
                     <SidebarMenu className="gap-1 mt-4">
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Dashboard" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
+                            <SidebarMenuButton asChild isActive={pathname === '/dashboard'} tooltip="Dashboard" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <LayoutDashboard className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Dashboard</span>
@@ -123,9 +124,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Vistorias" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
+                            <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/inspections')} tooltip="Vistorias" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard/inspections" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <ClipboardCheck className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Vistorias</span>
@@ -142,9 +143,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                         </div>
 
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Imóveis" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
+                            <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/registrations/properties')} tooltip="Imóveis" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard/registrations/properties" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <Building className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Imóveis</span>
@@ -153,9 +154,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Locadores" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
+                            <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/registrations/landlords')} tooltip="Locadores" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard/registrations/landlords" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <User className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Locadores</span>
@@ -164,9 +165,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Inquilinos" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
+                            <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/registrations/tenants')} tooltip="Inquilinos" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard/registrations/tenants" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <Users className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Inquilinos</span>
@@ -178,9 +179,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-data-[collapsible=icon]:hidden opacity-50">Equipe & Conta</p>
                         </div>
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Equipe" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
+                            <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/team')} tooltip="Equipe" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard/team" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <Users className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Equipe</span>
@@ -189,9 +190,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Meu Plano" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
+                            <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/plan')} tooltip="Meu Plano" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard/plan" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <Package className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Meu Plano</span>
@@ -200,9 +201,9 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild tooltip="Configurações" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
+                            <SidebarMenuButton asChild isActive={pathname.startsWith('/dashboard/settings')} tooltip="Configurações" className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
                                 <Link href="/dashboard/settings" className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors`}>
+                                    <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors group-data-[active=true]:bg-primary group-data-[active=true]:text-primary-foreground group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
                                         <Settings className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Configurações</span>
