@@ -121,22 +121,33 @@ const handleStart = async () => {
     try {
         const today = new Date().toISOString().split('T')[0];
         
+        // Buscar o nome do inquilino selecionado
+        const selectedTenant = tenants.find(t => t.id === tenantId);
+        if (!selectedTenant) {
+            setError('Inquilino não encontrado na lista');
+            setStarting(false);
+            return;
+        }
+        
         console.log('Criando vistoria com:', {
             agencyId,
             propertyId,
             tenantId,
+            tenantName: selectedTenant.name,
             landlordId,
+            inspectorId: user?.id, // ID do usuário logado
             type,
             date: today
         });
         
         if (isSupabaseConfigured && agencyId) {
-            // Chama diretamente a criação sem verificações extras
             const inspection = await createInspection({
                 tenantId: agencyId,
                 propertyId,
                 clientId: tenantId,
                 landlordId,
+                inspectorId: user?.id, // Adiciona o ID do inspetor (usuário logado)
+                tenantName: selectedTenant.name, // Adiciona o nome do inquilino
                 type,
                 status: 'ongoing',
                 date: today,

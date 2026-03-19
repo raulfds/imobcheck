@@ -112,24 +112,24 @@ export interface KeyRecord {
 }
 
 export interface Inspection {
-  id: string;
-  tenantId: string;
-  propertyId: string;
-  clientId: string; // Locatário
-  landlordId?: string; // Locador
-  type: InspectionType;
-  status: 'ongoing' | 'completed';
-  date: string;
-  startTime?: string;
-  environments: InspectionEnvironment[];
-  
-  // Footer Info (Insurance Requirements)
-  meters?: MeterReading;
-  keys?: KeyRecord[];
-  agreementTerm?: string;
-  signatures?: {
-    inspector: boolean;
-    landlord: boolean;
-    tenant: boolean;
-  };
+    id: string;
+    tenantId: string; // ID da agência
+    propertyId: string;
+    clientId: string; // ID do inquilino
+    landlordId?: string;
+    inspectorId?: string; // NOVO: ID do inspetor
+    tenantName?: string; // NOVO: Nome do inquilino
+    type: InspectionType;
+     status: 'draft' | 'ongoing' | 'completed' | 'cancelled'; // Definido diretamente aqui
+    date: string;
+    startTime?: string;
+    environments: InspectionEnvironment[];
+    meters?: any;
+    keys?: any[];
+    agreementTerm?: string;
+    signatures?: {
+        inspector: boolean;
+        landlord: boolean;
+        tenant: boolean;
+    };
 }

@@ -545,6 +545,8 @@ export async function createInspection(inspection: Omit<Inspection, 'id'>): Prom
             property_id: inspection.propertyId || null,
             client_id: inspection.clientId || null,
             landlord_id: inspection.landlordId || null,
+            inspector_id: inspection.inspectorId || null, // NOVO: ID do inspetor
+            tenant_name: inspection.tenantName || null, // NOVO: Nome do inquilino
             type: inspection.type,
             status: inspection.status,
             date: inspection.date,
