@@ -23,7 +23,7 @@ import { IssueListItem } from '@/components/vistorify/IssueListItem';
 export default function TenantDashboard() {
     const { user } = useAuth();
     const router = useRouter();
-    const agencyId = user?.tenantId ?? '';
+    const agencyId = user?.agency_id ?? '';
 
     const [inspections, setInspections] = useState<Inspection[]>([]);
     const [propertyCount, setPropertyCount] = useState(0);
@@ -35,7 +35,6 @@ export default function TenantDashboard() {
             const [insp, props] = await Promise.all([
                 fetchInspections(agencyId),
                 fetchProperties(agencyId),
-                fetchClients(agencyId), // Keeping the fetch so side effects happen, but ignoring result to satisfy linter
             ]);
             setInspections(insp);
             setPropertyCount(props.length);

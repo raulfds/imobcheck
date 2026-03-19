@@ -24,10 +24,12 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { mockLandlords } from '@/lib/mock-data';
 import { RegistrationsNav } from '@/components/vistorify/RegistrationsNav';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LandlordsPage() {
     const { user } = useAuth();
-    const agencyId = user?.tenantId ?? 't1';
+    const { toast } = useToast();
+    const agencyId = user?.agency_id;
 
     const [landlords, setLandlords] = useState<Landlord[]>([]);
     const [loading, setLoading] = useState(true);
@@ -36,7 +38,35 @@ export default function LandlordsPage() {
 
     const [newLandlord, setNewLandlord] = useState({ name: '', email: '', cpf: '', phone: '' });
 
+    const formatDocument = (v: string) => {
+        const clean = v.replace(/\D/g, '');
+        if (clean.length <= 11) {
+            return clean.replace(/(\d{3})(\d)/, '$1.$2')
+                        .replace(/(\d{3})(\d)/, '$1.$2')
+                        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        } else {
+            return clean.replace(/^(\d{2})(\d)/, '$1.$2')
+                        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+                        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+                        .replace(/(\d{4})(\d)/, '$1-$2')
+                        .substring(0, 18);
+        }
+    };
+
+    const formatPhone = (v: string) => {
+        const clean = v.replace(/\D/g, '');
+        if (clean.length <= 10) {
+            return clean.replace(/(\d{2})(\d)/, '($1) $2')
+                        .replace(/(\d{4})(\d)/, '$1-$2');
+        } else {
+            return clean.replace(/(\d{2})(\d)/, '($1) $2')
+                        .replace(/(\d{5})(\d)/, '$1-$2')
+                        .substring(0, 15);
+        }
+    };
+
     const loadData = useCallback(async () => {
+        if (!agencyId) return;
         setLoading(true);
         try {
             if (isSupabaseConfigured) {
@@ -56,24 +86,57 @@ export default function LandlordsPage() {
 
     const handleAddLandlord = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!agencyId) {
+            toast({ title: 'Erro', description: 'Usuário não vinculado a uma agência.', variant: 'destructive' });
+            return;
+        }
+
+        if (!newLandlord.name || !newLandlord.cpf) {
+            toast({ title: 'Atenção', description: 'Preencha o nome e o CPF/CNPJ.', variant: 'destructive' });
+            return;
+        }
+
         try {
             if (isSupabaseConfigured) {
                 const l = await createLandlord({ tenantId: agencyId, ...newLandlord });
                 setLandlords(prev => [l, ...prev]);
+                toast({ title: 'Sucesso!', description: 'Locador cadastrado com sucesso.' });
             } else {
                 const l: Landlord = { id: `l${Date.now()}`, tenantId: agencyId, ...newLandlord };
                 setLandlords(prev => [l, ...prev]);
+                toast({ title: 'Modo de Desenvolvimento', description: 'Locador salvo localmente.' });
             }
             setIsAddLandlordOpen(false);
             setNewLandlord({ name: '', email: '', cpf: '', phone: '' });
-        } catch (err) { console.error(err); alert('Erro ao cadastrar locador.'); }
+        } catch (err) { 
+            console.error(err); 
+            toast({ title: 'Erro', description: 'Erro ao cadastrar locador.', variant: 'destructive' });
+        }
     };
 
     const handleDeleteLandlord = async (id: string) => {
         if (!confirm('Excluir este locador?')) return;
-        if (isSupabaseConfigured) await deleteLandlord(id);
-        setLandlords(prev => prev.filter(l => l.id !== id));
+        try {
+            if (isSupabaseConfigured) {
+                await deleteLandlord(id);
+            }
+            setLandlords(prev => prev.filter(l => l.id !== id));
+            toast({ title: 'Sucesso!', description: 'Locador excluído com sucesso.' });
+        } catch (err) {
+            console.error(err);
+            toast({ title: 'Erro', description: 'Erro ao excluir locador.', variant: 'destructive' });
+        }
     };
+
+    if (!agencyId) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
+                <User className="h-16 w-16 text-muted-foreground/30" />
+                <p className="text-muted-foreground font-bold">Usuário não vinculado a uma agência</p>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -264,7 +327,7 @@ export default function LandlordsPage() {
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="lname" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Nome Completo</Label>
-                                <Input id="lname" required value={newLandlord.name} onChange={e => setNewLandlord({ ...newLandlord, name: e.target.value })} placeholder="Ex: João da Silva Santos" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                                <Input id="lname" value={newLandlord.name} onChange={e => setNewLandlord({ ...newLandlord, name: e.target.value })} placeholder="Ex: João da Silva Santos" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="lemail" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">E-mail para Contato</Label>
@@ -272,11 +335,11 @@ export default function LandlordsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="lphone" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Telefone</Label>
-                                <Input id="lphone" value={newLandlord.phone} onChange={e => setNewLandlord({ ...newLandlord, phone: e.target.value })} placeholder="Ex: (11) 99999-9999" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                                <Input id="lphone" value={newLandlord.phone} onChange={e => setNewLandlord({ ...newLandlord, phone: formatPhone(e.target.value) })} placeholder="Ex: (11) 99999-9999" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="lcpf" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">CPF</Label>
-                                <Input id="lcpf" required value={newLandlord.cpf} onChange={e => setNewLandlord({ ...newLandlord, cpf: e.target.value })} placeholder="Ex: 000.000.000-00" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                                <Label htmlFor="lcpf" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">CPF / CNPJ</Label>
+                                <Input id="lcpf" value={newLandlord.cpf} onChange={e => setNewLandlord({ ...newLandlord, cpf: formatDocument(e.target.value) })} placeholder="Ex: 000.000.000-00" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                         </div>
                         <div className="flex flex-col gap-3 pt-2 md:pt-4 shrink-0">

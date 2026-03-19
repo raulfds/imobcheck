@@ -466,7 +466,7 @@ export async function fetchProperty(id: string): Promise<Property | null> {
 
 export async function fetchClient(id: string): Promise<Client | null> {
     if (!isSupabaseConfigured) return null;
-    const { data, error } = await supabase.from('clients').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('inquilinos').select('*').eq('id', id).single();
     if (error) return null;
     return rowToClient(data);
 }
@@ -482,14 +482,14 @@ export async function fetchLandlord(id: string): Promise<Landlord | null> {
 
 export async function fetchClients(agencyId: string): Promise<Client[]> {
     if (!isSupabaseConfigured) return [];
-    const { data, error } = await supabase.from('clients')
+    const { data, error } = await supabase.from('inquilinos')
         .select('*').eq('agency_id', agencyId).order('created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []).map(rowToClient);
 }
 
 export async function createClient(c: Omit<Client, 'id'>): Promise<Client> {
-    const { data, error } = await supabase.from('clients').insert({
+    const { data, error } = await supabase.from('inquilinos').insert({
         agency_id: c.tenantId, 
         name: c.name, 
         cpf: c.cpf,
@@ -501,7 +501,7 @@ export async function createClient(c: Omit<Client, 'id'>): Promise<Client> {
 }
 
 export async function updateClient(id: string, updates: Partial<Client>): Promise<void> {
-    const { error } = await supabase.from('clients').update({
+    const { error } = await supabase.from('inquilinos').update({
         ...(updates.name !== undefined && { name: updates.name }),
         ...(updates.cpf !== undefined && { cpf: updates.cpf }),
         ...(updates.email !== undefined && { email: updates.email }),
@@ -511,7 +511,7 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
 }
 
 export async function deleteClient(id: string): Promise<void> {
-    const { error } = await supabase.from('clients').delete().eq('id', id);
+    const { error } = await supabase.from('inquilinos').delete().eq('id', id);
     if (error) throw error;
 }
 

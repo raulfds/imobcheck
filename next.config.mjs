@@ -9,6 +9,9 @@ const nextConfig = {
         // Type errors will not fail the production build either.
         ignoreBuildErrors: true,
     },
+    experimental: {
+        optimizePackageImports: ['lucide-react'],
+    },
 };
 
 export default nextConfig;

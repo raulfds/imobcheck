@@ -19,15 +19,20 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbS
 import { useAuth } from '@/components/auth/auth-provider';
 import { Property } from '@/types';
 import {
-    fetchProperties, createProperty, deleteProperty
+    fetchProperties,
+    createProperty,
+    deleteProperty
 } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { mockProperties } from '@/lib/mock-data';
 import { RegistrationsNav } from '@/components/vistorify/RegistrationsNav';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PropertiesPage() {
     const { user } = useAuth();
-    const agencyId = user?.tenantId ?? 't1';
+    const { toast } = useToast();
+    
+    // Garantir que temos o agency_id do usuário
+    const agencyId = user?.agency_id;
 
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,29 +51,64 @@ export default function PropertiesPage() {
     });
 
     const loadData = useCallback(async () => {
+        if (!agencyId) {
+            console.error('Agency ID não encontrado');
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
             if (isSupabaseConfigured) {
                 const props = await fetchProperties(agencyId);
                 setProperties(props);
             } else {
-                setProperties(mockProperties.filter(p => p.tenantId === agencyId));
+                // Fallback para dados mockados se necessário
+                setProperties([]);
             }
         } catch (err) {
             console.error('Failed to load properties:', err);
+            toast({
+                title: 'Erro ao carregar',
+                description: 'Não foi possível carregar os imóveis.',
+                variant: 'destructive',
+            });
         } finally {
             setLoading(false);
         }
-    }, [agencyId]);
+    }, [agencyId, toast]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => { 
+        if (agencyId) {
+            loadData(); 
+        }
+    }, [agencyId, loadData]);
 
     const handleAddProperty = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!agencyId) {
+            toast({
+                title: 'Erro',
+                description: 'Usuário não vinculado a uma agência.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (!newProperty.cep || !newProperty.logradouro || !newProperty.numero || !newProperty.bairro || !newProperty.cidade || !newProperty.estado) {
+            toast({
+                title: 'Atenção',
+                description: 'Preencha todos os campos obrigatórios do endereço.',
+                variant: 'destructive',
+            });
+            return;
+        }
+        
         try {
             const fullAddress = `${newProperty.logradouro}, ${newProperty.numero}${newProperty.complemento ? ' - ' + newProperty.complemento : ''} - ${newProperty.bairro}, ${newProperty.cidade} - ${newProperty.estado}`;
             const propertyData = { 
-                tenantId: agencyId, 
+                tenantId: agencyId, // Isso será mapeado para agency_id
                 address: fullAddress,
                 cep: newProperty.cep,
                 logradouro: newProperty.logradouro,
@@ -77,29 +117,100 @@ export default function PropertiesPage() {
                 bairro: newProperty.bairro,
                 cidade: newProperty.cidade,
                 estado: newProperty.estado,
-                description: newProperty.description 
+                description: newProperty.description
             };
 
             if (isSupabaseConfigured) {
                 const p = await createProperty(propertyData);
                 setProperties(prev => [p, ...prev]);
+                
+                toast({
+                    title: 'Sucesso!',
+                    description: 'Imóvel cadastrado com sucesso.',
+                });
             } else {
-                const p: Property = { id: `p${Date.now()}`, ...propertyData };
-                setProperties(prev => [p, ...prev]);
+                // Modo de desenvolvimento sem Supabase
+                const mockProperty: Property = { 
+                    id: `temp-${Date.now()}`, 
+                    ...propertyData,
+                    address: `${propertyData.logradouro}, ${propertyData.numero} - ${propertyData.bairro}, ${propertyData.cidade} - ${propertyData.estado}`
+                };
+                setProperties(prev => [mockProperty, ...prev]);
+                
+                toast({
+                    title: 'Modo Desenvolvimento',
+                    description: 'Imóvel salvo localmente (Supabase não configurado).',
+                });
             }
+            
             setIsAddPropertyOpen(false);
             setNewProperty({ 
                 cep: '', logradouro: '', numero: '', complemento: '', 
                 bairro: '', cidade: '', estado: '', description: '' 
             });
-        } catch (err) { console.error(err); alert('Erro ao cadastrar imóvel.'); }
+        } catch (err) { 
+            console.error(err); 
+            toast({
+                title: 'Erro',
+                description: 'Erro ao cadastrar imóvel.',
+                variant: 'destructive',
+            });
+        }
     };
 
     const handleDeleteProperty = async (id: string) => {
-        if (!confirm('Excluir este imóvel?')) return;
-        if (isSupabaseConfigured) await deleteProperty(id);
-        setProperties(prev => prev.filter(p => p.id !== id));
+        if (!confirm('Tem certeza que deseja excluir este imóvel?')) return;
+        
+        try {
+            if (isSupabaseConfigured) {
+                await deleteProperty(id);
+            }
+            setProperties(prev => prev.filter(p => p.id !== id));
+            
+            toast({
+                title: 'Sucesso!',
+                description: 'Imóvel excluído com sucesso.',
+            });
+        } catch (err) {
+            console.error(err);
+            toast({
+                title: 'Erro',
+                description: 'Erro ao excluir imóvel.',
+                variant: 'destructive',
+            });
+        }
     };
+
+    const handleCepBlur = async (cep: string) => {
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length === 8) {
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                const data = await response.json();
+                
+                if (!data.erro) {
+                    setNewProperty(prev => ({
+                        ...prev,
+                        logradouro: data.logradouro || prev.logradouro,
+                        bairro: data.bairro || prev.bairro,
+                        cidade: data.localidade || prev.cidade,
+                        estado: data.uf || prev.estado
+                    }));
+                }
+            } catch (error) {
+                console.error('Erro ao buscar CEP:', error);
+            }
+        }
+    };
+
+    if (!agencyId) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
+                <Building className="h-16 w-16 text-muted-foreground/30" />
+                <p className="text-muted-foreground font-bold">Usuário não vinculado a uma agência</p>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -112,12 +223,13 @@ export default function PropertiesPage() {
 
     const filteredProperties = properties.filter(p => 
         p.address.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.cep?.includes(searchTerm)
+        p.cep?.includes(searchTerm) ||
+        p.logradouro?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
         <div className="space-y-8 w-full pb-10">
-            {/* Header section with refined breadcrumbs */}
+            {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 pt-4 md:pt-0">
                 <div className="space-y-3 md:space-y-4">
                     <Breadcrumb className="hidden md:block">
@@ -293,39 +405,23 @@ export default function PropertiesPage() {
                                 <Label htmlFor="pcep" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">CEP</Label>
                                 <Input 
                                     id="pcep" 
-                                    required 
                                     value={newProperty.cep} 
-                                    onChange={async (e) => {
+                                    onChange={(e) => {
                                         const val = e.target.value.replace(/\D/g, '').substring(0, 8);
                                         setNewProperty({ ...newProperty, cep: val });
-                                        if (val.length === 8) {
-                                            try {
-                                                const res = await fetch(`https://viacep.com.br/ws/${val}/json/`);
-                                                const data = await res.json();
-                                                if (!data.erro) {
-                                                    setNewProperty(prev => ({
-                                                        ...prev,
-                                                        cep: val,
-                                                        logradouro: data.logradouro,
-                                                        bairro: data.bairro,
-                                                        cidade: data.localidade,
-                                                        estado: data.uf
-                                                    }));
-                                                }
-                                            } catch (err) { console.error('CEP fail', err); }
-                                        }
-                                    }} 
+                                    }}
+                                    onBlur={(e) => handleCepBlur(e.target.value)}
                                     placeholder="00000-000" 
                                     className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" 
                                 />
                             </div>
                             <div className="md:col-span-8 space-y-2">
                                 <Label htmlFor="plog" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Logradouro / Rua</Label>
-                                <Input id="plog" required value={newProperty.logradouro} onChange={e => setNewProperty({ ...newProperty, logradouro: e.target.value })} placeholder="Nome da rua" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                                <Input id="plog" value={newProperty.logradouro} onChange={e => setNewProperty({ ...newProperty, logradouro: e.target.value })} placeholder="Nome da rua" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="md:col-span-4 space-y-2">
                                 <Label htmlFor="pnum" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Número</Label>
-                                <Input id="pnum" required value={newProperty.numero} onChange={e => setNewProperty({ ...newProperty, numero: e.target.value })} placeholder="123" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                                <Input id="pnum" value={newProperty.numero} onChange={e => setNewProperty({ ...newProperty, numero: e.target.value })} placeholder="123" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="md:col-span-8 space-y-2">
                                 <Label htmlFor="pcomp" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Complemento</Label>
@@ -333,15 +429,15 @@ export default function PropertiesPage() {
                             </div>
                             <div className="md:col-span-6 space-y-2">
                                 <Label htmlFor="pbairro" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Bairro</Label>
-                                <Input id="pbairro" required value={newProperty.bairro} onChange={e => setNewProperty({ ...newProperty, bairro: e.target.value })} placeholder="Nome do bairro" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                                <Input id="pbairro" value={newProperty.bairro} onChange={e => setNewProperty({ ...newProperty, bairro: e.target.value })} placeholder="Nome do bairro" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="md:col-span-4 space-y-2">
                                 <Label htmlFor="pcidade" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Cidade</Label>
-                                <Input id="pcidade" required value={newProperty.cidade} onChange={e => setNewProperty({ ...newProperty, cidade: e.target.value })} placeholder="São Paulo" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
+                                <Input id="pcidade" value={newProperty.cidade} onChange={e => setNewProperty({ ...newProperty, cidade: e.target.value })} placeholder="São Paulo" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                             <div className="md:col-span-2 space-y-2">
                                 <Label htmlFor="puf" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">UF</Label>
-                                <Input id="puf" required maxLength={2} value={newProperty.estado} onChange={e => setNewProperty({ ...newProperty, estado: e.target.value.toUpperCase() })} placeholder="SP" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4 text-center" />
+                                <Input id="puf" maxLength={2} value={newProperty.estado} onChange={e => setNewProperty({ ...newProperty, estado: e.target.value.toUpperCase() })} placeholder="SP" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4 text-center" />
                             </div>
                             <div className="md:col-span-12 space-y-2">
                                 <Label htmlFor="pdesc" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Descrição curta (Tipo do imóvel)</Label>

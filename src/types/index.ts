@@ -71,11 +71,13 @@ export interface Landlord {
 
 export interface Client {
   id: string;
-  tenantId: string;
-  name: string;
-  cpf: string;
-  email?: string;
-  phone?: string;
+    tenantId: string; // agency_id
+    name: string;
+    cpf: string;
+    email?: string;
+    phone?: string;
+    primeiro_acesso?: boolean;
+    created_at?: string;
 }
 
 export interface InspectionEnvironment {
