@@ -13,7 +13,19 @@ import Link from 'next/link';
 
 type Step = 'login' | 'first-access-email' | 'verify-cnpj' | 'create-password';
 
-function LoginContent() {
+function SearchParamsHandler({ setSuccess }: { setSuccess: (msg: string) => void }) {
+    const searchParams = useSearchParams();
+    
+    useEffect(() => {
+        if (searchParams.get('senha_criada') === 'true') {
+            setSuccess('Senha criada com sucesso! Faça login com sua nova senha.');
+        }
+    }, [searchParams, setSuccess]);
+    
+    return null;
+}
+
+export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [cnpj, setCnpj] = useState('');
@@ -25,13 +37,6 @@ function LoginContent() {
     const [success, setSuccess] = useState('');
     const [currentStep, setCurrentStep] = useState<Step>('login');
     const { login, isLoading, verifyFirstAccess, verifyCnpj, createPassword } = useAuth();
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        if (searchParams.get('senha_criada') === 'true') {
-            setSuccess('Senha criada com sucesso! Faça login com sua nova senha.');
-        }
-    }, [searchParams]);
 
     const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -350,6 +355,9 @@ function LoginContent() {
     // Tela de login principal com destaque para Primeiro Acesso
     return (
         <div className="flex min-h-screen items-center justify-center bg-background p-6 selection:bg-primary/30 relative overflow-hidden">
+            <Suspense fallback={null}>
+                <SearchParamsHandler setSuccess={setSuccess} />
+            </Suspense>
             {/* Background elements */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full animate-pulse" />
@@ -488,17 +496,5 @@ function LoginContent() {
                 </a>
             </div>
         </div>
-    );
-}
-
-export default function LoginPage() {
-    return (
-        <Suspense fallback={
-            <div className="flex min-h-screen items-center justify-center bg-background p-6">
-                <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-            </div>
-        }>
-            <LoginContent />
-        </Suspense>
     );
 }
