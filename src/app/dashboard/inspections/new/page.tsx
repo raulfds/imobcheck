@@ -14,114 +14,167 @@ import {
     Building2,
     Users2,
     Settings2,
-    Play
+    Play,
+    AlertCircle,
+    UserRound
 } from 'lucide-react';
-import { Property, Client, Landlord, InspectionType } from '@/types';
+import { Property, Client, Landlord, InspectionType, Inspection } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
 import { fetchProperties, fetchClients, fetchLandlords, createInspection } from '@/lib/database';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { QuickAddProperty } from '@/components/inspections/quick-add-property';
-import { QuickAddClient } from '@/components/inspections/quick-add-client';
+import { QuickAddClient } from '@/components/inspections/quick-add-client'; // Ajuste para o componente correto
 import { QuickAddLandlord } from '@/components/inspections/quick-add-landlord';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
 
 export default function NewInspection() {
     const router = useRouter();
     const { user } = useAuth();
-    const agencyId = user?.tenantId ?? '';
+    const agencyId = user?.agency_id ?? '';
 
     const [properties, setProperties] = useState<Property[]>([]);
-    const [clients, setClients] = useState<Client[]>([]);
+    const [tenants, setTenants] = useState<Client[]>([]); // Mudado de Tenant para Client
     const [landlords, setLandlords] = useState<Landlord[]>([]);
     const [loading, setLoading] = useState(true);
     const [starting, setStarting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const [propertyId, setPropertyId] = useState('');
-    const [clientId, setClientId] = useState('');
+    const [tenantId, setTenantId] = useState(''); // Mudado de clientId para tenantId
     const [landlordId, setLandlordId] = useState('');
     const [type, setType] = useState<InspectionType>('entry');
 
     const loadData = useCallback(async () => {
-        if (!agencyId || !isSupabaseConfigured) { setLoading(false); return; }
+        if (!agencyId) {
+            setError('Usuário não vinculado a uma agência.');
+            setLoading(false);
+            return;
+        }
+
+        if (!isSupabaseConfigured) {
+            setError('Configuração do banco de dados não encontrada. Modo demonstração ativo.');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const [props, cls, lds] = await Promise.all([
+            setError(null);
+            console.log('Carregando dados para agency:', agencyId);
+            
+            // Mudado de fetchClients para fetchTenants
+            const [props, tens, lds] = await Promise.all([
                 fetchProperties(agencyId),
-                fetchClients(agencyId),
+                fetchClients(agencyId), // Função que busca da tabela inquilinos
                 fetchLandlords(agencyId),
             ]);
+            
+            console.log('Dados carregados:', {
+                properties: props.length,
+                tenants: tens.length,
+                landlords: lds.length,
+            });
+            
             setProperties(props);
-            setClients(cls);
+            setTenants(tens);
             setLandlords(lds);
         } catch (err) {
-            console.error(err);
+            console.error('Erro ao carregar dados:', err);
+            setError('Falha ao carregar dados do banco. Verifique sua conexão.');
         } finally {
             setLoading(false);
         }
     }, [agencyId]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => { 
+        loadData(); 
+    }, [loadData]);
 
     const handlePropertyAdded = (newProp: Property) => {
+        console.log('Novo imóvel adicionado:', newProp);
         setProperties(prev => [newProp, ...prev]);
         setPropertyId(newProp.id);
     };
 
-    const handleClientAdded = (newClient: Client) => {
-        setClients(prev => [newClient, ...prev]);
-        setClientId(newClient.id);
+    const handleTenantAdded = (newTenant: Client) => { // Mudado de Tenant para Client
+        console.log('Novo inquilino adicionado:', newTenant);
+        setTenants(prev => [newTenant, ...prev]);
+        setTenantId(newTenant.id);
     };
 
     const handleLandlordAdded = (newLandlord: Landlord) => {
+        console.log('Novo locador adicionado:', newLandlord);
         setLandlords(prev => [newLandlord, ...prev]);
         setLandlordId(newLandlord.id);
     };
 
-    const handleStart = async () => {
-        if (!propertyId || !clientId || !landlordId) return;
-        setStarting(true);
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            if (isSupabaseConfigured && agencyId) {
-                const inspection = await createInspection({
-                    tenantId: agencyId,
-                    propertyId,
-                    clientId,
-                    landlordId,
-                    type,
-                    status: 'ongoing',
-                    date: today,
-                    environments: [],
-                });
-                router.push(`/dashboard/inspections/active-demo?id=${inspection.id}`);
-            } else {
-                router.push('/dashboard/inspections/active-demo');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Erro ao criar vistoria.');
-        } finally {
-            setStarting(false);
+const handleStart = async () => {
+    if (!propertyId || !tenantId || !landlordId) {
+        console.log('Campos obrigatórios não preenchidos:', { propertyId, tenantId, landlordId });
+        return;
+    }
+    
+    setStarting(true);
+    setError(null);
+    
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        console.log('Criando vistoria com:', {
+            agencyId,
+            propertyId,
+            tenantId,
+            landlordId,
+            type,
+            date: today
+        });
+        
+        if (isSupabaseConfigured && agencyId) {
+            // Chama diretamente a criação sem verificações extras
+            const inspection = await createInspection({
+                tenantId: agencyId,
+                propertyId,
+                clientId: tenantId,
+                landlordId,
+                type,
+                status: 'ongoing',
+                date: today,
+                environments: [],
+            });
+            
+            console.log('✅ Vistoria criada com sucesso:', inspection);
+            router.push(`/dashboard/inspections/active-demo?id=${inspection.id}`);
+        } else {
+            router.push('/dashboard/inspections/active-demo');
         }
-    };
-
-    // Options for searchable selects
+    } catch (err: any) {
+        console.error('❌ Erro ao criar vistoria:', err);
+        setError(err?.message || 'Erro ao criar vistoria. Tente novamente.');
+    } finally {
+        setStarting(false);
+    }
+};
+    // Options para os selects
     const propertyOptions = properties.map(p => ({
         id: p.id,
         label: p.address,
-        searchValue: `${p.address} ${p.cep || ''} ${p.numero || ''}`,
+        searchValue: `${p.address} ${p.cep || ''} ${p.numero || ''} ${p.bairro || ''} ${p.cidade || ''}`,
     }));
 
-    const clientOptions = clients.map(c => ({
-        id: c.id,
-        label: c.name,
-        searchValue: `${c.name} ${c.cpf || ''}`,
+    const tenantOptions = tenants.map(t => ({ // Mudado de clientOptions
+        id: t.id,
+        label: t.name,
+        searchValue: `${t.name} ${t.cpf || ''} ${t.email || ''} ${t.phone || ''}`,
     }));
 
     const landlordOptions = landlords.map(l => ({
         id: l.id,
         label: l.name,
-        searchValue: `${l.name} ${l.cpf || ''}`,
+        searchValue: `${l.name} ${l.cpf || ''} ${l.email || ''} ${l.phone || ''}`,
     }));
+
+    const isFormValid = propertyId && tenantId && landlordId; // Mudado de clientId
 
     return (
         <div className="max-w-3xl mx-auto space-y-8 md:space-y-12 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -131,24 +184,43 @@ export default function NewInspection() {
                     <Breadcrumb className="hidden sm:block">
                         <BreadcrumbList>
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">
+                                    Dashboard
+                                </BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/inspections" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Vistorias</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard/inspections" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">
+                                    Vistorias
+                                </BreadcrumbLink>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator className="opacity-20" />
                             <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/inspections/new" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Nova</BreadcrumbLink>
+                                <BreadcrumbLink href="/dashboard/inspections/new" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                                    Nova
+                                </BreadcrumbLink>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
+                    
                     <div className="space-y-2">
-                        <h1 className="text-3xl md:text-6xl font-black tracking-tighter text-foreground leading-[0.85]">Configurar<br/>Nova Vistoria</h1>
-                        <p className="text-muted-foreground text-xs md:text-lg font-medium tracking-tight">Preencha os dados básicos para iniciar o laudo eletrônico.</p>
+                        <h1 className="text-3xl md:text-6xl font-black tracking-tighter text-foreground leading-[0.85]">
+                            Configurar<br/>Nova Vistoria
+                        </h1>
+                        <p className="text-muted-foreground text-xs md:text-lg font-medium tracking-tight">
+                            Preencha os dados básicos para iniciar o laudo eletrônico.
+                        </p>
                     </div>
                 </div>
             </div>
+
+            {/* Error Alert */}
+            {error && (
+                <Alert variant="destructive" className="mx-4 md:mx-0">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 px-4 md:px-0">
                 {/* Main Form */}
@@ -160,16 +232,23 @@ export default function NewInspection() {
                                     <Settings2 className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-lg md:text-xl font-black tracking-tight uppercase">Identificação das Partes</CardTitle>
-                                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest opacity-60">Imóvel, Locador e Locatário</CardDescription>
+                                    <CardTitle className="text-lg md:text-xl font-black tracking-tight uppercase">
+                                        Identificação das Partes
+                                    </CardTitle>
+                                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                                        Imóvel, Locador e Inquilino
+                                    </CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
+                        
                         <CardContent className="px-6 md:px-10 py-8 md:py-10 space-y-8 md:space-y-10">
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
                                     <Loader2 className="h-12 w-12 animate-spin text-primary/40" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Consultando Base...</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
+                                        Carregando dados da sua empresa...
+                                    </p>
                                 </div>
                             ) : (
                                 <>
@@ -186,8 +265,12 @@ export default function NewInspection() {
                                             onValueChange={setPropertyId}
                                             placeholder="Selecione ou busque por endereço/CEP..."
                                             searchPlaceholder="Digite endereço ou CEP..."
-                                            emptyText="Imóvel não encontrado."
+                                            emptyText="Nenhum imóvel encontrado para sua empresa."
+                                            disabled={loading}
                                         />
+                                        <p className="text-[8px] font-medium text-muted-foreground/60 ml-1">
+                                            {properties.length} {properties.length === 1 ? 'imóvel disponível' : 'imóveis disponíveis'}
+                                        </p>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
@@ -204,29 +287,42 @@ export default function NewInspection() {
                                                 onValueChange={setLandlordId}
                                                 placeholder="Nome ou CPF..."
                                                 searchPlaceholder="Digite nome ou CPF..."
+                                                emptyText="Nenhum locador encontrado."
+                                                disabled={loading}
                                             />
+                                            <p className="text-[8px] font-medium text-muted-foreground/60 ml-1">
+                                                {landlords.length} {landlords.length === 1 ? 'locador cadastrado' : 'locadores cadastrados'}
+                                            </p>
                                         </div>
 
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between ml-1">
-                                                <Label htmlFor="client" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                    <Users2 className="h-3 w-3" /> Locatário
+                                                <Label htmlFor="tenant" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                    <UserRound className="h-3 w-3" /> Inquilino
                                                 </Label>
-                                                <QuickAddClient agencyId={agencyId} onSuccess={handleClientAdded} />
+                                                <QuickAddClient agencyId={agencyId} onSuccess={handleTenantAdded} />
                                             </div>
                                             <SearchableSelect
-                                                options={clientOptions}
-                                                value={clientId}
-                                                onValueChange={setClientId}
+                                                options={tenantOptions}
+                                                value={tenantId}
+                                                onValueChange={setTenantId}
                                                 placeholder="Nome ou CPF..."
                                                 searchPlaceholder="Digite nome ou CPF..."
+                                                emptyText="Nenhum inquilino encontrado."
+                                                disabled={loading}
                                             />
+                                            <p className="text-[8px] font-medium text-muted-foreground/60 ml-1">
+                                                {tenants.length} {tenants.length === 1 ? 'inquilino cadastrado' : 'inquilinos cadastrados'}
+                                            </p>
                                         </div>
                                     </div>
 
                                     <div className="pt-4 border-t border-border/40 space-y-6">
-                                        <Label htmlFor="type" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Modalidade da Vistoria</Label>
+                                        <Label htmlFor="type" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                                            Modalidade da Vistoria
+                                        </Label>
                                         <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-4">
+                                            {/* Botões de tipo permanecem iguais */}
                                             <button 
                                                 onClick={() => setType('entry')}
                                                 className={`p-5 rounded-2xl md:rounded-[1.5rem] border-2 md:border-4 transition-all flex flex-row xs:flex-col items-center gap-4 xs:gap-3 ${
@@ -240,6 +336,7 @@ export default function NewInspection() {
                                                 </div>
                                                 <span className="font-black text-[10px] md:text-xs uppercase tracking-widest">Entrada</span>
                                             </button>
+                                            
                                             <button 
                                                 onClick={() => setType('exit')}
                                                 className={`p-5 rounded-2xl md:rounded-[1.5rem] border-2 md:border-4 transition-all flex flex-row xs:flex-col items-center gap-4 xs:gap-3 ${
@@ -253,6 +350,7 @@ export default function NewInspection() {
                                                 </div>
                                                 <span className="font-black text-[10px] md:text-xs uppercase tracking-widest">Saída</span>
                                             </button>
+                                            
                                             <button 
                                                 onClick={() => setType('verification')}
                                                 className={`p-5 rounded-2xl md:rounded-[1.5rem] border-2 md:border-4 transition-all flex flex-row xs:flex-col items-center gap-4 xs:gap-3 ${
@@ -274,15 +372,18 @@ export default function NewInspection() {
                     </Card>
 
                     <Button
-                        className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-2xl shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground gap-4 group"
+                        className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-2xl shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground gap-4 group disabled:opacity-50 disabled:hover:scale-100"
                         onClick={handleStart}
-                        disabled={!propertyId || !clientId || !landlordId || loading || starting}
+                        disabled={!isFormValid || loading || starting}
                     >
                         {starting ? (
-                            <><Loader2 className="h-6 w-6 animate-spin" /> Processando...</>
+                            <>
+                                <Loader2 className="h-6 w-6 animate-spin" /> 
+                                Iniciando Vistoria...
+                            </>
                         ) : (
                             <>
-                                Iniciar Vistoria Técnica 
+                                Iniciar Vistoria 
                                 <ArrowRight className="h-5 w-5 md:h-8 md:w-8 group-hover:translate-x-3 transition-transform" />
                             </>
                         )}
@@ -296,37 +397,69 @@ export default function NewInspection() {
                             <ClipboardList className="h-32 w-32 -mr-10 -mt-10" />
                         </div>
                         <CardHeader className="relative z-10">
-                            <CardTitle className="text-lg font-black tracking-tight">Resumo do Plano</CardTitle>
+                            <CardTitle className="text-lg font-black tracking-tight">
+                                Dados da Empresa
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="relative z-10 space-y-4">
                             <div className="space-y-1">
-                                <p className="text-xs font-bold uppercase tracking-widest opacity-60">Status</p>
-                                <p className="font-black text-xl">Ativo: Premium</p>
+                                <p className="text-xs font-bold uppercase tracking-widest opacity-60">
+                                    Agência
+                                </p>
+                                <p className="font-black text-sm truncate">
+                                    {user?.agency_name || agencyId || 'Não identificada'}
+                                </p>
                             </div>
-                            <div className="p-4 bg-white/10 rounded-2xl space-y-2">
-                                <div className="flex justify-between text-xs font-black uppercase tracking-widest">
-                                    <span>Vistorias Mês</span>
-                                    <span>24/50</span>
+                            
+                            {!loading && (
+                                <div className="p-4 bg-white/10 rounded-2xl space-y-2">
+                                    <div className="flex justify-between text-xs font-black uppercase tracking-widest">
+                                        <span>Registros</span>
+                                        <span>{properties.length + landlords.length + tenants.length}</span>
+                                    </div>
+                                    <div className="space-y-1 text-xs opacity-80">
+                                        <div className="flex justify-between">
+                                            <span>Imóveis:</span>
+                                            <span className="font-bold">{properties.length}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Locadores:</span>
+                                            <span className="font-bold">{landlords.length}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Inquilinos:</span>
+                                            <span className="font-bold">{tenants.length}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
-                                    <div className="h-full bg-white w-[48%]" />
-                                </div>
-                            </div>
+                            )}
                         </CardContent>
                     </Card>
 
                     <Card className="border-none shadow-lg bg-card rounded-[2rem]">
                         <CardHeader>
-                            <CardTitle className="text-base font-black tracking-tight">Dicas Pro</CardTitle>
+                            <CardTitle className="text-base font-black tracking-tight">
+                                Dicas Pro
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                                <p className="text-xs font-medium text-muted-foreground italic">Certifique-se de que o dispositivo está com bateria carregada para tirar fotos.</p>
+                                <p className="text-xs font-medium text-muted-foreground italic">
+                                    Certifique-se de que o dispositivo está com bateria carregada para tirar fotos.
+                                </p>
                             </div>
                             <div className="flex gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                                <p className="text-xs font-medium text-muted-foreground italic">O checklist sincroniza automaticamente com a nuvem a cada alteração.</p>
+                                <p className="text-xs font-medium text-muted-foreground italic">
+                                    O checklist sincroniza automaticamente com a nuvem a cada alteração.
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                                <p className="text-xs font-medium text-muted-foreground italic">
+                                    Use os botões + para cadastrar rapidamente novos registros.
+                                </p>
                             </div>
                         </CardContent>
                     </Card>

@@ -9,6 +9,7 @@ type User = {
   email: string;
   name: string;
   agency_id: string | null;
+  agency_name?: string;
   role: string;
 };
 
@@ -123,6 +124,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           agency_id: systemUser.agency_id,
           role: systemUser.role,
         };
+
+        // Buscar nome da agência se houver agency_id
+        if (systemUser.agency_id) {
+          const { data: agencyData } = await supabase
+            .from('agencies')
+            .select('name')
+            .eq('id', systemUser.agency_id)
+            .maybeSingle();
+          
+          if (agencyData) {
+            userData.agency_name = agencyData.name;
+          }
+        }
+
         setUser(userData);
         setIsLoading(false);
 
@@ -172,6 +187,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           agency_id: clientData.agency_id,
           role: 'CLIENT_ADMIN',
         };
+
+        // Buscar nome da agência se houver agency_id
+        if (clientData.agency_id) {
+          const { data: agencyData } = await supabase
+            .from('agencies')
+            .select('name')
+            .eq('id', clientData.agency_id)
+            .maybeSingle();
+          
+          if (agencyData) {
+            userData.agency_name = agencyData.name;
+          }
+        }
+
         setUser(userData);
         setIsLoading(false);
 

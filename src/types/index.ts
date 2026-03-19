@@ -70,7 +70,7 @@ export interface Landlord {
 }
 
 export interface Client {
-  id: string;
+    id: string;
     tenantId: string; // agency_id
     name: string;
     cpf: string;
@@ -78,6 +78,7 @@ export interface Client {
     phone?: string;
     primeiro_acesso?: boolean;
     created_at?: string;
+    updated_at?: string;
 }
 
 export interface InspectionEnvironment {

@@ -108,7 +108,10 @@ function rowToClient(row: any): Client {
         name: row.name, 
         cpf: row.cpf,
         email: row.email ?? undefined,
-        phone: row.phone ?? undefined
+        phone: row.phone ?? undefined,
+        primeiro_acesso: row.primeiro_acesso,
+        created_at: row.created_at,
+        updated_at: row.updated_at
     };
 }
 
@@ -533,22 +536,29 @@ export async function fetchInspection(id: string): Promise<Inspection | null> {
 }
 
 export async function createInspection(inspection: Omit<Inspection, 'id'>): Promise<Inspection> {
-    const { data, error } = await supabase.from('inspections').insert({
-        agency_id: inspection.tenantId,
-        property_id: inspection.propertyId || null,
-        client_id: inspection.clientId || null,
-        landlord_id: inspection.landlordId || null,
-        type: inspection.type,
-        status: inspection.status,
-        date: inspection.date,
-        start_time: inspection.startTime || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        environments: inspection.environments,
-        meters: inspection.meters || {},
-        keys: inspection.keys || [],
-        agreement_term: inspection.agreementTerm || '',
-        signatures: inspection.signatures || { inspector: false, landlord: false, tenant: false },
-    }).select().single();
-    if (error) throw error;
+    console.log('createInspection - dados recebidos:', inspection);
+    
+    const { data, error } = await supabase
+        .from('inspections')
+        .insert({
+            agency_id: inspection.tenantId,
+            property_id: inspection.propertyId || null,
+            client_id: inspection.clientId || null,
+            landlord_id: inspection.landlordId || null,
+            type: inspection.type,
+            status: inspection.status,
+            date: inspection.date,
+            environments: inspection.environments || []
+        })
+        .select()
+        .single();
+        
+    if (error) {
+        console.error('createInspection - erro:', error);
+        throw error;
+    }
+    
+    console.log('createInspection - sucesso:', data);
     return rowToInspection(data);
 }
 
