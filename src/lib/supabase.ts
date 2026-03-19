@@ -13,7 +13,7 @@ if (typeof window !== 'undefined' && supabaseUrl) {
 }
 
 export const supabase = createClient(
-    supabaseUrl || 'https://placeholder.supabase.co',
+    supabaseUrl,
     supabaseAnonKey || 'placeholder',
     {
         global: {

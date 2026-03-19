@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/ui/logo';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
     const { user, logout, isLoading } = useAuth();
@@ -38,56 +39,56 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                     <SidebarMenu className="gap-1 mt-4">
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg" asChild isActive={pathname === '/super-admin'} className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5 data-[active=true]:bg-primary/10">
-                                <a href="/super-admin" className="flex items-center gap-3">
+                                <Link href="/super-admin" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${pathname === '/super-admin' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors'}`}>
                                         <LayoutDashboard className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Dashboard</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
 
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg" asChild isActive={pathname === '/super-admin/tenants'} className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/super-admin/tenants" className="flex items-center gap-3">
+                                <Link href="/super-admin/tenants" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${pathname === '/super-admin/tenants' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors'}`}>
                                         <Building2 className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Assinantes</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg" asChild isActive={pathname === '/super-admin/users'} className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/super-admin/users" className="flex items-center gap-3">
+                                <Link href="/super-admin/users" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${pathname === '/super-admin/users' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors'}`}>
                                         <Users className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Super Admins</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg" asChild isActive={pathname === '/super-admin/settings'} className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/super-admin/settings" className="flex items-center gap-3">
+                                <Link href="/super-admin/settings" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${pathname === '/super-admin/settings' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors'}`}>
                                         <Settings className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Configurações</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg" asChild isActive={pathname === '/super-admin/plans'} className="h-11 rounded-xl transition-all duration-200 group hover:bg-primary/5">
-                                <a href="/super-admin/plans" className="flex items-center gap-3">
+                                <Link href="/super-admin/plans" className="flex items-center gap-3">
                                     <div className={`p-2 rounded-lg ${pathname === '/super-admin/plans' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors'}`}>
                                         <FileText className="h-4 w-4" />
                                     </div>
                                     <span className="font-bold tracking-tight text-sm">Planos</span>
-                                </a>
+                                </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>

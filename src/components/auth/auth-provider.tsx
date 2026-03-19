@@ -1,241 +1,507 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { User } from '@/types';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { finalizeUserPassword } from '@/app/actions/auth-actions';
 
-export interface AuthContextType {
-    user: User | null;
-    login: (email: string, password: string) => Promise<void>;
-    logout: () => void;
-    forgotPassword: (email: string) => Promise<void>;
-    resetPassword: (password: string) => Promise<void>;
-    isLoading: boolean;
-    needsPasswordReset: boolean;
-}
+type User = {
+  id: string;
+  email: string;
+  name: string;
+  agency_id: string | null;
+  role: string;
+};
+
+type FirstAccessData = {
+  email: string;
+  agency_id: string;
+  cnpj: string;
+  client_id: string;
+  name: string;
+};
+
+type AuthContextType = {
+  user: User | null;
+  isLoading: boolean;
+  needsPasswordReset: boolean;
+  firstAccessData: FirstAccessData | null;
+  login: (email: string, password: string) => Promise<void>;
+  resetPassword: (newPassword: string) => Promise<void>;
+  verifyFirstAccess: (email: string) => Promise<FirstAccessData | null>;
+  verifyCnpj: (cnpj: string) => Promise<boolean>;
+  createPassword: (password: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
-    const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
+  const [firstAccessData, setFirstAccessData] = useState<FirstAccessData | null>(null);
+  const router = useRouter();
 
-    useEffect(() => {
-        const savedUser = localStorage.getItem('imob_user');
-        if (savedUser) {
-            try { setUser(JSON.parse(savedUser)); } catch { /* ignore */ }
-        }
-        
-        
-        setIsLoading(false);
-    }, []);
-
-    const login = async (email: string, password: string) => {
-        setIsLoading(true);
-        try {
-            // ── Agency and Super Admin users via Supabase ─────────────────────────
-            if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-                const MOCK_USER: User = {
-                    id: 'mock-1',
-                    email: 'test@example.com',
-                    name: 'Admin Test',
-                    role: 'SUPER_ADMIN',
-                    tenantId: 'agency-1'
-                };
-                setUser(MOCK_USER);
-                localStorage.setItem('imob_user', JSON.stringify(MOCK_USER));
-                router.push('/super-admin');
-                return;
-            }
-
-            if (isSupabaseConfigured) {
-                const { data, error } = await supabase
-                    .from('system_users')
-                    .select('*')
-                    .eq('email', email.toLowerCase())
-                    .single();
-
-                if (error || !data) {
-                    throw new Error('E-mail não cadastrado no sistema.');
-                }
-
-                const loggedUser: User = {
-                    id: data.id,
-                    email: data.email,
-                    name: data.name,
-                    role: data.role,
-                    tenantId: data.agency_id,
-                };
-
-                // Check agency status and subscription if not super admin
-                if (loggedUser.role !== 'SUPER_ADMIN' && loggedUser.tenantId) {
-                    const { data: agency, error: agencyError } = await supabase
-                        .from('agencies')
-                        .select('*')
-                        .eq('id', loggedUser.tenantId)
-                        .single();
-
-                    if (agencyError || !agency) {
-                        throw new Error('Imobiliária não encontrada.');
-                    }
-
-                    // 1. Check if inactive
-                    if (agency.status !== 'active') {
-                        throw new Error('O acesso desta imobiliária está suspenso. Entre em contato com o suporte.');
-                    }
-
-                    // 2. Check expiration
-                    if (agency.expires_at && new Date(agency.expires_at) < new Date()) {
-                        await supabase.from('agencies').update({ status: 'inactive' }).eq('id', agency.id);
-                        throw new Error('Sua assinatura expirou. O acesso foi bloqueado.');
-                    }
-
-                    // 3. Record first login and set expiration if not set
-                    if (!agency.first_login_at) {
-                        const now = new Date();
-                        const expiresAt = new Date();
-                        if (agency.billing_cycle === 'annual') {
-                            expiresAt.setFullYear(now.getFullYear() + 1);
-                        } else {
-                            expiresAt.setMonth(now.getMonth() + 1);
-                        }
-
-                        await supabase.from('agencies').update({
-                            first_login_at: now.toISOString(),
-                            expires_at: expiresAt.toISOString()
-                        }).eq('id', agency.id);
-                    }
-                }
-
-                // Check temp password / must change password
-                // FIXED: Must validate password matches temp_password if it exists
-                if (data.temp_password && password === data.temp_password) {
-                    setNeedsPasswordReset(true);
-                    setLastTempPassword(password);
-                    setUser(loggedUser);
-                    return;
-                }
-
-                // Normal login — validate via Supabase Auth
-                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-
-                if (authError) {
-                    // Provide detailed error message instead of generic one
-                    const msg = authError.message.toLowerCase();
-                    if (msg.includes('invalid login credentials')) throw new Error('E-mail ou senha incorretos.');
-                    if (msg.includes('email not confirmed')) throw new Error('Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.');
-                    throw new Error(authError.message);
-                }
-
-                if (!authData.user) {
-                    throw new Error('Falha na autenticação.');
-                }
-
-                // Link auth_id if missing
-                if (!data.auth_id) {
-                    const { error: linkError } = await supabase.from('system_users').update({ auth_id: authData.user.id }).eq('id', data.id);
-                    if (linkError) console.warn('[AUTH] Falha ao vincular auth_id:', linkError);
-                }
-
-                setUser(loggedUser);
-                localStorage.setItem('imob_user', JSON.stringify(loggedUser));
-                
-                // Route based on role
-                switch (loggedUser.role) {
-                    case 'SUPER_ADMIN':
-                        router.push('/super-admin');
-                        break;
-                    case 'CLIENT_ADMIN':
-                    case 'INSPECTOR':
-                        router.push('/dashboard');
-                        break;
-                    default:
-                        router.push('/login');
-                        break;
-                }
-                return;
-            }
-
-            throw new Error('Sistema não configurado para autenticação.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const forgotPassword = async (_email: string) => {
-        // Functionality removed for security reasons. 
-        // Passwords must be reset by a Super Admin or Agency Admin.
-        throw new Error('Recuperação de senha desabilitada por segurança. Entre em contato com seu administrador.');
-    };
-
-    const resetPassword = async (_newPassword: string) => {
-        setIsLoading(true);
-        console.log('[AUTH] Finalizando nova senha para:', user?.email);
-        try {
-            if (user && isSupabaseConfigured) {
-                // 1. Utilize Server Action to finalize password (bypasses email rate limits)
-                const result = await finalizeUserPassword({
-                    email: user.email,
-                    newPassword: _newPassword
-                });
-
-                if (!result.success) {
-                    throw new Error(result.error || 'Erro ao processar nova senha.');
-                }
-
-                console.log('[AUTH] Senha finalizada via servidor. Realizando login automático...');
-
-                // 2. Perform silent login to establish the session
-                const { error: loginError } = await supabase.auth.signInWithPassword({
-                    email: user.email,
-                    password: _newPassword
-                });
-
-                if (loginError) {
-                    console.error('[AUTH] Erro no login automático:', loginError.message);
-                    // If login fails, we redirect to login page anyway so they can try manually
-                }
-
-                // 3. Clear transient state and finish
-                localStorage.setItem('imob_user', JSON.stringify(user));
-                setNeedsPasswordReset(false);
-                setLastTempPassword(null);
-                
-                router.push(user.role === 'SUPER_ADMIN' ? '/super-admin' : '/dashboard');
-            }
-        } catch (err: unknown) {
-            console.error('[AUTH] Reset password fatal error:', err);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const logout = () => {
+  // Verificar sessão ao carregar
+  useEffect(() => {
+    checkUser();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await loadUserData(session.user.email ?? null, session.user.id);
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setNeedsPasswordReset(false);
-        localStorage.removeItem('imob_user');
-        if (isSupabaseConfigured) supabase.auth.signOut();
-        router.push('/login');
-    };
+      }
+    });
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout, forgotPassword, resetPassword, isLoading, needsPasswordReset }}>
-            {children}
-        </AuthContext.Provider>
-    );
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function checkUser() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await loadUserData(session.user.email ?? null, session.user.id);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar usuário:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function loadUserData(userEmail: string | null, authUserId?: string): Promise<User | null> {
+    if (!userEmail) return null;
+    
+    try {
+      console.log('Buscando usuário no sistema com email:', userEmail);
+      
+      // Primeiro, buscar na tabela system_users
+      const { data: systemUser, error: systemError } = await supabase
+        .from('system_users')
+        .select(`
+          id,
+          email,
+          name,
+          agency_id,
+          role,
+          auth_id
+        `)
+        .eq('email', userEmail)
+        .maybeSingle();
+
+      if (systemError) {
+        console.error('Erro ao buscar system_user:', systemError);
+      }
+
+      if (systemUser) {
+        console.log('Usuário encontrado no system_users:', systemUser);
+        
+        const userData: User = {
+          id: systemUser.id,
+          email: systemUser.email,
+          name: systemUser.name,
+          agency_id: systemUser.agency_id,
+          role: systemUser.role,
+        };
+        setUser(userData);
+
+        // Se o auth_id não estiver preenchido, atualizar com o ID do auth
+        if (!systemUser.auth_id && authUserId) {
+          const { error: updateError } = await supabase
+            .from('system_users')
+            .update({ auth_id: authUserId })
+            .eq('id', systemUser.id);
+
+          if (updateError) {
+            console.error('Erro ao atualizar auth_id:', updateError);
+          }
+        }
+
+        return userData;
+      }
+
+      // Se não encontrar no system_users, buscar na tabela clients
+      console.log('Buscando cliente com email:', userEmail);
+      
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select(`
+          id,
+          name,
+          email,
+          agency_id,
+          primeiro_acesso,
+          agencies (
+            cnpj,
+            name
+          )
+        `)
+        .eq('email', userEmail)
+        .maybeSingle();
+
+      if (clientError) {
+        console.error('Erro ao buscar cliente:', clientError);
+        return null;
+      }
+
+      if (clientData) {
+        console.log('Cliente encontrado:', clientData);
+        
+        const userData: User = {
+          id: clientData.id,
+          email: clientData.email,
+          name: clientData.name,
+          agency_id: clientData.agency_id,
+          role: 'CLIENT_ADMIN',
+        };
+        setUser(userData);
+
+        // Se for primeiro acesso, marcar como FALSE após login bem sucedido
+        if (clientData.primeiro_acesso) {
+          console.log('Marcando primeiro acesso como false para cliente:', clientData.id);
+          
+          const { error: updateError } = await supabase
+            .from('clients')
+            .update({ primeiro_acesso: false })
+            .eq('id', clientData.id);
+
+          if (updateError) {
+            console.error('Erro ao atualizar primeiro_acesso:', updateError);
+          }
+        }
+        return userData;
+      } else {
+        console.log('Nenhum usuário encontrado com o email:', userEmail);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do usuário:', error);
+    }
+    return null;
+  }
+
+  async function verifyFirstAccess(email: string): Promise<FirstAccessData | null> {
+    try {
+      setIsLoading(true);
+      
+      console.log('Verificando primeiro acesso para email:', email);
+      
+      // Primeiro verificar se já é um system_user
+      const { data: systemUser } = await supabase
+        .from('system_users')
+        .select('id, email, role')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (systemUser) {
+        console.log('Usuário já é system_user:', systemUser);
+        // Se já é system_user, não é primeiro acesso
+        return null;
+      }
+      
+      // Buscar cliente pelo email
+      const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .select(`
+          id,
+          email,
+          name,
+          agency_id,
+          primeiro_acesso,
+          agencies (
+            cnpj
+          )
+        `)
+        .eq('email', email)
+        .maybeSingle();
+
+      if (clientError) {
+        console.error('Erro na consulta:', clientError);
+        throw new Error('Erro ao verificar email');
+      }
+
+      if (!client) {
+        console.log('Email não encontrado:', email);
+        throw new Error('Email não encontrado');
+      }
+
+      console.log('Cliente encontrado:', client);
+      console.log('Primeiro acesso:', client.primeiro_acesso);
+
+      // Verificar se é primeiro acesso
+      if (client.primeiro_acesso) {
+        const agencyData = client.agencies as unknown as { cnpj: string };
+        
+        const data: FirstAccessData = {
+          email: client.email,
+          agency_id: client.agency_id,
+          cnpj: agencyData.cnpj || '',
+          client_id: client.id,
+          name: client.name,
+        };
+        
+        setFirstAccessData(data);
+        setNeedsPasswordReset(true);
+        return data;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Erro ao verificar primeiro acesso:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function verifyCnpj(cnpj: string): Promise<boolean> {
+    try {
+      if (!firstAccessData) {
+        console.log('Sem dados de primeiro acesso');
+        return false;
+      }
+      
+      console.log('Verificando CNPJ:', cnpj);
+      console.log('CNPJ armazenado:', firstAccessData.cnpj);
+      
+      // Remover caracteres não numéricos para comparação
+      const cleanCnpjInput = cnpj.replace(/\D/g, '');
+      const cleanCnpjStored = firstAccessData.cnpj ? firstAccessData.cnpj.replace(/\D/g, '') : '';
+      
+      const isValid = cleanCnpjInput === cleanCnpjStored;
+      console.log('CNPJ válido?', isValid);
+      
+      return isValid;
+    } catch (error) {
+      console.error('Erro ao verificar CNPJ:', error);
+      return false;
+    }
+  }
+
+  async function createPassword(password: string): Promise<void> {
+    try {
+      setIsLoading(true);
+      
+      if (!firstAccessData) {
+        throw new Error('Dados de primeiro acesso não encontrados');
+      }
+
+      console.log('Criando senha para:', firstAccessData.email);
+
+      // Verificar se já existe um usuário com este email
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const existingUser = existingUsers?.users.find(u => u.email === firstAccessData.email);
+      const userExists = !!existingUser;
+
+      let authUserId: string;
+
+      if (userExists) {
+        // Se usuário já existe, fazer update da senha
+        authUserId = existingUser.id;
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+          authUserId,
+          { password }
+        );
+
+        if (updateError) throw updateError;
+      } else {
+        // Criar novo usuário
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: firstAccessData.email,
+          password: password,
+          options: {
+            data: {
+              client_id: firstAccessData.client_id,
+              agency_id: firstAccessData.agency_id,
+              name: firstAccessData.name,
+            }
+          }
+        });
+
+        if (authError) throw authError;
+        if (!authData.user) throw new Error('Erro ao criar usuário');
+        
+        authUserId = authData.user.id;
+      }
+
+      // Verificar se já existe na tabela system_users
+      const { data: existingSystemUser } = await supabase
+        .from('system_users')
+        .select('id')
+        .eq('email', firstAccessData.email)
+        .maybeSingle();
+
+      if (!existingSystemUser) {
+        // Inserir na tabela system_users
+        const { error: insertError } = await supabase
+          .from('system_users')
+          .insert({
+            auth_id: authUserId,
+            agency_id: firstAccessData.agency_id,
+            email: firstAccessData.email,
+            name: firstAccessData.name,
+            role: 'CLIENT_ADMIN',
+            must_change_password: false,
+            created_at: new Date().toISOString()
+          });
+
+        if (insertError) {
+          console.error('Erro ao inserir em system_users:', insertError);
+          throw new Error('Erro ao registrar usuário no sistema');
+        }
+      } else {
+        // Atualizar o auth_id se necessário
+        const { error: updateError } = await supabase
+          .from('system_users')
+          .update({ 
+            auth_id: authUserId,
+            must_change_password: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('email', firstAccessData.email);
+
+        if (updateError) {
+          console.error('Erro ao atualizar system_users:', updateError);
+        }
+      }
+
+      // Atualizar o cliente para marcar que não é mais primeiro acesso
+      const { error: updateError } = await supabase
+        .from('clients')
+        .update({ 
+          primeiro_acesso: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', firstAccessData.client_id);
+
+      if (updateError) throw updateError;
+
+      console.log('Senha criada com sucesso para:', firstAccessData.email);
+
+      // Limpar dados de primeiro acesso
+      setFirstAccessData(null);
+      setNeedsPasswordReset(false);
+      
+      // Redirecionar para login
+      router.push('/login?senha_criada=true');
+      
+    } catch (error) {
+      console.error('Erro ao criar senha:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function login(email: string, password: string) {
+    try {
+      setIsLoading(true);
+      
+      console.log('Tentando login para:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Erro no login:', error);
+        
+        // Se for erro de credenciais inválidas, verificar se o email existe no system_users ou clients
+        if (error.message === 'Invalid login credentials') {
+          // Verificar se o email existe em system_users
+          const { data: systemUser } = await supabase
+            .from('system_users')
+            .select('email')
+            .eq('email', email)
+            .maybeSingle();
+
+          if (systemUser) {
+            throw new Error('Usuário encontrado mas senha incorreta. Tente novamente ou use "Esqueceu a senha?".');
+          }
+
+          // Verificar se o email existe em clients
+          const { data: client } = await supabase
+            .from('clients')
+            .select('email, primeiro_acesso')
+            .eq('email', email)
+            .maybeSingle();
+
+          if (client) {
+            if (client.primeiro_acesso) {
+              throw new Error('Este é seu primeiro acesso. Por favor, use a opção "Primeiro Acesso" acima.');
+            } else {
+              throw new Error('Usuário encontrado mas senha incorreta. Tente novamente ou use "Esqueceu a senha?".');
+            }
+          }
+        }
+        
+        throw new Error('Email ou senha inválidos');
+      }
+
+      if (data.user) {
+        console.log('Login bem sucedido para:', data.user.email);
+        const userData = await loadUserData(data.user.email ?? null, data.user.id);
+        
+        if (userData?.role === 'SUPER_ADMIN') {
+          router.push('/super-admin');
+        } else {
+          router.push('/dashboard');
+        }
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function resetPassword(newPassword: string) {
+    throw new Error('Método não utilizado. Use createPassword para primeiro acesso.');
+  }
+
+  async function logout() {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+    } finally {
+      setUser(null);
+      setFirstAccessData(null);
+      setNeedsPasswordReset(false);
+      
+      // Limpar potenciais dados em cache ou storage
+      localStorage.removeItem('imob_user');
+      
+      // Utilizar hard-reload para limpar cache de estado do Next.js
+      window.location.href = '/login';
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      needsPasswordReset,
+      firstAccessData,
+      login,
+      resetPassword,
+      verifyFirstAccess,
+      verifyCnpj,
+      createPassword,
+      logout,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) throw new Error('useAuth must be used within an AuthProvider');
-    return context;
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
