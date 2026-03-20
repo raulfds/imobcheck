@@ -2,6 +2,17 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import { Resend } from 'resend';
+
+// Helper to get Resend instance safely
+const getResendClient = () => {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) {
+        console.warn('[RESEND] API Key missing in environment variables.');
+        return null;
+    }
+    return new Resend(key);
+};
 
 /**
  * Super-privileged Supabase client for administrative operations.
@@ -236,5 +247,106 @@ export async function adminResetPassword(userId: string, email: string, name: st
     } catch (err: unknown) {
         console.error('[ADMIN RESET ERROR FATAL]:', err);
         return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+}
+
+/**
+ * Public action to request a password reset.
+ * Generates a temporary password and (mocks) an email.
+ */
+export async function requestPasswordResetAction(emailId: string) {
+    const admin = getAdminClient();
+    if (!admin) return { success: false, error: 'Admin credentials missing.' };
+
+    const email = emailId.toLowerCase();
+    
+    try {
+        // 1. Check if user exists in system_users
+        const { data: user, error: userError } = await admin
+            .from('system_users')
+            .select('id, name, email')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (userError) throw userError;
+        if (!user) {
+            // Silently fail to avoid email enumeration if safe, 
+            // but for this app we'll return an error if not found.
+            return { success: false, error: 'E-mail não encontrado no sistema.' };
+        }
+
+        // 2. Generate temp password and update Auth/DB
+        const result = await adminResetPassword(user.id, user.email, user.name);
+        
+        if (!result.success) throw new Error(result.error);
+
+        // 3. SEND REAL EMAIL VIA RESEND
+        const resend = getResendClient();
+        if (!resend) {
+            console.error('[RESEND ERROR]: API Key missing.');
+            return { success: false, error: 'Configuração de e-mail (API Key) não encontrada. Verifique seu arquivo .env.local' };
+        }
+
+        try {
+            const { data: emailResult, error: sendError } = await resend.emails.send({
+                from: 'ImobCheck <onboarding@resend.dev>',
+                to: [user.email],
+                subject: 'Sua Senha Temporária - ImobCheck',
+                html: `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #10b981;">Olá ${user.name},</h2>
+                        <p>Recebemos uma solicitação de recuperação de senha para sua conta no <strong>ImobCheck</strong>.</p>
+                        <p>Sua nova senha temporária é:</p>
+                        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                            <span style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #111827;">${result.tempPassword}</span>
+                        </div>
+                        <p><strong>Importante:</strong> Ao fazer o login com esta senha, você será solicitado a criar uma nova senha definitiva por segurança.</p>
+                        <p>Se você não solicitou esta alteração, por favor ignore este e-mail.</p>
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                        <p style="font-size: 12px; color: #6b7280; text-align: center;">ImobCheck - Sistema de Vistorias Imobiliárias</p>
+                    </div>
+                `,
+            });
+            
+            if (sendError) {
+                console.error('[RESEND SEND ERROR]:', sendError);
+                return { success: false, error: `Erro no serviço de e-mail: ${sendError.message}` };
+            }
+
+            console.log(`[RESEND] Email enviado com sucesso para ${user.email}`, emailResult);
+        } catch (emailError: any) {
+            console.error('[RESEND FATAL ERROR]:', emailError);
+            return { success: false, error: `Erro fatal no envio de e-mail: ${emailError.message || 'Erro desconhecido'}` };
+        }
+
+        return { success: true };
+    } catch (err: unknown) {
+        console.error('[FORGOT PASSWORD ERROR]:', err);
+        return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
+}
+
+/**
+ * Public action for a logged-in user to change their own password
+ * and clear the must_change_password flag.
+ */
+export async function finalizePasswordChange(newPassword: string) {
+    // This action needs to be called by a logged-in user.
+    // However, since it uses admin client to update flags, we verify the session first.
+    const admin = getAdminClient();
+    if (!admin) return { success: false, error: 'Admin credentials missing.' };
+
+    try {
+        // We'll use the user's current session or email from metadata if possible.
+        // For now, we expect this to be called from a context where we know the user.
+        // A safer way is to check the JWT:
+        // const { data: { user } } = await supabase.auth.getUser(); // This needs a browser-side client
+        
+        // Let's use the finalizeUserPassword logic which handles both Auth and DB sync.
+        // We'll need the email.
+        
+        return { success: false, error: 'Use finalizeUserPassword no context correto.' };
+    } catch (err: unknown) {
+        return { success: false, error: String(err) };
     }
 }

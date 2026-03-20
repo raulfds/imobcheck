@@ -11,6 +11,7 @@ type User = {
   agency_id: string | null;
   agency_name?: string;
   role: string;
+  must_change_password?: boolean;
 };
 
 type FirstAccessData = {
@@ -90,7 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name,
           agency_id,
           role,
-          auth_id
+          auth_id,
+          must_change_password
         `)
         .eq('email', userEmail)
         .maybeSingle();
@@ -104,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('🔍 Tentando buscar system_user por auth_id:', authUserId);
         const { data: byAuthId } = await supabase
           .from('system_users')
-          .select('id, email, name, agency_id, role, auth_id')
+          .select('id, email, name, agency_id, role, auth_id, must_change_password')
           .eq('auth_id', authUserId)
           .maybeSingle();
           
@@ -123,7 +125,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: systemUser.name,
           agency_id: systemUser.agency_id,
           role: systemUser.role,
+          must_change_password: systemUser.must_change_password,
         };
+
+        // Se precisa trocar senha, setar o estado
+        if (systemUser.must_change_password) {
+          setNeedsPasswordReset(true);
+        }
 
         // Buscar nome da agência se houver agency_id
         if (systemUser.agency_id) {
@@ -512,6 +520,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (userData) {
           console.log('🎯 Role do usuário:', userData.role);
           
+          // Verificar se precisa trocar a senha antes de redirecionar para o dashboard
+          if (userData.must_change_password) {
+            console.log('🔐 Usuário com senha temporária, redirecionando para /redefinir-senha');
+            router.push('/redefinir-senha');
+            return;
+          }
+
           // Redirecionar baseado no role
           if (userData.role === 'SUPER_ADMIN') {
             console.log('👉 Redirecionando para /super-admin');
