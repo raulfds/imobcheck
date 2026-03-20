@@ -11,7 +11,6 @@ import { useAuth } from '@/components/auth/auth-provider';
 import { supabase } from '@/lib/supabase';
 import { updateAgencySettings, uploadAgencyLogo } from '@/app/actions/settings-actions';
 import { Tenant } from '@/types';
-import { toast } from 'sonner';
 import InputMask from 'react-input-mask';
 
 export default function AgencySettings() {
@@ -58,19 +57,13 @@ export default function AgencySettings() {
 
     const handleDiscard = () => {
         setAgency(originalAgency);
-        toast.info('Alterações descartadas', {
-            icon: <X className="h-4 w-4" />,
-            duration: 2000
-        });
+        // Não é estritamente necessário um alert para o descarte
     };
 
     const validateForm = () => {
         // Validar email
         if (agency.email && !/^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(agency.email)) {
-            toast.error('E-mail inválido', {
-                description: 'Por favor, insira um endereço de e-mail válido.',
-                icon: <AlertCircle className="h-4 w-4" />
-            });
+            alert('E-mail inválido. Por favor, insira um endereço de e-mail válido.');
             return false;
         }
 
@@ -78,10 +71,7 @@ export default function AgencySettings() {
         if (agency.cnpj) {
             const cleanCnpj = agency.cnpj.replace(/\D/g, '');
             if (cleanCnpj.length !== 14) {
-                toast.error('CNPJ inválido', {
-                    description: 'O CNPJ deve conter 14 dígitos.',
-                    icon: <AlertCircle className="h-4 w-4" />
-                });
+                alert('CNPJ inválido. O CNPJ deve conter 14 dígitos.');
                 return false;
             }
         }
@@ -90,10 +80,7 @@ export default function AgencySettings() {
         if (agency.phone) {
             const cleanPhone = agency.phone.replace(/\D/g, '');
             if (cleanPhone.length < 10 || cleanPhone.length > 11) {
-                toast.error('Telefone inválido', {
-                    description: 'O telefone deve ter 10 ou 11 dígitos.',
-                    icon: <AlertCircle className="h-4 w-4" />
-                });
+                alert('Telefone inválido. O telefone deve ter 10 ou 11 dígitos.');
                 return false;
             }
         }
@@ -111,17 +98,9 @@ export default function AgencySettings() {
         
         if (result.success) {
             setOriginalAgency(agency);
-            toast.success('Configurações salvas!', {
-                description: 'As informações da sua imobiliária foram atualizadas com sucesso.',
-                icon: <CheckCircle2 className="h-4 w-4" />,
-                duration: 3000
-            });
+            alert('Configurações salvas com sucesso!');
         } else {
-            toast.error('Erro ao salvar', {
-                description: result.error || 'Ocorreu um erro ao salvar as configurações. Tente novamente.',
-                icon: <AlertCircle className="h-4 w-4" />,
-                duration: 4000
-            });
+            alert('Erro ao salvar: ' + (result.error || 'Ocorreu um erro ao salvar as configurações.'));
         }
         setSaving(false);
     };
@@ -133,19 +112,13 @@ export default function AgencySettings() {
         // Validar tipo de arquivo
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!validTypes.includes(file.type)) {
-            toast.error('Formato não suportado', {
-                description: 'Use imagens nos formatos JPG, PNG ou WEBP.',
-                icon: <AlertCircle className="h-4 w-4" />
-            });
+            alert('Formato não suportado. Use imagens nos formatos JPG, PNG ou WEBP.');
             return;
         }
 
         // Validar tamanho (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            toast.error('Arquivo muito grande', {
-                description: 'A imagem deve ter no máximo 5MB.',
-                icon: <AlertCircle className="h-4 w-4" />
-            });
+            alert('Arquivo muito grande. A imagem deve ter no máximo 5MB.');
             return;
         }
 
@@ -157,15 +130,9 @@ export default function AgencySettings() {
         
         if (result.success && result.url) {
             setAgency(prev => ({ ...prev, logo: result.url }));
-            toast.success('Logo atualizada!', {
-                description: 'A nova logo foi enviada com sucesso.',
-                icon: <CheckCircle2 className="h-4 w-4" />
-            });
+            alert('Logo atualizada com sucesso!');
         } else {
-            toast.error('Erro no upload', {
-                description: result.error || 'Não foi possível fazer o upload da imagem.',
-                icon: <AlertCircle className="h-4 w-4" />
-            });
+            alert('Erro no upload: ' + (result.error || 'Não foi possível fazer o upload da imagem.'));
         }
         setUploading(false);
         
