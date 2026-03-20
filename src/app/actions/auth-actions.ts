@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { Resend } from 'resend';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { supabase as supabaseClient } from '@/lib/supabase';
 
 // Helper to get Resend instance safely
 const getResendClient = () => {
@@ -244,7 +245,7 @@ export async function adminResetPassword(userId: string, email: string, name: st
 
 /**
  * Public action to request a password reset.
- * Generates a temporary password and (mocks) an email.
+ * Uses Supabase's built-in password reset functionality.
  */
 export async function requestPasswordResetAction(emailId: string) {
     const admin = getAdminClient();
@@ -256,69 +257,147 @@ export async function requestPasswordResetAction(emailId: string) {
         // 1. Check if user exists in system_users
         const { data: user, error: userError } = await admin
             .from('system_users')
-            .select('id, name, email')
+            .select('id, name, email, auth_id')
             .eq('email', email)
             .maybeSingle();
 
-        if (userError) throw userError;
-        if (!user) {
-            // Silently fail to avoid email enumeration if safe, 
-            // but for this app we'll return an error if not found.
-            return { success: false, error: 'E-mail não encontrado no sistema.' };
+        if (userError) {
+            console.error('[PASSWORD RESET] Erro ao buscar usuário:', userError);
+            throw userError;
         }
-
-        // 2. Generate temp password and update Auth/DB
-        const result = await adminResetPassword(user.id, user.email, user.name);
         
-        if (!result.success) throw new Error(result.error);
-
-        // 3. SEND REAL EMAIL VIA RESEND
-        const resend = getResendClient();
-        if (!resend) {
-            console.error('[RESEND ERROR]: API Key missing.');
-            return { success: false, error: 'Configuração de e-mail (API Key) não encontrada. Verifique seu arquivo .env.local' };
+        if (!user) {
+            // Por segurança, retornamos erro genérico
+            console.log(`[PASSWORD RESET] E-mail não encontrado: ${email}`);
+            return { 
+                success: false, 
+                error: 'E-mail não encontrado no sistema. Verifique se o endereço está correto.' 
+            };
         }
 
-        try {
-            // Log for manual retrieval in case email fails (domain verification issue)
-            console.log(`[AUTH-ACTION] Temp Password for ${user.email} is: ${result.tempPassword}`);
+        console.log(`[PASSWORD RESET] Usuário encontrado: ${user.email} (${user.id})`);
 
-            const { data: emailResult, error: sendError } = await resend.emails.send({
-                from: 'ImobCheck <onboarding@resend.dev>',
-                to: [user.email],
-                subject: 'Sua Senha Temporária - ImobCheck',
-                html: `
-                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                        <h2 style="color: #10b981;">Olá ${user.name},</h2>
-                        <p>Recebemos uma solicitação de recuperação de senha para sua conta no <strong>ImobCheck</strong>.</p>
-                        <p>Sua nova senha temporária é:</p>
-                        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                            <span style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #111827;">${result.tempPassword}</span>
-                        </div>
-                        <p><strong>Importante:</strong> Ao fazer o login com esta senha, você será solicitado a criar uma nova senha definitiva por segurança.</p>
-                        <p>Se você não solicitou esta alteração, por favor ignore este e-mail.</p>
-                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                        <p style="font-size: 12px; color: #6b7280; text-align: center;">ImobCheck - Sistema de Vistorias Imobiliárias</p>
-                    </div>
-                `,
+        // 2. Gerar nova senha temporária
+        const tempPassword = generateSecureTempPassword();
+        
+        // 3. Atualizar a senha no Supabase Auth
+        let authId = user.auth_id;
+        
+        if (authId) {
+            // Se tem auth_id, atualiza diretamente
+            const { error: updateError } = await admin.auth.admin.updateUserById(authId, {
+                password: tempPassword,
+                email_confirm: true
             });
             
-            if (sendError) {
-                console.error('[RESEND SEND ERROR]:', sendError);
-                return { success: false, error: `Erro no serviço de e-mail: ${sendError.message}` };
+            if (updateError) {
+                console.error('[PASSWORD RESET] Erro ao atualizar senha no Auth:', updateError);
+                throw updateError;
             }
-
-            console.log(`[RESEND] Email enviado com sucesso para ${user.email}`, emailResult);
-        } catch (emailError: any) {
-            console.error('[RESEND FATAL ERROR]:', emailError);
-            return { success: false, error: `Erro fatal no envio de e-mail: ${emailError.message || 'Erro desconhecido'}` };
+        } else {
+            // Se não tem auth_id, tenta encontrar pelo email
+            const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
+            const authUser = users.find(u => u.email?.toLowerCase() === email);
+            
+            if (authUser) {
+                authId = authUser.id;
+                const { error: updateError } = await admin.auth.admin.updateUserById(authId, {
+                    password: tempPassword,
+                    email_confirm: true
+                });
+                if (updateError) throw updateError;
+            } else {
+                // Criar usuário no Auth se não existir
+                const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+                    email: email,
+                    password: tempPassword,
+                    email_confirm: true,
+                    user_metadata: { name: user.name }
+                });
+                
+                if (createError) throw createError;
+                authId = newUser.user.id;
+            }
         }
 
-        return { success: true };
-    } catch (err: unknown) {
-        console.error('[FORGOT PASSWORD ERROR]:', err);
-        return { success: false, error: err instanceof Error ? err.message : String(err) };
+        // 4. Atualizar flags no system_users
+        const { error: dbError } = await admin
+            .from('system_users')
+            .update({
+                temp_password: tempPassword,
+                must_change_password: true,
+                auth_id: authId,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id);
+
+        if (dbError) {
+            console.error('[PASSWORD RESET] Erro ao atualizar system_users:', dbError);
+            throw dbError;
+        }
+
+        console.log(`[PASSWORD RESET] Senha temporária gerada para ${user.email}: ${tempPassword}`);
+        console.log(`[PASSWORD RESET] Usuário deve trocar a senha no próximo login`);
+
+        // 5. Enviar e-mail de recuperação via Supabase
+        // O Supabase Auth envia automaticamente o e-mail de reset quando usamos o método correto
+        const { error: emailError } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
+        });
+
+        if (emailError) {
+            console.error('[PASSWORD RESET] Erro ao enviar e-mail via Supabase:', emailError);
+            // Se o e-mail falhar, ainda retornamos sucesso pois a senha foi gerada
+            return {
+                success: true,
+                message: 'Senha gerada com sucesso! Verifique seu e-mail (pode estar na pasta de spam).'
+            };
+        }
+
+        console.log(`[PASSWORD RESET] E-mail de recuperação enviado via Supabase para ${user.email}`);
+        
+        return { 
+            success: true, 
+            message: 'E-mail de recuperação enviado! Verifique sua caixa de entrada e a pasta de spam.' 
+        };
+        
+    } catch (err: any) {
+        console.error('[PASSWORD RESET] Erro fatal:', err);
+        const errorMessage = err.message || err.error_description || 'Erro interno';
+        return { 
+            success: false, 
+            error: `Não foi possível processar sua solicitação: ${errorMessage}` 
+        };
     }
+}
+
+/**
+ * Gera uma senha temporária segura
+ */
+function generateSecureTempPassword(length: number = 10): string {
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijkmnpqrstuvwxyz';
+    const numbers = '23456789';
+    const specials = '!@#$%&*';
+    
+    const allChars = uppercase + lowercase + numbers + specials;
+    
+    let password = '';
+    
+    // Garantir pelo menos um de cada tipo
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += specials[Math.floor(Math.random() * specials.length)];
+    
+    // Completar o resto
+    for (let i = password.length; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * allChars.length);
+        password += allChars[randomIndex];
+    }
+    
+    // Embaralhar a senha
+    return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
 /**

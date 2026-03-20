@@ -1,0 +1,137 @@
+﻿node_modules/next/dist/build/templates/app-page.d.ts(10,40): error TS2307: Cannot find module 'VAR_MODULE_GLOBAL_ERROR' or its corresponding type declarations.
+node_modules/next/dist/build/webpack-config.d.ts(11,104): error TS2694: Namespace '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/next/dist/compiled/webpack/webpack".webpack' has no exported member 'RuleSetUseItem'.
+node_modules/next/dist/build/webpack/loaders/next-app-loader.d.ts(1,13): error TS2613: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/next/dist/compiled/webpack/webpack"' has no default export. Did you mean to use 'import { webpack } from "C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/next/dist/compiled/webpack/webpack"' instead?
+node_modules/next/dist/build/webpack/plugins/define-env-plugin.d.ts(26,86): error TS2694: Namespace '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/next/dist/compiled/webpack/webpack".webpack' has no exported member 'DefinePlugin'.
+node_modules/next/dist/client/components/error-boundary.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/client/components/layout-router.d.ts(3,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/client/components/not-found-boundary.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/client/with-router.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/server/app-render/entry-base.d.ts(1,85): error TS2307: Cannot find module 'react-server-dom-webpack/server.edge' or its corresponding type declarations.
+node_modules/next/dist/server/render.d.ts(17,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/amp-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/app-router-context.shared-runtime.d.ts(4,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/head-manager-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/image-config-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/loadable-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/loadable.shared-runtime.d.ts(21,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/router-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/server-inserted-html.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/next/dist/shared/lib/utils.d.ts(12,13): error TS1192: Module '"fs"' has no default export.
+node_modules/next/types/index.d.ts(10,13): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+node_modules/sonner/dist/index.d.ts(1,8): error TS1259: Module '"C:/Users/vinic/OneDrive/Documentos/Alura/imobcheck/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+src/app/actions/auth-actions.ts(5,32): error TS2307: Cannot find module '@/lib/supabase-admin' or its corresponding type declarations.
+src/app/api/update-password-flag/route.ts(1,32): error TS2307: Cannot find module '@/lib/supabase-admin' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(4,87): error TS2307: Cannot find module '@/components/ui/card' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(5,24): error TS2307: Cannot find module '@/components/ui/button' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(6,23): error TS2307: Cannot find module '@/components/ui/input' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(7,23): error TS2307: Cannot find module '@/components/ui/label' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(8,97): error TS2307: Cannot find module '@/components/ui/breadcrumb' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(10,25): error TS2307: Cannot find module '@/components/auth/auth-provider' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(11,26): error TS2307: Cannot find module '@/lib/supabase' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(12,56): error TS2307: Cannot find module '@/app/actions/settings-actions' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(13,24): error TS2307: Cannot find module '@/types' or its corresponding type declarations.
+src/app/dashboard/settings/page.tsx(62,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(72,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(83,27): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(95,27): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(116,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(122,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(138,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(147,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(162,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(167,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(180,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(181,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(182,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(188,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(190,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(191,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(192,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(193,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(194,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(195,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(197,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(198,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(199,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(203,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(204,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(205,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(210,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(212,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(213,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(214,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(215,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(216,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(218,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(219,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(220,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(224,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(225,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(226,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(227,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(228,50): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(230,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(239,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(240,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(241,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(247,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(257,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(258,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(259,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(260,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(261,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(262,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(273,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(274,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(275,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(276,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(277,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(283,45): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(294,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(295,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(296,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(297,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(298,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(308,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(309,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(317,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(322,39): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(329,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(330,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(331,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(332,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(333,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(335,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(336,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(337,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(341,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(342,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(343,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(344,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(351,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(356,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(358,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(359,45): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(360,45): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(364,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(365,45): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(369,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(373,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(376,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(377,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(378,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(379,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(380,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(382,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(383,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(384,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(385,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(387,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(388,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(389,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(391,37): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(392,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(393,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/app/dashboard/settings/page.tsx(396,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/auth/auth-provider.tsx(4,26): error TS2307: Cannot find module '@/lib/supabase' or its corresponding type declarations.
+src/components/auth/auth-provider.tsx(576,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
