@@ -45,9 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firstAccessData, setFirstAccessData] = useState<FirstAccessData | null>(null);
   const router = useRouter();
 
+  const [authEventCount, setAuthEventCount] = useState(0);
+  const [lastAuthEvent, setLastAuthEvent] = useState(0);
+
   // Verificar sessão ao carregar
   useEffect(() => {
     let mounted = true;
+    const sessionKey = 'imobcheck-auth-session';
 
     async function initializeAuth() {
       try {
@@ -68,8 +72,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
     
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth State Change:', event);
       if (!mounted) return;
+      
+      console.log('🔄 Auth State Change:', event);
+
+      // Loop Guard: Se houverem muitos eventos SIGNED_IN em curto espaço de tempo, algo está errado
+      if (event === 'SIGNED_IN') {
+        const now = Date.now();
+        if (now - lastAuthEvent < 2000) { // Menos de 2 segundos entre eventos
+            setAuthEventCount(prev => prev + 1);
+            if (authEventCount > 5) { // Mais de 5 eventos seguidos
+                console.error('🚨 [Auth Loop Detected] Limpando sessão e recarregando...');
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = '/login?error=session_loop';
+                return;
+            }
+        } else {
+            setAuthEventCount(0);
+        }
+        setLastAuthEvent(now);
+      }
 
       if (event === 'SIGNED_IN' && session?.user) {
         // Se já temos o usuário e o email é o mesmo, evita recarregar desnecessariamente
@@ -82,8 +105,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setNeedsPasswordReset(false);
         setIsLoading(false);
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('Token atualizado com sucesso');
       }
     });
 
@@ -91,11 +112,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       authListener?.subscription.unsubscribe();
     };
-  }, [user?.email]);
+  }, [user?.email, authEventCount, lastAuthEvent]);
 
 
   async function loadUserData(userEmail: string | null, authUserId?: string): Promise<User | null> {
-    if (!userEmail) return null;
+    if (!userEmail) {
+        setIsLoading(false);
+        return null;
+    }
     
     try {
       console.log('🔍 Buscando usuário no sistema com email:', userEmail);

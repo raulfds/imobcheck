@@ -12,7 +12,10 @@ import {
     Play,
     Settings,
     TrendingUp,
-    Groups
+    LayoutDashboard,
+    ClipboardList,
+    Home,
+    UserCircle
 } from 'lucide-react';
 import { Inspection, Landlord, Property, Client } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -179,7 +182,7 @@ export default function TenantDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-card border border-border rounded-[2rem] p-8 shadow-sm relative overflow-hidden group h-full">
-                        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+                        <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
                         <h3 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-3 text-foreground">
                             <span className="h-2 w-2 rounded-full bg-primary" />
                             Ações Rápidas
@@ -243,6 +246,61 @@ export default function TenantDashboard() {
                                 </div>
                                 <ChevronRight className="h-4 w-4 opacity-40 group-hover:translate-x-1 transition-transform" />
                             </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-card border border-border rounded-[2rem] p-8 shadow-sm relative overflow-hidden group h-full">
+                        <div className="absolute -left-10 -top-10 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors" />
+                        <h3 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-3 text-foreground">
+                            <span className="h-2 w-2 rounded-full bg-blue-500" />
+                            Navegação Rápida
+                        </h3>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button 
+                                variant="ghost"
+                                onClick={() => router.push('/dashboard/inspections')}
+                                className="h-24 rounded-2xl border border-border/50 bg-muted/20 hover:bg-muted transition-all flex flex-col items-center justify-center gap-2 group"
+                            >
+                                <ClipboardList className="h-6 w-6 text-primary" />
+                                <p className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground">Vistorias</p>
+                            </Button>
+
+                            <Button 
+                                variant="ghost"
+                                onClick={() => router.push('/dashboard/registrations/properties')}
+                                className="h-24 rounded-2xl border border-border/50 bg-muted/20 hover:bg-muted transition-all flex flex-col items-center justify-center gap-2 group"
+                            >
+                                <Home className="h-6 w-6 text-blue-500" />
+                                <p className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground">Imóveis</p>
+                            </Button>
+
+                            <Button 
+                                variant="ghost"
+                                onClick={() => router.push('/dashboard/registrations/tenants')}
+                                className="h-24 rounded-2xl border border-border/50 bg-muted/20 hover:bg-muted transition-all flex flex-col items-center justify-center gap-2 group"
+                            >
+                                <UserCircle className="h-6 w-6 text-amber-500" />
+                                <p className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground">Inquilinos</p>
+                            </Button>
+
+                            <Button 
+                                variant="ghost"
+                                onClick={() => router.push('/dashboard/team')}
+                                className="h-24 rounded-2xl border border-border/50 bg-muted/20 hover:bg-muted transition-all flex flex-col items-center justify-center gap-2 group"
+                            >
+                                <UsersIcon className="h-6 w-6 text-emerald-500" />
+                                <p className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground">Equipe</p>
+                            </Button>
+                        </div>
+                        
+                        <div className="mt-8 p-4 rounded-xl bg-primary/5 border border-primary/10">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Dica de Produtividade</p>
+                            <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                                Use o atalho <kbd className="px-1.5 py-0.5 rounded border bg-background text-[10px] font-bold">N</kbd> para criar uma nova vistoria de qualquer lugar.
+                            </p>
                         </div>
                     </div>
                 </div>

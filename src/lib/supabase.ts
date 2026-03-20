@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
 const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
@@ -12,22 +12,9 @@ if (typeof window !== 'undefined' && supabaseUrl) {
     });
 }
 
-export const supabase = createClient(
+export const supabase = createBrowserClient(
     supabaseUrl,
-    supabaseAnonKey || 'placeholder',
-    {
-        auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storageKey: 'imobcheck-auth-session'
-        },
-        global: {
-            headers: {
-                'x-application-name': 'imobcheck'
-            }
-        }
-    }
+    supabaseAnonKey || 'placeholder'
 );
 
 // Helper to check if Supabase is configured
