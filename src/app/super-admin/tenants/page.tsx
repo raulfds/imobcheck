@@ -37,7 +37,7 @@ const emptyForm: FormState = {
 };
 
 export default function SuperAdminTenantsPage() {
-    const { tenants, addTenant, updateTenant, deleteTenant, resetTenantAdminPassword } = useTenants();
+    const { tenants, loading, addTenant, updateTenant, deleteTenant, resetTenantAdminPassword } = useTenants();
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [saving, setSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -98,8 +98,25 @@ export default function SuperAdminTenantsPage() {
                 setPasswordTarget(createForm.email);
                 setIsPasswordOpen(true);
             }
-        } catch { alert('Erro ao criar imobiliária.'); }
-        finally { setSaving(false); }
+        } catch (err: any) {
+            alert(err.message || "Erro ao salvar imobiliária");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleResetPassword = async (tenantId: string, email: string) => {
+        try {
+            setSaving(true);
+            const tempPassword = await resetTenantAdminPassword(tenantId, email);
+            setGeneratedPassword(tempPassword);
+            setPasswordTarget(email);
+            setIsPasswordOpen(true);
+        } catch (err: any) {
+            alert(err.message || "Erro ao resetar senha");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const openEdit = (tenant: Tenant) => {
@@ -147,17 +164,6 @@ export default function SuperAdminTenantsPage() {
     const handleDelete = async (id: string) => {
         if (confirm('Tem certeza que deseja deletar permanentemente esta imobiliária? Esta ação não pode ser desfeita.')) {
             await deleteTenant(id);
-        }
-    };
-
-    const handleResetPassword = async (tenant: Tenant) => {
-        if (confirm(`Deseja gerar uma nova senha de administrador para ${tenant.name}?`)) {
-            const newPassword = await resetTenantAdminPassword(tenant.id, tenant.email);
-            if (newPassword) {
-                setGeneratedPassword(newPassword);
-                setPasswordTarget(tenant.email);
-                setIsPasswordOpen(true);
-            }
         }
     };
 
@@ -331,8 +337,8 @@ export default function SuperAdminTenantsPage() {
                                             <DropdownMenuItem onClick={() => openEdit(tenant)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest">
                                                 <Pencil className="h-4 w-4" /> Editar Informações
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleResetPassword(tenant)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest text-amber-500 focus:text-amber-500">
-                                                <KeyRound className="h-4 w-4" /> Resetar Senha Admin
+                                            <DropdownMenuItem onClick={() => handleResetPassword(tenant.id, tenant.email)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest text-primary focus:text-primary">
+                                                <KeyRound className="h-4 w-4" /> Gerar Nova Senha
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator className="my-2 opacity-50" />
                                             <DropdownMenuItem onClick={() => handleToggleStatus(tenant.id, tenant.status)} className="cursor-pointer gap-4 h-12 rounded-xl text-[10px] uppercase tracking-widest">
