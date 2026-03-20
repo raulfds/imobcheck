@@ -4,9 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Users, Search, Plus, Edit, Trash2, Mail, Phone, Filter } from 'lucide-react';
+import { Users, Search, Plus, Edit, Trash2, Mail, Phone, Filter, ArrowLeft } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { useAuth } from '@/components/auth/auth-provider';
 import { Client } from '@/types';
@@ -17,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function TenantsPage() {
     const { user } = useAuth();
+    const router = useRouter();
     const { toast } = useToast();
     const agencyId = user?.agency_id;
 
@@ -186,21 +188,31 @@ const handleAddTenant = async (e: React.FormEvent) => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 pt-4 md:pt-0">
                 <div className="space-y-3 md:space-y-4">
-                    <Breadcrumb className="hidden md:block">
-                        <BreadcrumbList>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-20" />
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/registrations" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary">Cadastros</BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-20" />
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/registrations/tenants" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Inquilinos</BreadcrumbLink>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
+                    <div className="flex items-center gap-4">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 shrink-0 sm:hidden"
+                            onClick={() => router.push('/dashboard')}
+                        >
+                            <ArrowLeft className="h-5 w-5 text-foreground" />
+                        </Button>
+                        <Breadcrumb className="hidden sm:block">
+                            <BreadcrumbList>
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="opacity-20" />
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard/registrations" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary">Cadastros</BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="opacity-20" />
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard/registrations/tenants" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Inquilinos</BreadcrumbLink>
+                                </BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                    </div>
                     <div className="space-y-1.5 md:space-y-2">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
                             <Users className="h-3 w-3" />

@@ -140,15 +140,24 @@ export default function ActiveInspection() {
                                             const key = env.generalPhotos[i];
                                             if (key.startsWith('blob-ref:')) {
                                                 const blob = await getBlob(key);
-                                                if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                                                if (blob) {
+                                                    const url = URL.createObjectURL(blob);
+                                                    env.generalPhotos[i] = url;
+                                                    blobKeyMapRef.current[url] = key;
+                                                }
                                             }
                                         }
                                     }
                                     if (env.items) {
                                         for (const item of env.items) {
                                             if (item.photo && item.photo.startsWith('blob-ref:')) {
-                                                const blob = await getBlob(item.photo);
-                                                if (blob) item.photo = URL.createObjectURL(blob);
+                                                const key = item.photo;
+                                                const blob = await getBlob(key);
+                                                if (blob) {
+                                                    const url = URL.createObjectURL(blob);
+                                                    item.photo = url;
+                                                    blobKeyMapRef.current[url] = key;
+                                                }
                                             }
                                         }
                                     }
@@ -416,17 +425,38 @@ export default function ActiveInspection() {
             try {
                 // Ensure all data is saved
                 const cleanEnvs = JSON.parse(JSON.stringify(environments));
+                let translationErrors = 0;
+
                 for (const env of cleanEnvs) {
                     if (env.generalPhotos) {
-                        env.generalPhotos = env.generalPhotos.map((p: string) => p.startsWith('blob:') ? (blobKeyMapRef.current[p] || `blob-ref:gen-${env.id}-${p.slice(-5)}`) : p);
+                        env.generalPhotos = env.generalPhotos.map((p: string) => {
+                            if (!p.startsWith('blob:')) return p;
+                            const key = blobKeyMapRef.current[p];
+                            if (!key) {
+                                console.warn(`Untranslatable blob URL: ${p}`);
+                                translationErrors++;
+                                return p; // Keep it as blob: (will fail on other devices but might work for current PDF generate)
+                            }
+                            return key;
+                        });
                     }
                     if (env.items) {
                         env.items.forEach((item: InspectionItem) => {
                             if (item.photo && item.photo.startsWith('blob:')) {
-                                item.photo = blobKeyMapRef.current[item.photo] || `blob-ref:item-${item.id}`;
+                                const key = blobKeyMapRef.current[item.photo];
+                                if (!key) {
+                                    console.warn(`Untranslatable blob item URL: ${item.photo}`);
+                                    translationErrors++;
+                                } else {
+                                    item.photo = key;
+                                }
                             }
                         });
                     }
+                }
+
+                if (translationErrors > 0) {
+                    console.error(`${translationErrors} images could not be translated to keys!`);
                 }
 
                 await updateInspection(inspectionId, { 
@@ -471,7 +501,15 @@ export default function ActiveInspection() {
     return (
         <div className="w-full max-w-2xl mx-auto space-y-8 pb-40 animate-in fade-in duration-700 px-3">
             {/* Header Simples */}
-            <div className="pt-8 pb-2">
+            <div className="pt-8 pb-2 flex items-center gap-4">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-12 w-12 rounded-2xl bg-muted/50 hover:bg-muted border border-border/50 shrink-0"
+                    onClick={() => router.push('/dashboard/inspections')}
+                >
+                    <ArrowLeft className="h-6 w-6 text-foreground" />
+                </Button>
                 <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-foreground leading-none">Vistoria Ativa</h1>
             </div>
 

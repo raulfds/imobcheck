@@ -20,6 +20,7 @@ import {
     ExternalLink, 
     Archive, 
     Cloud,
+    ArrowLeft,
     ArrowRight,
     ShieldCheck,
     Clock,
@@ -87,6 +88,8 @@ export default function InspectionSummary() {
                         
                         // Resolver URLs das fotos (se houver blobs)
                         const { getBlob } = await import('@/lib/db');
+                        const { optimizeImage } = await import('@/lib/export-utils');
+
                         if (insp.environments) {
                             for (const env of insp.environments) {
                                 // Processar fotos gerais do ambiente
@@ -96,9 +99,19 @@ export default function InspectionSummary() {
                                         if (photo && typeof photo === 'string') {
                                             if (photo.startsWith('blob-ref:')) {
                                                 const blob = await getBlob(photo);
-                                                if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                                                if (blob) {
+                                                    try {
+                                                        const url = URL.createObjectURL(blob);
+                                                        const base64 = await optimizeImage(url, 0.7, 800);
+                                                        env.generalPhotos[i] = base64;
+                                                        URL.revokeObjectURL(url);
+                                                    } catch (err) {
+                                                        console.error('Erro ao converter foto para base64:', err);
+                                                        const url = URL.createObjectURL(blob);
+                                                        env.generalPhotos[i] = url;
+                                                    }
+                                                }
                                             } else if (photo.startsWith('http') || photo.startsWith('data:')) {
-                                                // URL válida ou base64, manter como está
                                                 env.generalPhotos[i] = photo;
                                             }
                                         }
@@ -111,7 +124,17 @@ export default function InspectionSummary() {
                                         if (item.photo && typeof item.photo === 'string') {
                                             if (item.photo.startsWith('blob-ref:')) {
                                                 const blob = await getBlob(item.photo);
-                                                if (blob) item.photo = URL.createObjectURL(blob);
+                                                if (blob) {
+                                                    try {
+                                                        const url = URL.createObjectURL(blob);
+                                                        const base64 = await optimizeImage(url, 0.7, 800);
+                                                        item.photo = base64;
+                                                        URL.revokeObjectURL(url);
+                                                    } catch (err) {
+                                                        console.error('Erro ao converter foto do item para base64:', err);
+                                                        item.photo = URL.createObjectURL(blob);
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -162,7 +185,7 @@ export default function InspectionSummary() {
                         type: (draft.type as InspectionType) || 'entry',
                         status: 'completed',
                         date: draft.date || new Date().toISOString().split('T')[0],
-                        environments: draft.environments || [],
+                        environments: JSON.parse(JSON.stringify(draft.environments || [])),
                         meters: draft.meters || {},
                         keys: draft.keys || [],
                         agreementTerm: draft.agreement || '',
@@ -171,6 +194,46 @@ export default function InspectionSummary() {
                         createdAt: draft.createdAt,
                         updatedAt: draft.updatedAt
                     };
+
+                    // Processar fotos do draft para base64
+                    const { optimizeImage } = await import('@/lib/export-utils');
+                    for (const env of mockInspection.environments) {
+                        if (env.generalPhotos) {
+                            for (let i = 0; i < env.generalPhotos.length; i++) {
+                                const photo = env.generalPhotos[i];
+                                if (photo && photo.startsWith('blob-ref:')) {
+                                    const blob = await (await import('@/lib/db')).getBlob(photo);
+                                    if (blob) {
+                                        try {
+                                            const url = URL.createObjectURL(blob);
+                                            env.generalPhotos[i] = await optimizeImage(url, 0.7, 800);
+                                            URL.revokeObjectURL(url);
+                                        } catch (err) {
+                                            console.error(err);
+                                            env.generalPhotos[i] = URL.createObjectURL(blob);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (env.items) {
+                            for (const item of env.items) {
+                                if (item.photo && item.photo.startsWith('blob-ref:')) {
+                                    const blob = await (await import('@/lib/db')).getBlob(item.photo);
+                                    if (blob) {
+                                        try {
+                                            const url = URL.createObjectURL(blob);
+                                            item.photo = await optimizeImage(url, 0.7, 800);
+                                            URL.revokeObjectURL(url);
+                                        } catch (err) {
+                                            console.error(err);
+                                            item.photo = URL.createObjectURL(blob);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     
                     setInspection(mockInspection);
                     
@@ -274,7 +337,16 @@ export default function InspectionSummary() {
     return (
         <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in zoom-in-95 duration-700">
             {/* Success Header */}
-            <div className="text-center space-y-4 pt-10">
+            <div className="text-center space-y-4 pt-10 relative">
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute left-0 top-10 rounded-xl font-bold gap-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => router.push('/dashboard/inspections')}
+                >
+                    <ArrowLeft className="h-4 w-4" /> Voltar para Lista
+                </Button>
+                
                 <div className="relative inline-flex mb-4">
                     <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 animate-pulse" />
                     <div className="relative h-24 w-24 rounded-[2rem] bg-emerald-500 text-white flex items-center justify-center shadow-2xl shadow-emerald-500/40 rotate-3">

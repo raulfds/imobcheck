@@ -16,7 +16,8 @@ import {
     Settings2,
     Play,
     AlertCircle,
-    UserRound
+    UserRound,
+    ArrowLeft
 } from 'lucide-react';
 import { Property, Client, Landlord, InspectionType, Inspection } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
@@ -192,27 +193,37 @@ const handleStart = async () => {
             {/* Header */}
             <div className="flex flex-col gap-4 px-4 md:px-0">
                 <div className="space-y-4">
-                    <Breadcrumb className="hidden sm:block">
-                        <BreadcrumbList>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">
-                                    Dashboard
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-20" />
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/inspections" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">
-                                    Vistorias
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-20" />
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/inspections/new" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                                    Nova
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
+                    <div className="flex items-center gap-4">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 shrink-0 sm:hidden"
+                            onClick={() => router.push('/dashboard/inspections')}
+                        >
+                            <ArrowLeft className="h-5 w-5 text-foreground" />
+                        </Button>
+                        <Breadcrumb className="hidden sm:block">
+                            <BreadcrumbList>
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">
+                                        Dashboard
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="opacity-20" />
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard/inspections" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">
+                                        Vistorias
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="opacity-20" />
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard/inspections/new" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                                        Nova
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                    </div>
                     
                     <div className="space-y-2">
                         <h1 className="text-3xl md:text-6xl font-black tracking-tighter text-foreground leading-[0.85]">

@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Building2, Mail, Phone, MapPin, Upload, Globe, ShieldCheck, Plus, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, Upload, Globe, ShieldCheck, Plus, Loader2, CheckCircle2, AlertCircle, X, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { updateAgencySettings, uploadAgencyLogo } from '@/app/actions/settings-actions';
 import { Tenant } from '@/types';
@@ -15,6 +16,7 @@ import InputMask from 'react-input-mask';
 
 export default function AgencySettings() {
     const { user } = useAuth();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -153,20 +155,29 @@ export default function AgencySettings() {
 
     return (
         <div className="space-y-10 max-w-5xl mx-auto pb-10 animate-in fade-in duration-700">
-            {/* Header section with refined breadcrumbs */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-4">
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="opacity-20" />
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/dashboard/settings" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Configurações</BreadcrumbLink>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
+                    <div className="flex items-center gap-4">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 shrink-0 sm:hidden"
+                            onClick={() => router.push('/dashboard')}
+                        >
+                            <ArrowLeft className="h-5 w-5 text-foreground" />
+                        </Button>
+                        <Breadcrumb className="hidden sm:block">
+                            <BreadcrumbList>
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="opacity-20" />
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink href="/dashboard/settings" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Configurações</BreadcrumbLink>
+                                </BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                    </div>
                     <div className="space-y-2">
                         <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-none">Configurações</h1>
                         <p className="text-muted-foreground text-sm md:text-lg font-medium tracking-tight">Personalize as informações da sua imobiliária e identidade visual.</p>

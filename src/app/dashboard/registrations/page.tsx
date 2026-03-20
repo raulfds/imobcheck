@@ -7,11 +7,15 @@ import {
     User, 
     Users, 
     ChevronRight,
-    ArrowRight
+    ArrowRight,
+    ArrowLeft
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { Button } from '@/components/ui/button';
 
 export default function RegistrationsIndexPage() {
+    const router = useRouter();
     const categories = [
         {
             title: 'Imóveis',
@@ -49,17 +53,27 @@ export default function RegistrationsIndexPage() {
         <div className="space-y-10 md:space-y-16 w-full pb-20">
             {/* Header section */}
             <div className="flex flex-col md:items-start gap-4 md:gap-6 pt-4 md:pt-10">
-                <Breadcrumb className="hidden md:block">
-                    <BreadcrumbList>
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="opacity-20" />
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href="/dashboard/registrations" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Cadastros</BreadcrumbLink>
-                        </BreadcrumbItem>
-                    </BreadcrumbList>
-                </Breadcrumb>
+                <div className="flex items-center gap-4">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 shrink-0 sm:hidden"
+                        onClick={() => router.push('/dashboard')}
+                    >
+                        <ArrowLeft className="h-5 w-5 text-foreground" />
+                    </Button>
+                    <Breadcrumb className="hidden sm:block">
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard" className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors">Dashboard</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="opacity-20" />
+                            <BreadcrumbItem>
+                                <BreadcrumbLink href="/dashboard/registrations" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Cadastros</BreadcrumbLink>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </div>
                 
                 <div className="space-y-2 md:space-y-4 text-center md:text-left">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] mx-auto md:mx-0 shadow-sm">
