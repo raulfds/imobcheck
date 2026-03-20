@@ -132,6 +132,8 @@ function rowToInspection(row: any): Inspection {
         keys: row.keys ?? undefined,
         agreementTerm: row.agreement_term ?? undefined,
         signatures: row.signatures ?? undefined,
+        createdAt: row.created_at ?? undefined, // NOVO
+        updatedAt: row.updated_at ?? undefined, // NOVO
     };
 }
 

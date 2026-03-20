@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Inspection, InspectionEnvironment, Property, Client, Landlord, Tenant } from '@/types';
+import { Inspection, InspectionEnvironment, Property, Client, Landlord, Tenant, InspectionType } from '@/types';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InspectionPDF } from '@/components/inspection/inspection-pdf';
 import { downloadAllPhotos, uploadToGoogleDrive } from '@/lib/export-utils';
@@ -45,7 +45,8 @@ export default function InspectionSummary() {
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
     const { user } = useAuth();
-    const agencyId = user?.tenantId;
+    // CORREÇÃO: usar agency_id em vez de tenantId
+    const agencyId = user?.agency_id ?? 't1';
 
     const [loading, setLoading] = useState(true);
     const [inspection, setInspection] = useState<Inspection | null>(null);
@@ -60,31 +61,58 @@ export default function InspectionSummary() {
 
     useEffect(() => {
         async function loadData() {
-            const DRAFT_ID = 'active-inspection-demo';
-            
-            // Try Supabase first if ID is present
-            if (id && isSupabaseConfigured) {
+            if (!id) {
+                console.error('ID da vistoria não fornecido');
+                setLoading(false);
+                return;
+            }
+
+            // Try Supabase first
+            if (isSupabaseConfigured) {
                 try {
+                    console.log('🔍 Buscando vistoria com ID:', id);
                     const insp = await fetchInspection(id);
+                    
                     if (insp) {
-                        // Resolve blob-refs
+                        console.log('✅ Vistoria encontrada:', insp);
+                        
+                        // Verificar se a vistoria pertence à agência do usuário
+                        if (insp.tenantId !== agencyId && insp.agency_id !== agencyId) {
+                            console.error('❌ Vistoria não pertence à agência do usuário');
+                            alert('Você não tem permissão para visualizar esta vistoria.');
+                            router.push('/dashboard/inspections');
+                            setLoading(false);
+                            return;
+                        }
+                        
+                        // Resolver URLs das fotos (se houver blobs)
                         const { getBlob } = await import('@/lib/db');
                         if (insp.environments) {
                             for (const env of insp.environments) {
+                                // Processar fotos gerais do ambiente
                                 if (env.generalPhotos) {
                                     for (let i = 0; i < env.generalPhotos.length; i++) {
-                                        const key = env.generalPhotos[i];
-                                        if (key && key.startsWith('blob-ref:')) {
-                                            const blob = await getBlob(key);
-                                            if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                                        const photo = env.generalPhotos[i];
+                                        if (photo && typeof photo === 'string') {
+                                            if (photo.startsWith('blob-ref:')) {
+                                                const blob = await getBlob(photo);
+                                                if (blob) env.generalPhotos[i] = URL.createObjectURL(blob);
+                                            } else if (photo.startsWith('http') || photo.startsWith('data:')) {
+                                                // URL válida ou base64, manter como está
+                                                env.generalPhotos[i] = photo;
+                                            }
                                         }
                                     }
                                 }
+                                
+                                // Processar fotos dos itens
                                 if (env.items) {
                                     for (const item of env.items) {
-                                        if (item.photo && item.photo.startsWith('blob-ref:')) {
-                                            const blob = await getBlob(item.photo);
-                                            if (blob) item.photo = URL.createObjectURL(blob);
+                                        if (item.photo && typeof item.photo === 'string') {
+                                            if (item.photo.startsWith('blob-ref:')) {
+                                                const blob = await getBlob(item.photo);
+                                                if (blob) item.photo = URL.createObjectURL(blob);
+                                            }
                                         }
                                     }
                                 }
@@ -92,65 +120,94 @@ export default function InspectionSummary() {
                         }
 
                         setInspection(insp);
+                        
+                        // Buscar dados relacionados
+                        console.log('🔍 Buscando dados relacionados...');
                         const [p, c, l, t] = await Promise.all([
-                            fetchProperty(insp.propertyId),
-                            fetchClient(insp.clientId),
+                            insp.propertyId ? fetchProperty(insp.propertyId) : Promise.resolve(null),
+                            insp.clientId ? fetchClient(insp.clientId) : Promise.resolve(null),
                             insp.landlordId ? fetchLandlord(insp.landlordId) : Promise.resolve(null),
-                            fetchAgency(insp.tenantId)
+                            fetchAgency(insp.tenantId || agencyId)
                         ]);
+                        
                         setProperty(p);
                         setClient(c);
                         setLandlord(l);
                         if (t) setTenant(t);
+                        
+                        console.log('✅ Dados carregados com sucesso');
                         setLoading(false);
                         return;
                     }
                 } catch (err) {
-                    console.error('Failed to load from Supabase:', err);
+                    console.error('❌ Erro ao carregar do Supabase:', err);
                 }
             }
 
-            // Fallback to IndexedDB (Demo Mode)
+            // Fallback: Tentar carregar do IndexedDB (modo demo)
             try {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                console.log('🔍 Tentando carregar do IndexedDB...');
                 const { getDraft } = await import('@/lib/db');
-                const draft = await getDraft(id || DRAFT_ID);
+                const draft = await getDraft(id);
+                
                 if (draft) {
-                    // Convert draft to Inspection type
+                    console.log('✅ Draft encontrado no IndexedDB');
                     const mockInspection: Inspection = {
                         id: draft.id,
-                        tenantId: draft.tenantId,
-                        propertyId: '',
-                        clientId: '',
-                        type: 'entry',
+                        tenantId: draft.tenantId || agencyId,
+                        agency_id: draft.agencyId || agencyId,
+                        propertyId: draft.propertyId || '',
+                        clientId: draft.clientId || '',
+                        landlordId: draft.landlordId || '',
+                        type: (draft.type as InspectionType) || 'entry',
                         status: 'completed',
-                        date: new Date(draft.updatedAt).toISOString().split('T')[0],
-                        environments: draft.environments,
-                        meters: draft.meters,
-                        keys: draft.keys,
-                        agreementTerm: draft.agreement
+                        date: draft.date || new Date().toISOString().split('T')[0],
+                        environments: draft.environments || [],
+                        meters: draft.meters || {},
+                        keys: draft.keys || [],
+                        agreementTerm: draft.agreement || '',
+                        signatures: draft.signatures || { tenant: false, landlord: false, inspector: false },
+                        startTime: draft.startTime,
+                        createdAt: draft.createdAt,
+                        updatedAt: draft.updatedAt
                     };
+                    
                     setInspection(mockInspection);
+                    
+                    // Buscar dados relacionados se disponíveis
                     if (isSupabaseConfigured) {
-                        const t = await fetchAgency(draft.tenantId);
+                        const t = await fetchAgency(agencyId);
                         if (t) setTenant(t);
                     }
+                } else {
+                    console.log('❌ Nenhum draft encontrado');
+                    alert('Vistoria não encontrada.');
+                    router.push('/dashboard/inspections');
                 }
             } catch (err) {
-                console.error('Failed to load from IndexedDB:', err);
+                console.error('❌ Erro ao carregar do IndexedDB:', err);
+                alert('Erro ao carregar os dados da vistoria.');
             } finally {
                 setLoading(false);
             }
         }
-        loadData();
-    }, [id]);
+        
+        if (id) {
+            loadData();
+        } else {
+            console.error('ID da vistoria não fornecido');
+            setLoading(false);
+            alert('ID da vistoria não fornecido.');
+            router.push('/dashboard/inspections');
+        }
+    }, [id, agencyId, router]);
 
-    const displayTenant = tenant || ({ 
-        id: agencyId || 'demo-tenant',
-        name: 'Imobiliária', // Fallback
+    const displayTenant = tenant || { 
+        id: agencyId,
+        name: user?.agency_name || 'Imobiliária',
         status: 'active' as const,
         plan: 'Premium',
-    } as Tenant);
+    } as Tenant;
 
     const handleDownloadPhotos = async () => {
         if (!inspection) return;
@@ -162,10 +219,14 @@ export default function InspectionSummary() {
         if (!inspection) return;
         setIsUploading(true);
         try {
-            const result = await uploadToGoogleDrive(new Blob(['mock pdf content']), `Vistoria-${inspection.id}.pdf`);
+            const result = await uploadToGoogleDrive(
+                new Blob(['mock pdf content']), 
+                `Vistoria-${inspection.id}.pdf`
+            );
             setUploadUrl(result.url);
             alert('Relatório enviado para o Google Drive!');
-        } catch {
+        } catch (err) {
+            console.error('Erro no upload:', err);
             alert('Erro ao enviar para o Google Drive.');
         } finally {
             setIsUploading(false);
@@ -192,7 +253,7 @@ export default function InspectionSummary() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <Loader2 className="h-12 w-12 animate-spin text-primary/40" />
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Processando Laudo...</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Carregando dados da vistoria...</p>
             </div>
         );
     }
@@ -200,8 +261,12 @@ export default function InspectionSummary() {
     if (!inspection) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <AlertTriangle className="h-12 w-12 text-red-500" />
                 <p className="text-xl font-black">Vistoria não encontrada.</p>
-                <Button onClick={() => router.push('/dashboard/inspections')}>Voltar para Lista</Button>
+                <p className="text-sm text-muted-foreground">A vistoria que você está procurando pode ter sido excluída ou não existe.</p>
+                <Button onClick={() => router.push('/dashboard/inspections')} className="mt-4">
+                    Voltar para Lista
+                </Button>
             </div>
         );
     }
@@ -221,6 +286,9 @@ export default function InspectionSummary() {
                     <p className="text-muted-foreground font-medium text-lg italic max-w-lg mx-auto">
                         O relatório técnico e todas as evidências visuais já estão processados e prontos para exportação.
                     </p>
+                    <Badge variant="outline" className="mt-4 bg-emerald-500/10 text-emerald-700 border-emerald-500/20">
+                        {inspection.type === 'entry' ? 'Vistoria de Entrada' : inspection.type === 'exit' ? 'Vistoria de Saída' : 'Vistoria de Constatação'}
+                    </Badge>
                 </div>
             </div>
 
@@ -241,7 +309,7 @@ export default function InspectionSummary() {
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                 <Home className="h-3 w-3" /> Imóvel Vistoriado
                             </p>
-                            <p className="font-bold text-base leading-tight">{property?.address || 'Não informado'}</p>
+                            <p className="font-bold text-base leading-tight">{property?.address || inspection.propertyAddress || 'Não informado'}</p>
                             <p className="text-xs text-muted-foreground font-medium italic">
                                 {property?.cep ? `CEP: ${property.cep}` : ''} {property?.numero ? `Nº ${property.numero}` : ''}
                             </p>
@@ -253,7 +321,7 @@ export default function InspectionSummary() {
                                 <Clock className="h-3 w-3" /> Data e Hora
                             </p>
                             <p className="font-bold text-base leading-tight">
-                                {new Date(inspection.date).toLocaleDateString('pt-BR')} 
+                                {inspection.date ? new Date(inspection.date).toLocaleDateString('pt-BR') : 'Data não informada'}
                             </p>
                             <p className="text-xs text-muted-foreground font-medium italic">
                                 Início: {inspection.startTime || '--:--'}
@@ -320,12 +388,16 @@ export default function InspectionSummary() {
                             <div className="flex flex-wrap gap-2">
                                 {!inspection.keys || inspection.keys.length === 0 ? (
                                     <p className="text-[10px] italic opacity-40">Nenhuma chave registrada</p>
-                                ) : inspection.keys.map((k, i) => (
-                                    <div key={i} className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-xl border border-border/20">
-                                        <span className="font-bold text-xs text-foreground">{k.description}</span>
-                                        <Badge className="bg-primary h-5 text-[8px] font-black px-1.5 rounded-lg text-primary-foreground">{k.quantity} UN</Badge>
-                                    </div>
-                                ))}
+                                ) : (
+                                    inspection.keys.map((k, i) => (
+                                        <div key={i} className="flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-xl border border-border/20">
+                                            <span className="font-bold text-xs text-foreground">{k.description}</span>
+                                            <Badge className="bg-primary h-5 text-[8px] font-black px-1.5 rounded-lg text-primary-foreground">
+                                                {k.quantity} UN
+                                            </Badge>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
@@ -337,82 +409,159 @@ export default function InspectionSummary() {
                 <CardHeader className="p-10 border-b border-border/40 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <CardTitle className="text-2xl font-black tracking-tight">Resumo por Ambiente</CardTitle>
-                        <CardDescription className="text-sm font-bold uppercase tracking-widest opacity-70 mt-1">Checklist de conformidade técnica</CardDescription>
+                        <CardDescription className="text-sm font-bold uppercase tracking-widest opacity-70 mt-1">
+                            Checklist de conformidade técnica
+                        </CardDescription>
                     </div>
                     <Badge variant="outline" className="bg-foreground text-card border-none font-black text-xs uppercase tracking-widest px-6 py-2 rounded-full">
-                        {inspection.environments.length} Áreas Verificadas
+                        {inspection.environments?.length || 0} Áreas Verificadas
                     </Badge>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="divide-y divide-border/20">
-                        {inspection.environments.map((env) => {
-                            const defects = env.items.filter(i => i.status === 'not_ok');
-                            const totalItems = env.items.length;
-                            
-                            return (
-                                <div key={env.id} className="p-10 space-y-6 hover:bg-muted/10 transition-colors">
-                                    <div className="flex justify-between items-center group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all">
-                                                <Layout className="h-5 w-5" />
+                    {!inspection.environments || inspection.environments.length === 0 ? (
+                        <div className="p-10 text-center">
+                            <p className="text-muted-foreground italic">Nenhum ambiente registrado nesta vistoria.</p>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-border/20">
+                            {inspection.environments.map((env) => {
+                                const defects = env.items?.filter(i => i.status === 'not_ok') || [];
+                                const totalItems = env.items?.length || 0;
+                                
+                                return (
+                                    <div key={env.id} className="p-10 space-y-6 hover:bg-muted/10 transition-colors">
+                                        <div className="flex justify-between items-center group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-all">
+                                                    <Layout className="h-5 w-5" />
+                                                </div>
+                                                <span className="font-black text-xl tracking-tight text-foreground">
+                                                    {env.name}
+                                                </span>
                                             </div>
-                                            <span className="font-black text-xl tracking-tight text-foreground">{env.name}</span>
+                                            <div className="flex items-center gap-2">
+                                                {defects.length > 0 && (
+                                                    <Badge variant="destructive" className="text-[9px] font-black">
+                                                        {defects.length} Pendência{defects.length !== 1 ? 's' : ''}
+                                                    </Badge>
+                                                )}
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic bg-muted/40 px-3 py-1 rounded-lg">
+                                                    {totalItems} it{totalItems === 1 ? 'em' : 'ens'}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic bg-muted/40 px-3 py-1 rounded-lg">
-                                            {totalItems} it{totalItems === 1 ? 'em' : 'ens'}
-                                        </span>
-                                    </div>
 
-                                    {/* Environment Photos */}
-                                    {env.generalPhotos && env.generalPhotos.length > 0 && (
-                                        <div className="flex gap-4 overflow-x-auto pb-4 ml-4 no-scrollbar">
-                                            {env.generalPhotos.map((photo, idx) => (
-                                                <div key={idx} className="w-40 h-40 shrink-0 rounded-2xl overflow-hidden border-2 border-white shadow-xl hover:scale-105 transition-transform">
-                                                    <img src={photo} alt={`Ambiente ${idx}`} className="w-full h-full object-cover" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* Items Status */}
-                                    <div className="ml-14 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-                                        {env.items.filter(item => item.status !== 'pending').map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between border-b border-border/10 pb-2">
-                                                <div className="flex items-center gap-3">
-                                                    {item.status === 'ok' ? (
-                                                        <div className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                                                            <Check className="h-3 w-3" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="h-5 w-5 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center">
-                                                            <AlertTriangle className="h-3 w-3" />
-                                                        </div>
-                                                    )}
-                                                    <span className={`text-sm font-bold ${item.status === 'ok' ? 'text-foreground/80' : 'text-red-700'}`}>
-                                                        {item.name}
-                                                    </span>
-                                                </div>
-                                                {(item.observation || item.defect) && (
-                                                    <div className="mt-1">
-                                                        <Badge variant="outline" className="text-[9px] font-bold uppercase text-red-700 border-red-200 bg-red-50 whitespace-normal text-left leading-tight py-1">
-                                                            Avaria: {item.observation || item.defect}
-                                                        </Badge>
+                                        {/* Environment Photos */}
+                                        {env.generalPhotos && env.generalPhotos.length > 0 && (
+                                            <div className="flex gap-4 overflow-x-auto pb-4 ml-4 no-scrollbar">
+                                                {env.generalPhotos.map((photo, idx) => (
+                                                    <div key={idx} className="w-40 h-40 shrink-0 rounded-2xl overflow-hidden border-2 border-white shadow-xl hover:scale-105 transition-transform">
+                                                        <img src={photo} alt={`${env.name} - Foto ${idx + 1}`} className="w-full h-full object-cover" />
                                                     </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Items Status */}
+                                        {env.items && env.items.length > 0 && (
+                                            <div className="ml-14 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                                                {env.items.filter(item => item.status !== 'pending').map((item) => (
+                                                    <div key={item.id} className="flex flex-col gap-1 border-b border-border/10 pb-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                {item.status === 'ok' ? (
+                                                                    <div className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                                                                        <Check className="h-3 w-3" />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="h-5 w-5 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center">
+                                                                        <AlertTriangle className="h-3 w-3" />
+                                                                    </div>
+                                                                )}
+                                                                <span className={`text-sm font-bold ${item.status === 'ok' ? 'text-foreground/80' : 'text-red-700'}`}>
+                                                                    {item.name}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        {(item.observation || item.defect) && (
+                                                            <div className="ml-8">
+                                                                <Badge variant="outline" className="text-[9px] font-bold text-red-700 border-red-200 bg-red-50 whitespace-normal text-left leading-tight py-1">
+                                                                    Avaria: {item.observation || item.defect}
+                                                                </Badge>
+                                                            </div>
+                                                        )}
+                                                        {item.photo && typeof item.photo === 'string' && (
+                                                            <div className="ml-8 mt-1">
+                                                                <img src={item.photo} alt={`Item ${item.name}`} className="h-16 w-16 rounded-lg object-cover border" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                {env.items.filter(item => item.status !== 'pending').length === 0 && (
+                                                    <p className="text-xs italic opacity-40 col-span-2">
+                                                        Nenhum item verificado neste ambiente.
+                                                    </p>
                                                 )}
                                             </div>
-                                        ))}
-                                        {env.items.filter(item => item.status !== 'pending').length === 0 && (
-                                            <p className="text-xs italic opacity-40 col-span-2">Nenhum item verificado neste ambiente.</p>
                                         )}
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
+            {/* Termo de Acordo */}
+            {inspection.agreementTerm && (
+                <Card className="border-none shadow-2xl bg-card rounded-[2.5rem] overflow-hidden">
+                    <CardHeader className="p-8 border-b border-border/40 bg-muted/20">
+                        <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+                            <FileCheck2 className="h-5 w-5" />
+                            Termo de Acordo
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-8">
+                        <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+                            {inspection.agreementTerm}
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
+            {/* Assinaturas */}
+            {inspection.signatures && (
+                <Card className="border-none shadow-2xl bg-card rounded-[2.5rem] overflow-hidden">
+                    <CardHeader className="p-8 border-b border-border/40 bg-muted/20">
+                        <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+                            <UserCheck className="h-5 w-5" />
+                            Assinaturas
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Locatário</p>
+                                <Badge variant={inspection.signatures.tenant ? "success" : "secondary"}>
+                                    {inspection.signatures.tenant ? "Assinado" : "Pendente"}
+                                </Badge>
+                            </div>
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Locador</p>
+                                <Badge variant={inspection.signatures.landlord ? "success" : "secondary"}>
+                                    {inspection.signatures.landlord ? "Assinado" : "Pendente"}
+                                </Badge>
+                            </div>
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vistoriador</p>
+                                <Badge variant={inspection.signatures.inspector ? "success" : "secondary"}>
+                                    {inspection.signatures.inspector ? "Assinado" : "Pendente"}
+                                </Badge>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Export Section */}
             <div className="space-y-8">
@@ -435,7 +584,9 @@ export default function InspectionSummary() {
                             <label htmlFor="signAsAgencyToggle" className="text-sm font-bold text-foreground cursor-pointer select-none">
                                 Assinar como Imobiliária (por procuração)
                             </label>
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground ml-2">Locador será ignorado nas assinaturas</span>
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground ml-2">
+                                Locador será ignorado nas assinaturas
+                            </span>
                         </div>
                     </div>
                 )}
@@ -545,4 +696,3 @@ export default function InspectionSummary() {
         </div>
     );
 }
-

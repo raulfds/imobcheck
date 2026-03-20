@@ -13,9 +13,9 @@ import {
     Trash2,
     Play
 } from 'lucide-react';
-import { Inspection } from '@/types';
+import { Inspection, Landlord, Property, Client } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
-import { fetchInspections, fetchProperties, fetchClients, deleteInspection } from '@/lib/database';
+import { fetchInspections, fetchProperties, fetchClients, deleteInspection, fetchLandlords } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { MetricCard } from '@/components/vistorify/MetricCard';
 import { IssueListItem } from '@/components/vistorify/IssueListItem';
@@ -28,16 +28,61 @@ export default function TenantDashboard() {
     const [inspections, setInspections] = useState<Inspection[]>([]);
     const [propertyCount, setPropertyCount] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [properties, setProperties] = useState<Record<string, Property>>({});
+    const [clients, setClients] = useState<Record<string, Client>>({});
+    const [landlordsMap, setLandlordsMap] = useState<Record<string, Landlord>>({});
+
+    // Função para obter o nome do locador
+    const getLandlordName = (landlordId?: string) => {
+        if (!landlordId) return 'Proprietário não informado';
+        const landlord = landlordsMap[landlordId];
+        if (!landlord) return 'Proprietário não encontrado';
+        return landlord.name;
+    };
+
+    // Função para formatar a exibição do imóvel
+    const getPropertyDisplay = (inspection: Inspection) => {
+        const property = properties[inspection.propertyId];
+        const landlordName = getLandlordName(inspection.landlordId);
+        
+        if (property?.address) {
+            return `${landlordName} - ${property.address}`;
+        }
+        
+        return `Imóvel de ${landlordName}`;
+    };
 
     const loadStats = useCallback(async () => {
-        if (!agencyId || !isSupabaseConfigured) { setLoading(false); return; }
+        if (!agencyId || !isSupabaseConfigured) { 
+            setLoading(false); 
+            return; 
+        }
         try {
-            const [insp, props] = await Promise.all([
+            const [insp, props, cls, lords] = await Promise.all([
                 fetchInspections(agencyId),
                 fetchProperties(agencyId),
+                fetchClients(agencyId),
+                fetchLandlords(agencyId)
             ]);
+            
             setInspections(insp);
             setPropertyCount(props.length);
+            
+            // Criar mapas para lookup rápido
+            const propMap: Record<string, Property> = {};
+            props.forEach(p => propMap[p.id] = p);
+            setProperties(propMap);
+            
+            const clientMap: Record<string, Client> = {};
+            cls.forEach(c => clientMap[c.id] = c);
+            setClients(clientMap);
+            
+            const landlordsMapData: Record<string, Landlord> = {};
+            lords.forEach(landlord => {
+                landlordsMapData[landlord.id] = landlord;
+            });
+            setLandlordsMap(landlordsMapData);
+            
         } catch (err) {
             console.error('Dashboard load error:', err);
         } finally {
@@ -167,7 +212,7 @@ export default function TenantDashboard() {
                         </button>
                     </div>
 
-                    <Card className="border border-border/50 shadow-sm bg-muted/20 rounded-2xl">
+               {/*  <Card className="border border-border/50 shadow-sm bg-muted/20 rounded-2xl">
                         <CardContent className="p-8">
                             <div className="flex items-start gap-4">
                                 <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
@@ -181,7 +226,7 @@ export default function TenantDashboard() {
                                 </div>
                             </div>
                         </CardContent>
-                    </Card>
+                    </Card>*/}
                 </div>
 
                 {/* Recent Inspections Flow */}
@@ -197,65 +242,79 @@ export default function TenantDashboard() {
                             </Button>
                         </div>
                         <div className="flex-1 divide-y divide-border">
-                            {recentInspections.map((inspection) => (
-                                <div 
-                                    key={inspection.id} 
-                                    className="group px-6 md:px-10 py-6 md:py-8 flex items-center gap-4 md:gap-8 hover:bg-muted/30 transition-all cursor-pointer" 
-                                    onClick={() => router.push(
-                                        inspection.status === 'completed' 
-                                            ? `/dashboard/inspections/summary-demo?id=${inspection.id}` 
-                                            : `/dashboard/inspections/active-demo?id=${inspection.id}`
-                                    )}
-                                >
-                                    <div className={`h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 border transition-all group-hover:scale-105 group-hover:shadow-lg ${
-                                        inspection.status === 'completed' 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-emerald-500/5'
-                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-amber-500/5'
-                                    }`}>
-                                        <span className="material-symbols-outlined !text-xl md:!text-2xl">{inspection.status === 'completed' ? 'verified' : 'pending_actions'}</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0 space-y-1 md:space-y-2">
-                                        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                                            <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-0.5 md:py-1 rounded-full border ${
-                                                inspection.type === 'entry' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
-                                            }`}>
-                                                {inspection.type === 'entry' ? 'ENTRADA' : 'SAÍDA'}
-                                            </span>
-                                            <div className="hidden xs:block h-1 w-1 rounded-full bg-border" />
-                                            <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{inspection.date}</span>
-                                        </div>
-                                        <p className="text-base md:text-lg font-black text-foreground group-hover:text-primary transition-colors truncate tracking-tight">Imóvel #{inspection.propertyId.substring(0, 8)}</p>
-                                    </div>
-                                    <div className="hidden sm:flex items-center gap-3 pr-2">
-                                        {inspection.status === 'ongoing' ? (
-                                            <>
-                                                <Button 
-                                                    size="sm" 
-                                                    className="h-9 px-4 rounded-xl font-black gap-2 bg-blue-600 hover:bg-blue-700 text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/10"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        router.push(`/dashboard/inspections/active-demo?id=${inspection.id}`);
-                                                    }}
-                                                >
-                                                    <Play className="h-3.5 w-3.5 fill-current" /> Continuar
-                                                </Button>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-9 w-9 rounded-xl hover:bg-destructive hover:text-white transition-all text-muted-foreground"
-                                                    onClick={(e) => handleDeleteInspection(inspection.id, e)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </>
-                                        ) : (
-                                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-1 rounded-lg border bg-emerald-500/5 border-emerald-500/10 text-emerald-500">
-                                                CONCLUÍDO
-                                            </span>
+                            {recentInspections.map((inspection) => {
+                                const property = properties[inspection.propertyId];
+                                const landlordName = getLandlordName(inspection.landlordId);
+                                const client = clients[inspection.clientId];
+                                
+                                return (
+                                    <div 
+                                        key={inspection.id} 
+                                        className="group px-6 md:px-10 py-6 md:py-8 flex items-center gap-4 md:gap-8 hover:bg-muted/30 transition-all cursor-pointer" 
+                                        onClick={() => router.push(
+                                            inspection.status === 'completed' 
+                                                ? `/dashboard/inspections/summary-demo?id=${inspection.id}` 
+                                                : `/dashboard/inspections/active-demo?id=${inspection.id}`
                                         )}
+                                    >
+                                        <div className={`h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 border transition-all group-hover:scale-105 group-hover:shadow-lg ${
+                                            inspection.status === 'completed' 
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-emerald-500/5'
+                                                : 'bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-amber-500/5'
+                                        }`}>
+                                            <span className="material-symbols-outlined !text-xl md:!text-2xl">{inspection.status === 'completed' ? 'verified' : 'pending_actions'}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0 space-y-1 md:space-y-2">
+                                            <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                                                <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-0.5 md:py-1 rounded-full border ${
+                                                    inspection.type === 'entry' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-muted border-border text-muted-foreground'
+                                                }`}>
+                                                    {inspection.type === 'entry' ? 'ENTRADA' : 'SAÍDA'}
+                                                </span>
+                                                <div className="hidden xs:block h-1 w-1 rounded-full bg-border" />
+                                                <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{inspection.date}</span>
+                                            </div>
+                                            <p className="text-base md:text-lg font-black text-foreground group-hover:text-primary transition-colors truncate tracking-tight">
+                                                {getPropertyDisplay(inspection)}
+                                            </p>
+                                            {client && (
+                                                <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                                                    <span className="inline-block w-1 h-1 rounded-full bg-primary/60"></span>
+                                                    Inquilino: {client.name}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="hidden sm:flex items-center gap-3 pr-2">
+                                            {inspection.status === 'ongoing' ? (
+                                                <>
+                                                    <Button 
+                                                        size="sm" 
+                                                        className="h-9 px-4 rounded-xl font-black gap-2 bg-blue-600 hover:bg-blue-700 text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/10"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            router.push(`/dashboard/inspections/active-demo?id=${inspection.id}`);
+                                                        }}
+                                                    >
+                                                        <Play className="h-3.5 w-3.5 fill-current" /> Continuar
+                                                    </Button>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-9 w-9 rounded-xl hover:bg-destructive hover:text-white transition-all text-muted-foreground"
+                                                        onClick={(e) => handleDeleteInspection(inspection.id, e)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-1 rounded-lg border bg-emerald-500/5 border-emerald-500/10 text-emerald-500">
+                                                    CONCLUÍDO
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                             {recentInspections.length === 0 && (
                                 <div className="p-12 md:p-24 text-center flex flex-col items-center gap-4 md:gap-6">
                                     <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-muted flex items-center justify-center">
@@ -274,4 +333,3 @@ export default function TenantDashboard() {
         </div>
     );
 }
-

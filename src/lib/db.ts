@@ -7,11 +7,20 @@ interface ImobCheckDB extends DBSchema {
         value: {
             id: string;
             tenantId: string;
+            agencyId?: string; // NOVO
+            propertyId?: string; // NOVO
+            clientId?: string; // NOVO
+            landlordId?: string; // NOVO
+            type?: string; // NOVO
+            date?: string; // NOVO
             environments: InspectionEnvironment[];
             updatedAt: number;
             meters?: { light: string, water: string, gas: string };
             keys?: { description: string, quantity: number }[];
             agreement?: string;
+            signatures?: { tenant: boolean; landlord: boolean; inspector: boolean }; // NOVO
+            startTime?: string; // NOVO
+            createdAt?: number; // NOVO
         };
         indexes: { 'by-date': number };
     };

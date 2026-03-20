@@ -127,6 +127,10 @@ export interface Inspection {
     meters?: any;
     keys?: any[];
     agreementTerm?: string;
+    propertyAddress?: string; // NOVO: Endereço para fallback
+    agency_id?: string; // NOVO: Compatibilidade com Supabase
+    createdAt?: string | number; // NOVO: Timestamp ou ISO string de criação
+    updatedAt?: string | number; // NOVO: Timestamp ou ISO string de atualização
     signatures?: {
         inspector: boolean;
         landlord: boolean;
