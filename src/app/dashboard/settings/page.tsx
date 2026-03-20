@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Building2, Mail, Phone, MapPin, Upload, Globe, ShieldCheck, Plus, Loader2 } from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, Upload, Globe, ShieldCheck, Plus, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { supabase } from '@/lib/supabase';
 import { updateAgencySettings, uploadAgencyLogo } from '@/app/actions/settings-actions';
 import { Tenant } from '@/types';
+import { toast } from 'sonner';
+import InputMask from 'react-input-mask';
 
 export default function AgencySettings() {
     const { user } = useAuth();
@@ -18,6 +20,7 @@ export default function AgencySettings() {
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [agency, setAgency] = useState<Partial<Tenant>>({});
+    const [originalAgency, setOriginalAgency] = useState<Partial<Tenant>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -31,7 +34,7 @@ export default function AgencySettings() {
                 .single();
 
             if (!error && data) {
-                setAgency({
+                const agencyData = {
                     id: data.id,
                     name: data.name,
                     email: data.email || '',
@@ -39,7 +42,9 @@ export default function AgencySettings() {
                     cnpj: data.cnpj || '',
                     address: data.address || '',
                     logo: data.logo_url || ''
-                });
+                };
+                setAgency(agencyData);
+                setOriginalAgency(agencyData);
             }
             setLoading(false);
         }
@@ -47,14 +52,76 @@ export default function AgencySettings() {
         loadAgency();
     }, [user?.tenantId]);
 
+    const hasChanges = () => {
+        return JSON.stringify(agency) !== JSON.stringify(originalAgency);
+    };
+
+    const handleDiscard = () => {
+        setAgency(originalAgency);
+        toast.info('Alterações descartadas', {
+            icon: <X className="h-4 w-4" />,
+            duration: 2000
+        });
+    };
+
+    const validateForm = () => {
+        // Validar email
+        if (agency.email && !/^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(agency.email)) {
+            toast.error('E-mail inválido', {
+                description: 'Por favor, insira um endereço de e-mail válido.',
+                icon: <AlertCircle className="h-4 w-4" />
+            });
+            return false;
+        }
+
+        // Validar CNPJ (opcional, mas se preenchido deve ser válido)
+        if (agency.cnpj) {
+            const cleanCnpj = agency.cnpj.replace(/\D/g, '');
+            if (cleanCnpj.length !== 14) {
+                toast.error('CNPJ inválido', {
+                    description: 'O CNPJ deve conter 14 dígitos.',
+                    icon: <AlertCircle className="h-4 w-4" />
+                });
+                return false;
+            }
+        }
+
+        // Validar telefone
+        if (agency.phone) {
+            const cleanPhone = agency.phone.replace(/\D/g, '');
+            if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+                toast.error('Telefone inválido', {
+                    description: 'O telefone deve ter 10 ou 11 dígitos.',
+                    icon: <AlertCircle className="h-4 w-4" />
+                });
+                return false;
+            }
+        }
+
+        return true;
+    };
+
     const handleSave = async () => {
         if (!user?.tenantId) return;
+        
+        if (!validateForm()) return;
+        
         setSaving(true);
         const result = await updateAgencySettings(user.tenantId, agency);
+        
         if (result.success) {
-            console.log('Configurações salvas com sucesso');
+            setOriginalAgency(agency);
+            toast.success('Configurações salvas!', {
+                description: 'As informações da sua imobiliária foram atualizadas com sucesso.',
+                icon: <CheckCircle2 className="h-4 w-4" />,
+                duration: 3000
+            });
         } else {
-            console.error('Erro ao salvar:', result.error);
+            toast.error('Erro ao salvar', {
+                description: result.error || 'Ocorreu um erro ao salvar as configurações. Tente novamente.',
+                icon: <AlertCircle className="h-4 w-4" />,
+                duration: 4000
+            });
         }
         setSaving(false);
     };
@@ -63,17 +130,49 @@ export default function AgencySettings() {
         const file = e.target.files?.[0];
         if (!file || !user?.tenantId) return;
 
+        // Validar tipo de arquivo
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            toast.error('Formato não suportado', {
+                description: 'Use imagens nos formatos JPG, PNG ou WEBP.',
+                icon: <AlertCircle className="h-4 w-4" />
+            });
+            return;
+        }
+
+        // Validar tamanho (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Arquivo muito grande', {
+                description: 'A imagem deve ter no máximo 5MB.',
+                icon: <AlertCircle className="h-4 w-4" />
+            });
+            return;
+        }
+
         setUploading(true);
         const formData = new FormData();
         formData.append('logo', file);
 
         const result = await uploadAgencyLogo(user.tenantId, formData);
+        
         if (result.success && result.url) {
             setAgency(prev => ({ ...prev, logo: result.url }));
+            toast.success('Logo atualizada!', {
+                description: 'A nova logo foi enviada com sucesso.',
+                icon: <CheckCircle2 className="h-4 w-4" />
+            });
         } else {
-            console.error('Erro no upload:', result.error);
+            toast.error('Erro no upload', {
+                description: result.error || 'Não foi possível fazer o upload da imagem.',
+                icon: <AlertCircle className="h-4 w-4" />
+            });
         }
         setUploading(false);
+        
+        // Limpar o input para permitir upload do mesmo arquivo novamente
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     if (loading) {
@@ -125,24 +224,34 @@ export default function AgencySettings() {
                     <CardContent className="p-8 space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-2">
-                                <Label htmlFor="corporateName" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Razão Social</Label>
+                                <Label htmlFor="corporateName" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                                    Razão Social <span className="text-red-500">*</span>
+                                </Label>
                                 <Input 
                                     id="corporateName" 
                                     value={agency.name || ''} 
                                     onChange={(e) => setAgency({ ...agency, name: e.target.value })}
                                     placeholder="Ex: Imobiliária Silva LTDA" 
                                     className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus-visible:ring-primary/20" 
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="cnpj" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">CNPJ</Label>
-                                <Input 
-                                    id="cnpj" 
-                                    value={agency.cnpj || ''} 
-                                    onChange={(e) => setAgency({ ...agency, cnpj: e.target.value })}
-                                    placeholder="00.000.000/0000-00" 
-                                    className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus-visible:ring-primary/20" 
-                                />
+                                <InputMask
+                                    mask="99.999.999/9999-99"
+                                    value={agency.cnpj || ''}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAgency({ ...agency, cnpj: e.target.value })}
+                                >
+                                    {(inputProps: any) => (
+                                        <Input 
+                                            {...inputProps}
+                                            id="cnpj" 
+                                            placeholder="00.000.000/0000-00" 
+                                            className="h-14 rounded-2xl bg-muted/50 border-none shadow-inner font-bold px-6 focus-visible:ring-primary/20" 
+                                        />
+                                    )}
+                                </InputMask>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -153,6 +262,7 @@ export default function AgencySettings() {
                                     <Input 
                                         id="email" 
                                         type="email" 
+                                        disabled
                                         value={agency.email || ''} 
                                         onChange={(e) => setAgency({ ...agency, email: e.target.value })}
                                         placeholder="contato@empresa.com.br" 
@@ -164,13 +274,20 @@ export default function AgencySettings() {
                                 <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Telefone Principal</Label>
                                 <div className="relative">
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                                    <Input 
-                                        id="phone" 
-                                        value={agency.phone || ''} 
-                                        onChange={(e) => setAgency({ ...agency, phone: e.target.value })}
-                                        placeholder="(00) 00000-0000" 
-                                        className="h-14 pl-12 pr-6 rounded-2xl bg-muted/50 border-none shadow-inner font-bold focus-visible:ring-primary/20" 
-                                    />
+                                    <InputMask
+                                        mask="(99) 99999-9999"
+                                        value={agency.phone || ''}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAgency({ ...agency, phone: e.target.value })}
+                                    >
+                                        {(inputProps: any) => (
+                                            <Input 
+                                                {...inputProps}
+                                                id="phone" 
+                                                placeholder="(00) 00000-0000" 
+                                                className="h-14 pl-12 pr-6 rounded-2xl bg-muted/50 border-none shadow-inner font-bold focus-visible:ring-primary/20" 
+                                            />
+                                        )}
+                                    </InputMask>
                                 </div>
                             </div>
                         </div>
@@ -189,11 +306,18 @@ export default function AgencySettings() {
                         </div>
                     </CardContent>
                     <CardFooter className="px-8 py-6 bg-muted/10 border-t border-border/40 flex justify-end gap-3">
-                        <Button variant="ghost" className="h-12 px-6 rounded-xl font-bold opacity-60 hover:opacity-100" disabled={saving}>Descartar</Button>
+                        <Button 
+                            variant="ghost" 
+                            className="h-12 px-6 rounded-xl font-bold opacity-60 hover:opacity-100"
+                            onClick={handleDiscard}
+                            disabled={saving || !hasChanges()}
+                        >
+                            Descartar
+                        </Button>
                         <Button 
                             className="h-12 px-8 rounded-xl font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all min-w-[160px]"
                             onClick={handleSave}
-                            disabled={saving}
+                            disabled={saving || !hasChanges()}
                         >
                             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                             {saving ? 'Salvando...' : 'Salvar Alterações'}
@@ -221,7 +345,7 @@ export default function AgencySettings() {
                                     type="file" 
                                     ref={fileInputRef} 
                                     className="hidden" 
-                                    accept="image/*" 
+                                    accept="image/jpeg,image/jpg,image/png,image/webp" 
                                     onChange={handleFileChange} 
                                 />
                                 <div 
@@ -237,7 +361,7 @@ export default function AgencySettings() {
                                         </div>
                                     )}
                                     {uploading && (
-                                        <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-sm">
                                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                         </div>
                                     )}
@@ -253,15 +377,20 @@ export default function AgencySettings() {
                                 <div className="space-y-1">
                                     <h3 className="font-black text-lg">Logotipo da Organização</h3>
                                     <p className="text-sm text-muted-foreground font-medium">Recomendamos uma imagem quadrada de pelo menos 512x512px.</p>
+                                    <p className="text-xs text-muted-foreground">Formatos aceitos: JPG, PNG, WEBP (máx. 5MB)</p>
                                 </div>
                                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
                                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/5 text-emerald-600 border border-emerald-500/10">
                                         <ShieldCheck className="h-4 w-4" />
-                                        <span className="text-xs font-black uppercase tracking-widest">PNG Suportado</span>
+                                        <span className="text-xs font-black uppercase tracking-widest">PNG</span>
                                     </div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/5 text-blue-600 border border-blue-500/10">
                                         <ShieldCheck className="h-4 w-4" />
-                                        <span className="text-xs font-black uppercase tracking-widest">JPG Suportado</span>
+                                        <span className="text-xs font-black uppercase tracking-widest">JPG</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/5 text-purple-600 border border-purple-500/10">
+                                        <ShieldCheck className="h-4 w-4" />
+                                        <span className="text-xs font-black uppercase tracking-widest">WEBP</span>
                                     </div>
                                 </div>
                                 <p className="text-xs text-muted-foreground italic max-w-sm">Dica: Use logotipos com fundo transparente para um visual mais profissional nos laudos.</p>

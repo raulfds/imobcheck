@@ -9,6 +9,7 @@ type User = {
   email: string;
   name: string;
   agency_id: string | null;
+  tenantId?: string | null;
   agency_name?: string;
   role: string;
   must_change_password?: boolean;
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: systemUser.email,
           name: systemUser.name,
           agency_id: systemUser.agency_id,
+          tenantId: systemUser.agency_id,
           role: systemUser.role,
           must_change_password: systemUser.must_change_password,
         };
@@ -193,6 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: clientData.email,
           name: clientData.name,
           agency_id: clientData.agency_id,
+          tenantId: clientData.agency_id,
           role: 'CLIENT_ADMIN',
         };
 
@@ -262,6 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: inserted.email,
               name: inserted.name,
               agency_id: inserted.agency_id,
+              tenantId: inserted.agency_id,
               role: inserted.role,
             };
             setUser(userData);
