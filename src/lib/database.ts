@@ -168,51 +168,6 @@ export async function fetchAgency(id: string): Promise<Tenant | null> {
 }
 
 
-export async function createAgency(tenant: Omit<Tenant, 'id'>): Promise<Tenant> {
-    const { data, error } = await supabase.from('agencies').insert({
-        name: tenant.name,
-        email: tenant.email,
-        admin_name: tenant.adminName ?? null,
-        phone: tenant.phone ?? null,
-        status: tenant.status,
-        plan: tenant.plan,
-        plan_id: tenant.planId ?? null,
-        acquisition_date: tenant.acquisitionDate || new Date().toISOString(),
-        cnpj: tenant.cnpj ?? null,
-        address: tenant.address ?? null,
-        logo_url: tenant.logo ?? null,
-        billing_cycle: tenant.billingCycle ?? 'monthly',
-        first_login_at: tenant.firstLoginAt ?? null,
-        expires_at: tenant.expiresAt ?? null,
-    }).select().single();
-    if (error) throw error;
-    return rowToTenant(data);
-}
-
-export async function updateAgency(id: string, updates: Partial<Tenant>): Promise<void> {
-    const { error } = await supabase.from('agencies').update({
-        ...(updates.name !== undefined && { name: updates.name }),
-        ...(updates.email !== undefined && { email: updates.email }),
-        ...(updates.adminName !== undefined && { admin_name: updates.adminName }),
-        ...(updates.phone !== undefined && { phone: updates.phone }),
-        ...(updates.status !== undefined && { status: updates.status }),
-        ...(updates.plan !== undefined && { plan: updates.plan }),
-        ...(updates.planId !== undefined && { plan_id: updates.planId }),
-        ...(updates.acquisitionDate !== undefined && { acquisition_date: updates.acquisitionDate }),
-        ...(updates.cnpj !== undefined && { cnpj: updates.cnpj }),
-        ...(updates.address !== undefined && { address: updates.address }),
-        ...(updates.logo !== undefined && { logo_url: updates.logo }),
-        ...(updates.billingCycle !== undefined && { billing_cycle: updates.billingCycle }),
-        ...(updates.firstLoginAt !== undefined && { first_login_at: updates.firstLoginAt }),
-        ...(updates.expiresAt !== undefined && { expires_at: updates.expiresAt }),
-    }).eq('id', id);
-    if (error) throw error;
-}
-
-export async function deleteAgency(id: string): Promise<void> {
-    const { error } = await supabase.from('agencies').delete().eq('id', id);
-    if (error) throw error;
-}
 
 // ─── ROOM TEMPLATES ──────────────────────────────────────────────────────────
 

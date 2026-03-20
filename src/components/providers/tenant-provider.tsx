@@ -4,8 +4,10 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { Tenant } from '@/types';
 import { mockTenants as initialMockTenants } from '@/lib/mock-data';
 import {
-    fetchAgencies, createAgency, updateAgency, deleteAgency, saveSystemUser, resetUserPassword, fetchUsersByAgency
+    fetchAgencies, fetchUsersByAgency
 } from '@/lib/database';
+import { saveAgencyAction, deleteAgencyAction } from '@/app/actions/tenant-actions';
+import { saveSystemUser, resetUserPassword } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 interface TenantContextData {
@@ -50,8 +52,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             return { tenant: newTenant };
         }
         
-        // 1. Create the agency (tenant)
-        const newTenant = await createAgency(tenantData);
+        // 1. Create the agency via Server Action
+        const result = await saveAgencyAction(tenantData);
+        if (!result.success) throw new Error(result.error);
+        
+        const newTenant = result.data as Tenant;
         
         // 2. Create the initial admin user for this agency
         const tempPassword = await saveSystemUser({
@@ -91,7 +96,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             setTenants(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
             return;
         }
-        await updateAgency(id, updates);
+        const result = await saveAgencyAction({ id, ...updates });
+        if (!result.success) throw new Error(result.error);
         setTenants(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     };
 
@@ -100,7 +106,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             setTenants(prev => prev.filter(t => t.id !== id));
             return;
         }
-        await deleteAgency(id);
+        const result = await deleteAgencyAction(id);
+        if (!result.success) throw new Error(result.error);
         setTenants(prev => prev.filter(t => t.id !== id));
     };
 

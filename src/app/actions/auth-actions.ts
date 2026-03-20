@@ -1,8 +1,8 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { Resend } from 'resend';
+import { getAdminClient } from '@/lib/supabase-admin';
 
 // Helper to get Resend instance safely
 const getResendClient = () => {
@@ -12,26 +12,6 @@ const getResendClient = () => {
         return null;
     }
     return new Resend(key);
-};
-
-/**
- * Super-privileged Supabase client for administrative operations.
- * This client bypasses RLS and uses the service_role key.
- */
-const getAdminClient = () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !key) {
-        return null;
-    }
-
-    return createClient(url, key, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    });
 };
 
 /**
@@ -81,10 +61,14 @@ export async function adminSaveUser(userData: {
 
             if (createError) {
                 if (createError.message.toLowerCase().includes('already registered')) {
-                    // If already registered, fetch the user to get ID
-                    const { data: { users } } = await admin.auth.admin.listUsers();
+                    // If already registered, fetch the user to get ID (use 1000 to avoid page 1 limit)
+                    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
                     const existing = users.find(u => u.email?.toLowerCase() === email);
                     authId = existing?.id;
+                    
+                    if (!authId) {
+                        throw new Error('Usuário já registrado no Auth, mas não foi encontrado na lista administrativa.');
+                    }
                 } else {
                     throw createError;
                 }
@@ -140,7 +124,7 @@ export async function finalizeUserPassword(userData: {
         let authId = null;
 
         // 1. More robust user lookup: Try to find user in Auth
-        const { data: { users }, error: listError } = await admin.auth.admin.listUsers();
+        const { data: { users }, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
         if (listError) throw listError;
 
         const existingAuthUser = users.find((u: any) => u.email?.toLowerCase() === email);
@@ -155,7 +139,7 @@ export async function finalizeUserPassword(userData: {
             if (updateError) throw updateError;
         } else {
             // Fallback for edge cases, but usually we prefer not to list 1000
-            const { data: { users } } = await admin.auth.admin.listUsers();
+            const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
             const retryUser = users.find(u => u.email?.toLowerCase() === email);
             if (retryUser) {
                 authId = retryUser.id;
@@ -217,8 +201,8 @@ export async function adminResetPassword(userId: string, email: string, name: st
             });
             if (authError) throw authError;
         } else {
-            // Fallback: If not in DB, list Auth users (limited to default page)
-            const { data: { users } } = await admin.auth.admin.listUsers();
+            // Fallback: If not in DB, list Auth users (limited to 1000 to avoid missing users)
+            const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
             const authUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
             
             if (authUser) {
@@ -296,6 +280,9 @@ export async function requestPasswordResetAction(emailId: string) {
         }
 
         try {
+            // Log for manual retrieval in case email fails (domain verification issue)
+            console.log(`[AUTH-ACTION] Temp Password for ${user.email} is: ${result.tempPassword}`);
+
             const { data: emailResult, error: sendError } = await resend.emails.send({
                 from: 'ImobCheck <onboarding@resend.dev>',
                 to: [user.email],
