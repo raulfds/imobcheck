@@ -53,31 +53,44 @@ export async function adminSaveUser(userData: {
     try {
         let authId = null;
 
-        // 1. Check if user already exists in Auth
-        const { data: { users }, error: listError } = await admin.auth.admin.listUsers();
-        if (listError) throw listError;
+        // 1. Check if user already exists (Query DB first for speed, then Auth if needed)
+        const { data: dbUser } = await admin.from('system_users')
+            .select('auth_id')
+            .eq('email', email)
+            .maybeSingle();
 
-        const existingAuthUser = users.find(u => u.email?.toLowerCase() === email);
+        authId = dbUser?.auth_id;
 
-        if (existingAuthUser) {
-            authId = existingAuthUser.id;
-            // Update email if it changed (though uniquely indexed)
+        if (authId) {
+            // Update existing user in Auth
             await admin.auth.admin.updateUserById(authId, {
                 email: email,
                 user_metadata: { name: userData.name },
                 ...(userData.temp_password && { password: userData.temp_password, email_confirm: true })
             });
-        } else if (userData.temp_password) {
-            // Create new user in Auth
+        } else {
+            // If not in DB, double check listUsers but with a filter if possible 
+            // (Supabase doesn't support filter well in listUsers, so we'll try to find by email directly)
+            // A better way is actually to just TRAY to create and handle the "already registered" error.
             const { data: newUser, error: createError } = await admin.auth.admin.createUser({
                 email: email,
-                password: userData.temp_password,
-                email_confirm: true, // AUTO CONFIRM
+                password: userData.temp_password || Math.random().toString(36).slice(-12),
+                email_confirm: true,
                 user_metadata: { name: userData.name }
             });
 
-            if (createError) throw createError;
-            authId = newUser.user.id;
+            if (createError) {
+                if (createError.message.toLowerCase().includes('already registered')) {
+                    // If already registered, fetch the user to get ID
+                    const { data: { users } } = await admin.auth.admin.listUsers();
+                    const existing = users.find(u => u.email?.toLowerCase() === email);
+                    authId = existing?.id;
+                } else {
+                    throw createError;
+                }
+            } else {
+                authId = newUser.user.id;
+            }
         }
 
         // 2. Upsert into system_users (Public Schema)
@@ -96,8 +109,11 @@ export async function adminSaveUser(userData: {
 
         if (dbError) throw dbError;
 
-        revalidatePath('/super-admin/users');
-        revalidatePath('/dashboard/team');
+        // Parallel revalidation
+        await Promise.all([
+            revalidatePath('/super-admin/users'),
+            revalidatePath('/dashboard/team')
+        ]);
         
         return { success: true, authId };
     } catch (err: unknown) {
@@ -124,13 +140,10 @@ export async function finalizeUserPassword(userData: {
         let authId = null;
 
         // 1. More robust user lookup: Try to find user in Auth
-        // We fetch a larger batch to avoid page 1 limitations
-        const { data: { users }, error: listError } = await admin.auth.admin.listUsers({
-            perPage: 1000
-        });
+        const { data: { users }, error: listError } = await admin.auth.admin.listUsers();
         if (listError) throw listError;
 
-        const existingAuthUser = users.find(u => u.email?.toLowerCase() === email);
+        const existingAuthUser = users.find((u: any) => u.email?.toLowerCase() === email);
 
         if (existingAuthUser) {
             authId = existingAuthUser.id;
@@ -141,33 +154,17 @@ export async function finalizeUserPassword(userData: {
             });
             if (updateError) throw updateError;
         } else {
-            console.log(`[ADMIN] User not found in Auth. Creating new confirmed user...`);
-            const { data: newUser, error: createError } = await admin.auth.admin.createUser({
-                email: email,
-                password: userData.newPassword,
-                email_confirm: true,
-                user_metadata: { name: 'Migrated User' }
-            });
-
-            if (createError) {
-                // Handle late-arrival race condition: if they were created between list and create
-                if (createError.message.toLowerCase().includes('already registered')) {
-                     const { data: { users: retryUsers } } = await admin.auth.admin.listUsers({ perPage: 1000 });
-                     const retryUser = retryUsers.find(u => u.email?.toLowerCase() === email);
-                     if (retryUser) {
-                        authId = retryUser.id;
-                        await admin.auth.admin.updateUserById(authId, {
-                            password: userData.newPassword,
-                            email_confirm: true
-                        });
-                     } else {
-                         throw createError;
-                     }
-                } else {
-                    throw createError;
-                }
+            // Fallback for edge cases, but usually we prefer not to list 1000
+            const { data: { users } } = await admin.auth.admin.listUsers();
+            const retryUser = users.find(u => u.email?.toLowerCase() === email);
+            if (retryUser) {
+                authId = retryUser.id;
+                await admin.auth.admin.updateUserById(authId, {
+                    password: userData.newPassword,
+                    email_confirm: true
+                });
             } else {
-                authId = newUser.user.id;
+                throw new Error('Usuário não encontrado no Supabase Auth.');
             }
         }
 
@@ -203,33 +200,44 @@ export async function adminResetPassword(userId: string, email: string, name: st
     console.log(`[ADMIN] Resetting password for ${email} (${userId})...`);
 
     try {
-        // 1. First, find the user in Auth to get their Auth ID
-        const { data: { users }, error: listError } = await admin.auth.admin.listUsers({
-            perPage: 1000
-        });
-        if (listError) throw listError;
+        // 1. Get user's auth_id from DB first (faster than listing all Auth users)
+        const { data: dbUser } = await admin.from('system_users')
+            .select('auth_id')
+            .eq('id', userId)
+            .single();
         
-        const authUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-        let authId = authUser?.id || null;
+        let authId = dbUser?.auth_id;
 
-        if (authUser) {
-            console.log(`[ADMIN] Found Auth user ${authId}. Updating password to temp...`);
+        if (authId) {
+            console.log(`[ADMIN] Found Auth user ${authId} via DB. Updating password to temp...`);
             // Update password in Auth
-            const { error: authError } = await admin.auth.admin.updateUserById(authUser.id, {
+            const { error: authError } = await admin.auth.admin.updateUserById(authId, {
                 password: tempPassword,
                 email_confirm: true
             });
             if (authError) throw authError;
         } else {
-            console.log(`[ADMIN] User not in Auth. Creating temp account...`);
-            const { data: newUser, error: createError } = await admin.auth.admin.createUser({
-                email: email,
-                password: tempPassword,
-                email_confirm: true,
-                user_metadata: { name }
-            });
-            if (createError) throw createError;
-            authId = newUser.user.id;
+            // Fallback: If not in DB, list Auth users (limited to default page)
+            const { data: { users } } = await admin.auth.admin.listUsers();
+            const authUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+            
+            if (authUser) {
+                authId = authUser.id;
+                await admin.auth.admin.updateUserById(authId, {
+                    password: tempPassword,
+                    email_confirm: true
+                });
+            } else {
+                console.log(`[ADMIN] User not in Auth. Creating temp account...`);
+                const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+                    email: email,
+                    password: tempPassword,
+                    email_confirm: true,
+                    user_metadata: { name }
+                });
+                if (createError) throw createError;
+                authId = newUser.user.id;
+            }
         }
 
         // 2. Update flags in system_users
