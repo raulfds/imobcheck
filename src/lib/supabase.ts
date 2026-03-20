@@ -16,10 +16,15 @@ export const supabase = createClient(
     supabaseUrl,
     supabaseAnonKey || 'placeholder',
     {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: 'imobcheck-auth-session'
+        },
         global: {
             headers: {
-                'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${supabaseAnonKey}`
+                'x-application-name': 'imobcheck'
             }
         }
     }

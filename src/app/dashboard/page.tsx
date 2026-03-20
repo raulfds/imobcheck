@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { 
@@ -9,16 +8,17 @@ import {
     PlusCircle,
     Building2,
     Users as UsersIcon,
-    History,
     Trash2,
-    Play
+    Play,
+    Settings,
+    TrendingUp,
+    Groups
 } from 'lucide-react';
 import { Inspection, Landlord, Property, Client } from '@/types';
 import { useAuth } from '@/components/auth/auth-provider';
 import { fetchInspections, fetchProperties, fetchClients, deleteInspection, fetchLandlords } from '@/lib/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { MetricCard } from '@/components/vistorify/MetricCard';
-import { IssueListItem } from '@/components/vistorify/IssueListItem';
 
 export default function TenantDashboard() {
     const { user } = useAuth();
@@ -140,98 +140,116 @@ export default function TenantDashboard() {
                 </div>
             </div>
 
-            {/* Metric Grid - Responsive columns: 2 columns on mobile-large */}
-            <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-2 max-w-2xl">
+            {/* Metric Grid - High Impact */}
+            <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
-                    title="Vistorias"
+                    title="Vistorias Totais"
                     value={inspections.length}
-                    subtext={`${ongoingCount} pendentes`}
+                    subtext={`${ongoingCount} em andamento`}
                     icon="fact_check"
                     onClick={() => router.push('/dashboard/inspections')}
+                    className="bg-primary/5 border-primary/20"
                 />
                 <MetricCard
                     title="Imóveis"
                     value={propertyCount}
-                    subtext="Cadastrados"
+                    subtext="Registrados"
                     icon="corporate_fare"
+                    onClick={() => router.push('/dashboard/registrations/properties')}
+                    className="bg-blue-500/5 border-blue-500/20"
+                />
+                <MetricCard
+                    title="Taxa de Conclusão"
+                    value={`${completionRate}%`}
+                    subtext="Eficiência mensal"
+                    icon="trending_up"
+                    className="bg-emerald-500/5 border-emerald-500/20"
+                />
+                <MetricCard
+                    title="Inquilinos"
+                    value={Object.keys(clients).length}
+                    subtext="Ativos no sistema"
+                    icon="groups"
+                    onClick={() => router.push('/dashboard/registrations/tenants')}
+                    className="bg-amber-500/5 border-amber-500/20"
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10">
-                <div className="lg:col-span-1 space-y-6 md:space-y-8">
-                    <div className="grid gap-4 pt-4">
-                        <button 
-                            onClick={() => router.push('/dashboard/inspections/new')}
-                            className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 transition-all text-left group relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
-                                <PlusCircle className="h-16 w-16" />
-                            </div>
-                            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 transition-transform shadow-inner">
-                                <PlusCircle className="h-7 w-7" />
-                            </div>
-                            <div className="relative z-10">
-                                <p className="font-black text-foreground tracking-tight mb-0.5">Nova Vistoria</p>
-                                <p className="text-[11px] text-muted-foreground font-bold tracking-wide">Iniciar laudo de entrada/saída</p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                        </button>
+            {/* Premium Navigation Panel */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-card border border-border rounded-[2rem] p-8 shadow-sm relative overflow-hidden group h-full">
+                        <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+                        <h3 className="text-xl font-black uppercase tracking-tighter mb-6 flex items-center gap-3 text-foreground">
+                            <span className="h-2 w-2 rounded-full bg-primary" />
+                            Ações Rápidas
+                        </h3>
+                        
+                        <div className="grid grid-cols-1 gap-3">
+                            <Button 
+                                onClick={() => router.push('/dashboard/inspections/new')}
+                                className="h-20 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between px-6 group"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                                        <PlusCircle className="h-6 w-6" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="font-black uppercase tracking-widest text-[10px]">Nova</p>
+                                        <p className="text-lg font-black tracking-tight leading-none">Vistoria</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="h-5 w-5 opacity-40 group-hover:translate-x-1 transition-transform" />
+                            </Button>
 
-                        <button 
-                            onClick={() => router.push('/dashboard/registrations')}
-                            className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left group relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
-                                <Building2 className="h-16 w-16" />
-                            </div>
-                            <div className="h-14 w-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 group-hover:scale-110 transition-transform shadow-inner">
-                                <Building2 className="h-7 w-7" />
-                            </div>
-                            <div className="relative z-10">
-                                <p className="font-black text-foreground tracking-tight mb-0.5">Cadastrar Imóvel</p>
-                                <p className="text-[11px] text-muted-foreground font-bold tracking-wide">Adicionar unidade ao portfólio</p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                        </button>
+                            <Button 
+                                variant="outline"
+                                onClick={() => router.push('/dashboard/registrations/properties')}
+                                className="h-16 rounded-2xl border-border bg-card hover:bg-muted/50 transition-all flex items-center justify-between px-6 group"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                                        <Building2 className="h-5 w-5" />
+                                    </div>
+                                    <p className="font-bold text-sm">Gerenciar Imóveis</p>
+                                </div>
+                                <ChevronRight className="h-4 w-4 opacity-40 group-hover:translate-x-1 transition-transform" />
+                            </Button>
 
-                        <button 
-                            onClick={() => router.push('/dashboard/team')}
-                            className="flex items-center gap-5 p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/5 transition-all text-left group relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
-                                <UsersIcon className="h-16 w-16" />
-                            </div>
-                            <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0 group-hover:scale-110 transition-transform shadow-inner">
-                                <UsersIcon className="h-7 w-7" />
-                            </div>
-                            <div className="relative z-10">
-                                <p className="font-black text-foreground tracking-tight mb-0.5">Gestão de Equipe</p>
-                                <p className="text-[11px] text-muted-foreground font-bold tracking-wide">Vistoriadores e permissões</p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                        </button>
+                            <Button 
+                                variant="outline"
+                                onClick={() => router.push('/dashboard/team')}
+                                className="h-16 rounded-2xl border-border bg-card hover:bg-muted/50 transition-all flex items-center justify-between px-6 group"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                                        <UsersIcon className="h-5 w-5" />
+                                    </div>
+                                    <p className="font-bold text-sm">Minha Equipe</p>
+                                </div>
+                                <ChevronRight className="h-4 w-4 opacity-40 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+
+                            <Button 
+                                variant="outline"
+                                onClick={() => router.push('/dashboard/settings')}
+                                className="h-16 rounded-2xl border-border bg-card hover:bg-muted/50 transition-all flex items-center justify-between px-6 group"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="h-8 w-8 rounded-lg bg-slate-500/10 text-slate-500 flex items-center justify-center">
+                                        <Settings className="h-5 w-5" />
+                                    </div>
+                                    <p className="font-bold text-sm">Configurações</p>
+                                </div>
+                                <ChevronRight className="h-4 w-4 opacity-40 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </div>
                     </div>
-
-               {/*  <Card className="border border-border/50 shadow-sm bg-muted/20 rounded-2xl">
-                        <CardContent className="p-8">
-                            <div className="flex items-start gap-4">
-                                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
-                                    <History className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <p className="text-sm font-black tracking-tight uppercase">Lembrete de Hoje</p>
-                                    <p className="text-xs text-muted-foreground font-bold leading-relaxed opacity-80">
-                                        Vistoria da Rua Alagoas expira em breve. Recomendamos priorizar a revisão dos itens críticos.
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>*/}
                 </div>
 
-                {/* Recent Inspections Flow */}
+                {/* Recent Activity Section */}
                 <div className="lg:col-span-2">
-                    <div className="bg-card border border-border rounded-xl md:rounded-2xl shadow-sm overflow-hidden h-full flex flex-col">
+                    <div className="bg-card border border-border rounded-xl md:rounded-[2.5rem] shadow-sm overflow-hidden h-full flex flex-col">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 md:px-10 py-6 md:py-8 border-b border-border bg-muted/30 gap-4 sm:gap-0">
                             <div className="space-y-1.5">
                                 <h3 className="text-xl md:text-2xl font-black tracking-tight text-foreground uppercase leading-none">Atividade Recente</h3>

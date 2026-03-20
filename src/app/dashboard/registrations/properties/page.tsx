@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
@@ -29,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function PropertiesPage() {
     const { user } = useAuth();
+    const router = useRouter();
     const { toast } = useToast();
     
     // Garantir que temos o agency_id do usuário
@@ -38,6 +40,8 @@ export default function PropertiesPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [savedPropertyId, setSavedPropertyId] = useState<string | null>(null);
 
     const [newProperty, setNewProperty] = useState({ 
         cep: '',
@@ -105,6 +109,7 @@ export default function PropertiesPage() {
             return;
         }
         
+        setIsSaving(true);
         try {
             const fullAddress = `${newProperty.logradouro}, ${newProperty.numero}${newProperty.complemento ? ' - ' + newProperty.complemento : ''} - ${newProperty.bairro}, ${newProperty.cidade} - ${newProperty.estado}`;
             const propertyData = { 
@@ -123,6 +128,7 @@ export default function PropertiesPage() {
             if (isSupabaseConfigured) {
                 const p = await createProperty(propertyData);
                 setProperties(prev => [p, ...prev]);
+                setSavedPropertyId(p.id);
                 
                 toast({
                     title: 'Sucesso!',
@@ -143,7 +149,8 @@ export default function PropertiesPage() {
                 });
             }
             
-            setIsAddPropertyOpen(false);
+            // Não fecha imediatamente se quisermos mostrar opções de próxima ação
+            // setIsAddPropertyOpen(false);
             setNewProperty({ 
                 cep: '', logradouro: '', numero: '', complemento: '', 
                 bairro: '', cidade: '', estado: '', description: '' 
@@ -152,9 +159,11 @@ export default function PropertiesPage() {
             console.error(err); 
             toast({
                 title: 'Erro',
-                description: 'Erro ao cadastrar imóvel.',
+                description: 'Não foi possível salvar o imóvel. Verifique sua conexão e tente novamente.',
                 variant: 'destructive',
             });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -444,14 +453,67 @@ export default function PropertiesPage() {
                                 <Input id="pdesc" value={newProperty.description} onChange={e => setNewProperty({ ...newProperty, description: e.target.value })} placeholder="Ex: Apartamento 3 Quartos com Suíte" className="h-14 rounded-xl bg-muted/30 border-border/50 font-bold px-4" />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-3 pt-2 md:pt-4 shrink-0">
-                            <Button type="submit" className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest">
-                                Finalizar Cadastro
-                            </Button>
-                            <Button type="button" variant="ghost" className="rounded-xl md:rounded-2xl h-12 md:h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsAddPropertyOpen(false)}>
-                                Cancelar operação
-                            </Button>
-                        </div>
+                        {savedPropertyId ? (
+                            <div className="flex flex-col gap-4 pt-6 animate-in fade-in zoom-in duration-300">
+                                <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
+                                    <div className="h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto mb-2">
+                                        <Plus className="h-6 w-6" />
+                                    </div>
+                                    <h4 className="font-black text-emerald-600 uppercase tracking-tight">Imóvel Cadastrado!</h4>
+                                    <p className="text-xs text-emerald-600/70 font-bold">O que você deseja fazer agora?</p>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
+                                    <Button 
+                                        type="button" 
+                                        className="h-14 rounded-xl font-black bg-emerald-600 hover:bg-emerald-700 text-white uppercase tracking-widest text-[10px]"
+                                        onClick={() => {
+                                            setIsAddPropertyOpen(false);
+                                            setSavedPropertyId(null);
+                                            router.push(`/dashboard/inspections/new?propertyId=${savedPropertyId}`);
+                                        }}
+                                    >
+                                        Iniciar Vistoria Agora
+                                    </Button>
+                                    <Button 
+                                        type="button" 
+                                        variant="outline"
+                                        className="h-14 rounded-xl font-black uppercase tracking-widest text-[10px]"
+                                        onClick={() => {
+                                            setSavedPropertyId(null);
+                                            setIsAddPropertyOpen(false);
+                                        }}
+                                    >
+                                        Voltar para a Lista
+                                    </Button>
+                                    <Button 
+                                        type="button" 
+                                        variant="ghost"
+                                        className="h-12 rounded-xl font-black uppercase tracking-widest text-[10px] opacity-60"
+                                        onClick={() => setSavedPropertyId(null)}
+                                    >
+                                        Cadastrar Outro Imóvel
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3 pt-2 md:pt-4 shrink-0">
+                                <Button 
+                                    type="submit" 
+                                    disabled={isSaving}
+                                    className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl font-black text-base md:text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all bg-primary text-primary-foreground uppercase tracking-widest disabled:opacity-50"
+                                >
+                                    {isSaving ? (
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-5 w-5 rounded-full border-2 border-primary-foreground/20 border-t-primary-foreground animate-spin" />
+                                            Salvando...
+                                        </div>
+                                    ) : 'Finalizar Cadastro'}
+                                </Button>
+                                <Button type="button" variant="ghost" className="rounded-xl md:rounded-2xl h-12 md:h-14 font-black uppercase tracking-widest text-[10px] opacity-40 hover:opacity-100 hover:bg-muted/50 transition-all" onClick={() => setIsAddPropertyOpen(false)}>
+                                    Cancelar operação
+                                </Button>
+                            </div>
+                        )}
                     </form>
                 </DialogContent>
             </Dialog>

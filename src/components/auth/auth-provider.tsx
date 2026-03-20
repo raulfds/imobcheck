@@ -47,35 +47,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Verificar sessão ao carregar
   useEffect(() => {
-    checkUser();
+    let mounted = true;
+
+    async function initializeAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          if (session?.user) {
+            await loadUserData(session.user.email ?? null, session.user.id);
+          } else {
+            setIsLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao inicializar auth:', error);
+        if (mounted) setIsLoading(false);
+      }
+    }
+
+    initializeAuth();
     
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth State Change:', event);
+      if (!mounted) return;
+
       if (event === 'SIGNED_IN' && session?.user) {
+        // Se já temos o usuário e o email é o mesmo, evita recarregar desnecessariamente
+        if (user?.email === session.user.email) {
+          setIsLoading(false);
+          return;
+        }
         await loadUserData(session.user.email ?? null, session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setNeedsPasswordReset(false);
         setIsLoading(false);
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('Token atualizado com sucesso');
       }
     });
 
     return () => {
+      mounted = false;
       authListener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [user?.email]);
 
-  async function checkUser() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await loadUserData(session.user.email ?? null, session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('Erro ao verificar usuário:', error);
-      setIsLoading(false);
-    }
-  }
 
   async function loadUserData(userEmail: string | null, authUserId?: string): Promise<User | null> {
     if (!userEmail) return null;
@@ -149,6 +166,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setUser(userData);
+        
+        // Cache opcional no sessionStorage para performance (apenas metadados não sensíveis)
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('imobcheck_user_meta', JSON.stringify({
+            role: userData.role,
+            agency_id: userData.agency_id
+          }));
+        }
+
         setIsLoading(false);
 
         // Se o auth_id não estiver preenchido, atualizar com o ID do auth
@@ -555,19 +581,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     try {
-      console.log('🔓 Fazendo logout...');
+      console.log('🔓 Fazendo logout completo...');
+      setIsLoading(true);
+      
+      // 1. Sign out do Supabase (limpa cookies e tokens gerenciados)
       await supabase.auth.signOut();
+      
+      // 2. Limpar explicitamente todos os itens de auth do localStorage
+      if (typeof window !== 'undefined') {
+        // Limpa tokens específicos se o ID for conhecido, mas também busca por padrões
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('sb-') && key.includes('-auth-token')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Limpar metadados do sistema
+        localStorage.removeItem('imobcheck_session_data');
+        sessionStorage.removeItem('imobcheck_user_meta');
+        
+        // Limpar outros caches possíveis
+        localStorage.clear(); // Opcional: Limpeza total para garantir 'incognito-like' behavior
+      }
     } catch (error) {
       console.error('Erro ao sair:', error);
     } finally {
       setUser(null);
       setFirstAccessData(null);
       setNeedsPasswordReset(false);
+      setIsLoading(false);
       
-      // Limpar dados em cache
-      localStorage.removeItem('sb-wvdtaccrextjkinecngz-auth-token');
-      
-      // Hard reload para limpar tudo
+      // Hard reload para garantir que todos os estados de memória sejam limpos
       window.location.href = '/login';
     }
   }
